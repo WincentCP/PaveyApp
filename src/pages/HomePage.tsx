@@ -300,7 +300,7 @@ export default function HomePage() {
 
             {/* Full itinerary — not truncated */}
             <div className="relative">
-              <div className="absolute left-2.5 top-4 bottom-4 w-px bg-ink-200" />
+              <div className="absolute left-2.5 top-0 bottom-0 w-px bg-ink-200" />
               <div className="space-y-3">
                 {itinerary.map((p, i) => {
                   const startMin = 10 * 60 + 30 + i * 150;
@@ -351,22 +351,22 @@ export default function HomePage() {
                   );
                 })}
               </div>
+            </div>
 
-              {/* Edit plan CTA */}
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => nav('/generate?edit=1')}
-                  className="flex-1 h-10 rounded-xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5"
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Edit Plan
-                </button>
-                <button
-                  onClick={() => nav('/map')}
-                  className="flex-1 h-10 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1.5 shadow-glow"
-                >
-                  <MapPin className="w-3.5 h-3.5" /> View Map
-                </button>
-              </div>
+            {/* Edit plan CTA — outside timeline container so line doesn't bleed in */}
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => nav('/generate?edit=1')}
+                className="flex-1 h-10 rounded-xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit Plan
+              </button>
+              <button
+                onClick={() => nav('/map')}
+                className="flex-1 h-10 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1.5 shadow-glow"
+              >
+                <MapPin className="w-3.5 h-3.5" /> View Map
+              </button>
             </div>
           </div>
         )}
@@ -429,7 +429,7 @@ export default function HomePage() {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] font-bold tracking-widest text-ink-500">UP NEXT</span>
             </div>
-            <div className="bg-gradient-to-br from-brand-50 to-purple-50 rounded-2xl p-4 border border-brand-100 flex items-center gap-4">
+            <div className="bg-brand-50 rounded-2xl p-4 border border-brand-100 flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center shrink-0">
                 <span className="text-2xl">✈️</span>
               </div>

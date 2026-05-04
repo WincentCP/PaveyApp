@@ -1,8 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronDown, Crosshair, List, Navigation, X, MapPin, Smile,
-  Clock, Star, DollarSign, ChevronDown as ChevDown, Bookmark,
-  ChevronUp, Plus, Map, Pencil,
+  ChevronDown, Crosshair, List, Navigation, X, MapPin,
+  Clock, Star, DollarSign, Bookmark, Smile,
+  ChevronUp, Plus, Map,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +19,7 @@ type ViewMode = 'map' | 'list';
 export default function MapPage() {
   const nav = useNavigate();
   const {
-    itinerary, setIsNavigating, setNavIndex,
+    itinerary, setIsNavigating, setNavIndex, removeStop,
     savePlace, removeSavedPlace, isSaved,
     destinations, activeDestIdx, setActiveDestIdx,
   } = useApp();
@@ -58,22 +58,12 @@ export default function MapPage() {
           ? `${destinations[activeDestIdx]?.name ?? 'My Trip'} · ${activeItinerary.length} stops`
           : `${activeItinerary.length} stop${activeItinerary.length !== 1 ? 's' : ''}`}
         right={
-          <>
-            {activeItinerary.length > 0 && (
-              <button
-                onClick={() => nav('/generate?edit=1')}
-                className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold border border-brand-100"
-              >
-                <Pencil className="w-3.5 h-3.5" /> Edit
-              </button>
-            )}
-            <button
-              onClick={() => setView(view === 'map' ? 'list' : 'map')}
-              className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-ink-50 text-ink-800 text-xs font-semibold"
-            >
-              <List className="w-4 h-4" /> {view === 'map' ? 'List' : 'Map'}
-            </button>
-          </>
+          <button
+            onClick={() => setView(view === 'map' ? 'list' : 'map')}
+            className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-ink-50 text-ink-800 text-xs font-semibold"
+          >
+            <List className="w-4 h-4" /> {view === 'map' ? 'List' : 'Map'}
+          </button>
         }
       />
 
@@ -135,7 +125,7 @@ export default function MapPage() {
               onGenerate={() => nav('/generate')}
             />
           ) : (
-            <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} />
+            <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={removeStop} />
           )}
         </div>
       ) : (
@@ -147,7 +137,7 @@ export default function MapPage() {
               inline
             />
           ) : (
-            <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} />
+            <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} onRemove={removeStop} />
           )}
         </div>
       )}
@@ -282,8 +272,8 @@ function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) 
 
 /* --------------- BOTTOM SHEET (collapsible) --------------- */
 
-function ItineraryBottomSheet({ itinerary, totals, onStart }: {
-  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void;
+function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove }: {
+  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -334,12 +324,19 @@ function ItineraryBottomSheet({ itinerary, totals, onStart }: {
                       <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 mr-1">
                     <div className="text-xs text-brand-600 font-semibold">{formatRp(p.priceRange.min)}</div>
                     {p.priceRange.max !== p.priceRange.min && (
                       <div className="text-[10px] text-ink-400">– {formatRp(p.priceRange.max)}</div>
                     )}
                   </div>
+                  <button
+                    onClick={() => onRemove(p.id)}
+                    className="w-7 h-7 rounded-full bg-ink-50 hover:bg-red-50 flex items-center justify-center press shrink-0 transition-colors"
+                    aria-label="Remove stop"
+                  >
+                    <X className="w-3.5 h-3.5 text-ink-400 hover:text-red-500" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -374,8 +371,8 @@ function nineColon(i: number, addMin = 0) {
 
 /* ----------------- LIST VIEW ----------------- */
 
-function ListView({ itinerary, onStart, totals, onPin }: {
-  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void;
+function ListView({ itinerary, onStart, totals, onPin, onRemove }: {
+  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void; onRemove: (id: string) => void;
 }) {
   return (
     <div className="pt-2">
@@ -396,10 +393,11 @@ function ListView({ itinerary, onStart, totals, onPin }: {
                 <div className="flex-1 h-px bg-ink-100" />
               </div>
             )}
-            <button
-              onClick={() => onPin(p)}
-              className="w-full rounded-2xl border border-ink-100 overflow-hidden press hover:border-brand-200 transition-colors text-left"
-            >
+            <div className="relative">
+              <button
+                onClick={() => onPin(p)}
+                className="w-full rounded-2xl border border-ink-100 overflow-hidden press hover:border-brand-200 transition-colors text-left"
+              >
               <div className="relative h-28">
                 <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -433,7 +431,16 @@ function ListView({ itinerary, onStart, totals, onPin }: {
                 </div>
                 <div className="text-xs text-ink-500 mt-1.5 line-clamp-2">{p.description}</div>
               </div>
-            </button>
+              </button>
+              {/* Inline remove button */}
+              <button
+                onClick={() => onRemove(p.id)}
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center press z-10 transition-colors hover:bg-red-500/70"
+                aria-label="Remove stop"
+              >
+                <X className="w-3.5 h-3.5 text-white" />
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -530,7 +537,7 @@ function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSa
                   </div>
                 </div>
                 <motion.div animate={{ rotate: culturalExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevDown className="w-4 h-4 text-ink-400" />
+                  <ChevronDown className="w-4 h-4 text-ink-400" />
                 </motion.div>
               </button>
               <AnimatePresence>

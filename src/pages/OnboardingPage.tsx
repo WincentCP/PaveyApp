@@ -4,7 +4,7 @@ import {
   Diamond, Eye, EyeOff, Flame, GripVertical, Lock,
   Mail, MapPin, Palmtree, Plus, Sparkles, User, X,
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { Vibe } from '../data/places';
@@ -12,21 +12,19 @@ import type { Vibe } from '../data/places';
 type AuthMode = 'signup' | 'login';
 type Step =
   | 'welcome'
-  | 'auth_choice'
   | 'auth_form'
   | 'vibe'
   | 'destinations'
   | 'dates'
-  | 'duration'
   | 'budget'
   | 'interests'
   | 'location';
 
-const VIBES: { id: Vibe; label: string; emoji: string; desc: string; tint: string }[] = [
-  { id: 'chill', label: 'Chill', emoji: '🌴', desc: 'Relaxed beaches & slow mornings', tint: '#10B981' },
-  { id: 'chaos', label: 'Chaos', emoji: '🔥', desc: 'Full days & hidden street food', tint: '#F97316' },
-  { id: 'zen', label: 'Zen', emoji: '🧘', desc: 'Temples, nature & mindful walks', tint: '#3B5BFF' },
-  { id: 'luxury', label: 'Luxury', emoji: '💎', desc: 'Boutique stays & fine dining', tint: '#A855F7' },
+const VIBES: { id: Vibe; label: string; emoji: string; desc: string }[] = [
+  { id: 'chill', label: 'Chill', emoji: '🌴', desc: 'Relaxed beaches & slow mornings' },
+  { id: 'chaos', label: 'Chaos', emoji: '🔥', desc: 'Full days & hidden street food' },
+  { id: 'zen', label: 'Zen', emoji: '🧘', desc: 'Temples, nature & mindful walks' },
+  { id: 'luxury', label: 'Luxury', emoji: '💎', desc: 'Boutique stays & fine dining' },
 ];
 
 const INTEREST_OPTIONS = [
@@ -38,12 +36,17 @@ const INTEREST_OPTIONS = [
   { label: 'Architecture', emoji: '🏙️' }, { label: 'Local Markets', emoji: '🏪' },
 ];
 
-const PROGRESS_STEPS: Step[] = ['vibe', 'destinations', 'dates', 'duration', 'budget', 'interests', 'location'];
-
+const FLOW: Step[] = ['welcome', 'auth_form', 'vibe', 'destinations', 'dates', 'budget', 'interests', 'location'];
+const PROGRESS_STEPS: Step[] = ['vibe', 'destinations', 'dates', 'budget', 'interests', 'location'];
 
 export default function OnboardingPage() {
   const nav = useNavigate();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, onboardingComplete } = useApp();
+
+  // Skip onboarding if already authenticated
+  useEffect(() => {
+    if (onboardingComplete) nav('/', { replace: true });
+  }, [onboardingComplete, nav]);
 
   const [step, setStep] = useState<Step>('welcome');
   const [authMode, setAuthMode] = useState<AuthMode>('signup');
@@ -64,7 +67,6 @@ export default function OnboardingPage() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [calPhase, setCalPhase] = useState<'start' | 'end'>('start');
-  const [dayDistribution, setDayDistribution] = useState<number[]>([]);
   const [budget, setBudget] = useState(500_000);
   const [interests, setInterests] = useState<string[]>([]);
   const [locationGranted, setLocationGranted] = useState(false);
@@ -77,18 +79,8 @@ export default function OnboardingPage() {
     return Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1);
   }, [startDate, endDate]);
 
-  const autoDays = useMemo(() => {
-    if (destList.length === 0) return [];
-    const base = Math.floor(totalDays / destList.length);
-    const rem = totalDays - base * destList.length;
-    return destList.map((_, i) => base + (i < rem ? 1 : 0));
-  }, [destList.length, totalDays]);
-
-  const effectiveDays = dayDistribution.length === destList.length ? dayDistribution : autoDays;
-
   const progressIdx = PROGRESS_STEPS.indexOf(step);
 
-  // ── Validation ────────────────────────────────────────
   const validateAuth = (): boolean => {
     const errs: Record<string, string> = {};
     if (!email.trim()) errs.email = 'Email is required';
@@ -122,7 +114,7 @@ export default function OnboardingPage() {
       email,
       vibe: selectedVibe,
       destinations: destList.length > 0
-        ? destList.map((d, i) => ({ name: d, days: effectiveDays[i] ?? 1 }))
+        ? destList.map((d) => ({ name: d, days: Math.max(1, Math.floor(totalDays / Math.max(1, destList.length))) }))
         : [{ name: 'My Destination', days: totalDays }],
       totalDays,
       budget,
@@ -133,12 +125,10 @@ export default function OnboardingPage() {
 
   const go = (s: Step) => setStep(s);
   const back = () => {
-    const order: Step[] = ['welcome', 'auth_choice', 'auth_form', 'vibe', 'destinations', 'dates', 'duration', 'budget', 'interests', 'location'];
-    const idx = order.indexOf(step);
-    if (idx > 0) setStep(order[idx - 1]);
+    const idx = FLOW.indexOf(step);
+    if (idx > 0) setStep(FLOW[idx - 1]);
   };
 
-  // ── Calendar helpers ──────────────────────────────────
   const handleCalSelect = (d: Date) => {
     if (calPhase === 'start') {
       setStartDate(d); setEndDate(null); setCalPhase('end');
@@ -171,17 +161,46 @@ export default function OnboardingPage() {
   const fmt = (n: number) =>
     n >= 1_000_000 ? `Rp ${(n / 1_000_000).toFixed(1)}jt` : `Rp ${Math.round(n / 1000)}K`;
 
-  // ── Slide animation config ────────────────────────────
   const slideVariants = {
     enter: { x: 40, opacity: 0 },
     center: { x: 0, opacity: 1 },
     exit: { x: -40, opacity: 0 },
   };
 
+  // ── Per-step CTA config ───────────────────────────────
+  type CTAConfig = { label: string; onClick: () => void; disabled?: boolean; className?: string; skipLabel?: string; onSkip?: () => void };
+
+  const ctaConfig: Partial<Record<Step, CTAConfig>> = {
+    vibe: { label: 'Continue', onClick: () => go('destinations') },
+    destinations: {
+      label: 'Continue',
+      onClick: () => { if (destList.length === 0) setDestList(['My Destination']); go('dates'); },
+    },
+    dates: {
+      label: startDate && endDate ? 'Continue' : 'Skip for now',
+      onClick: () => { if (!startDate) setStartDate(new Date()); go('budget'); },
+    },
+    budget: { label: 'Continue', onClick: () => go('interests') },
+    interests: {
+      label: 'Continue',
+      onClick: () => go('location'),
+      skipLabel: 'Skip',
+      onSkip: () => go('location'),
+    },
+    location: {
+      label: locationGranted ? 'Start exploring →' : 'Continue without location',
+      onClick: handleFinish,
+      className: locationGranted ? 'bg-emerald-500 text-white' : undefined,
+    },
+  };
+
+  const cta = ctaConfig[step];
+
   return (
     <div className="absolute inset-0 bg-white flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
-        {/* ── WELCOME ────────────────────────────────── */}
+
+        {/* ── WELCOME ── */}
         {step === 'welcome' && (
           <motion.div
             key="welcome"
@@ -189,15 +208,7 @@ export default function OnboardingPage() {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="flex-1 flex flex-col"
           >
-            {/* Hero bg */}
-            <div className="relative flex-1 flex flex-col">
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: 'linear-gradient(135deg, #3B5BFF 0%, #6C3BFF 50%, #A855F7 100%)',
-                }}
-              />
-              {/* Decorative circles */}
+            <div className="relative flex-1 flex flex-col bg-brand-500">
               <div className="absolute top-[-80px] right-[-60px] w-64 h-64 rounded-full bg-white/5" />
               <div className="absolute top-[60px] left-[-40px] w-40 h-40 rounded-full bg-white/5" />
 
@@ -206,7 +217,7 @@ export default function OnboardingPage() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 20 }}
-                  className="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-6 shadow-xl border border-white/30"
+                  className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center mb-6 shadow-xl"
                 >
                   <span className="text-5xl">✈️</span>
                 </motion.div>
@@ -226,7 +237,6 @@ export default function OnboardingPage() {
                 </motion.p>
               </div>
 
-              {/* Bottom sheet */}
               <motion.div
                 initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.55, type: 'spring', stiffness: 280, damping: 30 }}
@@ -245,23 +255,23 @@ export default function OnboardingPage() {
                   I already have an account
                 </button>
                 <p className="text-center text-[11px] text-ink-400 mt-4 leading-relaxed">
-                  By continuing you agree to our Terms & Privacy Policy
+                  By continuing you agree to our Terms &amp; Privacy Policy
                 </p>
               </motion.div>
             </div>
           </motion.div>
         )}
 
-        {/* ── AUTH FORM (Sign Up / Login) ───────────── */}
+        {/* ── AUTH FORM ── */}
         {step === 'auth_form' && (
           <motion.div
             key="auth_form"
             variants={slideVariants} initial="enter" animate="center" exit="exit"
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            className="flex-1 flex flex-col overflow-y-auto no-scrollbar"
+            className="flex-1 flex flex-col"
           >
-            {/* Header */}
-            <div className="px-5 pt-12 pb-2">
+            {/* Back + title */}
+            <div className="px-5 pt-12 pb-4 shrink-0">
               <button onClick={() => go('welcome')} className="mb-4 w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -269,27 +279,22 @@ export default function OnboardingPage() {
                 {authMode === 'signup' ? 'Create your account' : 'Welcome back'}
               </h2>
               <p className="text-sm text-ink-500 mt-1">
-                {authMode === 'signup'
-                  ? 'Join thousands of smart travelers'
-                  : 'Sign in to continue your journey'}
+                {authMode === 'signup' ? 'Join thousands of smart travelers' : 'Sign in to continue your journey'}
               </p>
             </div>
 
-            <div className="px-5 mt-4 space-y-4 flex-1">
+            {/* Scrollable fields */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-5 space-y-4 pb-4">
               {authMode === 'signup' && (
                 <FormField
                   label="Full Name" icon={<User className="w-4 h-4" />}
-                  value={name} onChange={setName}
-                  placeholder="Your name"
-                  error={authErrors.name}
+                  value={name} onChange={setName} placeholder="Your name" error={authErrors.name}
                 />
               )}
               <FormField
                 label="Email Address" icon={<Mail className="w-4 h-4" />}
-                value={email} onChange={setEmail}
-                placeholder="you@email.com"
-                type="email"
-                error={authErrors.email}
+                value={email} onChange={setEmail} placeholder="you@email.com"
+                type="email" error={authErrors.email}
               />
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5 flex items-center gap-1.5">
@@ -308,7 +313,6 @@ export default function OnboardingPage() {
                 </div>
                 {authErrors.password && <p className="text-xs text-red-500 mt-1">{authErrors.password}</p>}
               </div>
-
               {authMode === 'signup' && (
                 <div>
                   <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">CONFIRM PASSWORD</div>
@@ -321,7 +325,10 @@ export default function OnboardingPage() {
                   {authErrors.confirmPassword && <p className="text-xs text-red-500 mt-1">{authErrors.confirmPassword}</p>}
                 </div>
               )}
+            </div>
 
+            {/* Fixed bottom CTA */}
+            <div className="px-5 pt-3 pb-8 bg-white shrink-0 border-t border-ink-50 space-y-2">
               <button
                 onClick={handleAuthSubmit}
                 disabled={authLoading}
@@ -335,7 +342,6 @@ export default function OnboardingPage() {
                   <>{authMode === 'signup' ? 'Create Account' : 'Sign In'} <ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
-
               <button
                 onClick={() => setAuthMode(authMode === 'signup' ? 'login' : 'signup')}
                 className="w-full text-center text-sm text-ink-500 press py-2"
@@ -348,18 +354,18 @@ export default function OnboardingPage() {
           </motion.div>
         )}
 
-        {/* ── POST-AUTH STEPS ───────────────────────── */}
-        {['vibe', 'destinations', 'dates', 'duration', 'budget', 'interests', 'location'].includes(step) && (
+        {/* ── POST-AUTH STEPS ── */}
+        {PROGRESS_STEPS.includes(step) && (
           <motion.div
             key={step}
             variants={slideVariants} initial="enter" animate="center" exit="exit"
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="flex-1 flex flex-col overflow-hidden"
           >
-            {/* Progress bar + back */}
-            <div className="px-5 pt-12 pb-2 shrink-0">
+            {/* Progress bar */}
+            <div className="px-5 pt-12 pb-3 shrink-0">
               <div className="flex items-center gap-3">
-                <button onClick={back} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press">
+                <button onClick={back} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press shrink-0">
                   <ArrowLeft className="w-4 h-4 text-ink-700" />
                 </button>
                 <div className="flex-1 h-1.5 bg-ink-100 rounded-full overflow-hidden">
@@ -376,15 +382,13 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-8">
-              {/* ── VIBE ── */}
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-4">
+
+              {/* VIBE */}
               {step === 'vibe' && (
-                <StepWrapper
-                  title="What's your travel vibe?"
-                  subtitle="This shapes every recommendation we make"
-                  onNext={() => go('destinations')}
-                  nextDisabled={false}
-                >
+                <>
+                  <StepTitle title="What's your travel vibe?" subtitle="This shapes every recommendation we make" />
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     {VIBES.map((v) => {
                       const active = selectedVibe === v.id;
@@ -401,28 +405,20 @@ export default function OnboardingPage() {
                             </div>
                           )}
                           <div className="text-3xl mb-2">{v.emoji}</div>
-                          <Icon className="hidden" style={{ color: v.tint }} />
+                          <Icon className="hidden" />
                           <div className="font-bold text-ink-900 font-display">{v.label}</div>
                           <div className="text-xs text-ink-500 mt-0.5 leading-snug">{v.desc}</div>
                         </motion.button>
                       );
                     })}
                   </div>
-                </StepWrapper>
+                </>
               )}
 
-              {/* ── DESTINATIONS ── */}
+              {/* DESTINATIONS */}
               {step === 'destinations' && (
-                <StepWrapper
-                  title="Where are you headed?"
-                  subtitle="Add one or more destinations — in order"
-                  onNext={() => {
-                    if (destList.length === 0) setDestList(['My Destination']);
-                    go('dates');
-                  }}
-                  nextDisabled={false}
-                >
-                  {/* Input row */}
+                <>
+                  <StepTitle title="Where are you headed?" subtitle="Add one or more destinations — in order" />
                   <div className="mt-4 flex gap-2">
                     <div className="flex-1 flex items-center gap-2 bg-ink-50 rounded-xl px-3 py-2.5 border-2 border-transparent focus-within:border-brand-400 transition-colors">
                       <MapPin className="w-4 h-4 text-ink-400 shrink-0" />
@@ -443,14 +439,12 @@ export default function OnboardingPage() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {/* Quick suggestions */}
                   {destList.length === 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {['Paris, France', 'Rome, Italy', 'Bali, Indonesia', 'Tokyo, Japan', 'Barcelona, Spain'].map((d) => (
                         <button
                           key={d}
-                          onClick={() => { setDestList((prev) => prev.includes(d) ? prev : [...prev, d]); }}
+                          onClick={() => setDestList((prev) => prev.includes(d) ? prev : [...prev, d])}
                           className="px-3 py-1.5 rounded-full bg-ink-50 text-ink-700 text-xs font-semibold press border border-ink-100"
                         >
                           {d}
@@ -458,16 +452,13 @@ export default function OnboardingPage() {
                       ))}
                     </div>
                   )}
-
-                  {/* Destination list */}
                   {destList.length > 0 && (
                     <div className="mt-4 space-y-2">
                       <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1">YOUR ROUTE</div>
                       <AnimatePresence>
                         {destList.map((d, i) => (
                           <motion.div
-                            key={d}
-                            layout
+                            key={d} layout
                             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, height: 0 }}
                             className="flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-3 py-2.5"
@@ -489,7 +480,6 @@ export default function OnboardingPage() {
                           </motion.div>
                         ))}
                       </AnimatePresence>
-                      {/* Travel line between destinations */}
                       {destList.length > 1 && (
                         <div className="flex items-center gap-2 py-1 px-2">
                           <div className="flex-1 h-px border-t border-dashed border-brand-200" />
@@ -499,22 +489,14 @@ export default function OnboardingPage() {
                       )}
                     </div>
                   )}
-                </StepWrapper>
+                </>
               )}
 
-              {/* ── DATES ── */}
+              {/* DATES */}
               {step === 'dates' && (
-                <StepWrapper
-                  title="When are you traveling?"
-                  subtitle="Pick your start and end dates"
-                  onNext={() => {
-                    if (!startDate) { setStartDate(new Date()); }
-                    go('duration');
-                  }}
-                  nextLabel={startDate && endDate ? 'Continue' : 'Skip for now'}
-                >
+                <>
+                  <StepTitle title="When are you traveling?" subtitle="Pick your start and end dates" />
                   <div className="mt-4">
-                    {/* Phase indicator */}
                     <div className="flex items-center gap-2 mb-3">
                       <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border-2 transition-colors ${calPhase === 'start' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-100 bg-ink-50 text-ink-600'}`}>
                         <div className="text-[9px] text-ink-400 mb-0.5">DEPART</div>
@@ -542,79 +524,13 @@ export default function OnboardingPage() {
                       </button>
                     )}
                   </div>
-                </StepWrapper>
+                </>
               )}
 
-              {/* ── DURATION DISTRIBUTION ── */}
-              {step === 'duration' && destList.length > 1 && (
-                <StepWrapper
-                  title="How many days per destination?"
-                  subtitle={`${totalDays} total days — auto-distributed below`}
-                  onNext={() => go('budget')}
-                >
-                  <div className="mt-4 space-y-3">
-                    {destList.map((d, i) => {
-                      const days = dayDistribution.length === destList.length
-                        ? dayDistribution[i]
-                        : autoDays[i] ?? 1;
-                      const setDays = (val: number) => {
-                        setDayDistribution((prev) => {
-                          const arr = prev.length === destList.length ? prev.slice() : autoDays.slice();
-                          arr[i] = Math.max(1, val);
-                          return arr;
-                        });
-                      };
-                      return (
-                        <div key={d} className="bg-ink-50 rounded-2xl px-4 py-3 flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-ink-900 text-sm truncate">{d}</div>
-                            <div className="text-[11px] text-ink-500">{days} day{days !== 1 ? 's' : ''}</div>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={() => setDays(days - 1)} className="w-8 h-8 rounded-full bg-white border border-ink-200 flex items-center justify-center press text-ink-700 font-bold">−</button>
-                            <div className="w-8 text-center font-bold text-ink-900">{days}</div>
-                            <button onClick={() => setDays(days + 1)} className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center press font-bold">+</button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div className="flex items-center justify-between px-1 text-xs">
-                      <span className="text-ink-400">Total assigned</span>
-                      <span className={`font-bold ${effectiveDays.reduce((s, d) => s + d, 0) === totalDays ? 'text-emerald-600' : 'text-orange-500'}`}>
-                        {effectiveDays.reduce((s, d) => s + d, 0)} / {totalDays} days
-                      </span>
-                    </div>
-                  </div>
-                </StepWrapper>
-              )}
-
-              {/* Single destination or skip straight to budget */}
-              {step === 'duration' && destList.length <= 1 && (
-                <StepWrapper
-                  title="Trip duration"
-                  subtitle={`${totalDays} day${totalDays !== 1 ? 's' : ''} — confirmed`}
-                  onNext={() => go('budget')}
-                >
-                  <div className="mt-6 bg-brand-50 rounded-2xl p-6 text-center border border-brand-100">
-                    <div className="text-5xl font-extrabold text-brand-600 font-display">{totalDays}</div>
-                    <div className="text-sm text-brand-700 mt-1 font-semibold">day{totalDays !== 1 ? 's' : ''}</div>
-                    <div className="text-xs text-ink-500 mt-2">
-                      {startDate && endDate
-                        ? `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} → ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                        : 'Set your dates to calculate'}
-                    </div>
-                  </div>
-                </StepWrapper>
-              )}
-
-              {/* ── BUDGET ── */}
+              {/* BUDGET */}
               {step === 'budget' && (
-                <StepWrapper
-                  title="What's your daily budget?"
-                  subtitle="Per stop — we'll filter places accordingly"
-                  onNext={() => go('interests')}
-                >
+                <>
+                  <StepTitle title="What's your daily budget?" subtitle="Per stop — we'll filter places accordingly" />
                   <div className="mt-6">
                     <div className="text-center mb-6">
                       <div className="text-4xl font-extrabold text-brand-600 font-display">{fmt(budget)}</div>
@@ -631,7 +547,6 @@ export default function OnboardingPage() {
                       <span>Rp 50K</span>
                       <span>Rp 1jt+</span>
                     </div>
-                    {/* Budget presets */}
                     <div className="grid grid-cols-3 gap-2 mt-5">
                       {[150_000, 300_000, 600_000].map((v) => (
                         <button
@@ -650,19 +565,13 @@ export default function OnboardingPage() {
                       </p>
                     </div>
                   </div>
-                </StepWrapper>
+                </>
               )}
 
-              {/* ── INTERESTS ── */}
+              {/* INTERESTS */}
               {step === 'interests' && (
-                <StepWrapper
-                  title="What do you love?"
-                  subtitle="Optional — helps us personalize your trip"
-                  onNext={() => go('location')}
-                  nextLabel="Continue"
-                  skipLabel="Skip"
-                  onSkip={() => go('location')}
-                >
+                <>
+                  <StepTitle title="What do you love?" subtitle="Optional — helps us personalize your trip" />
                   <div className="mt-4 flex flex-wrap gap-2">
                     {INTEREST_OPTIONS.map((item) => {
                       const active = interests.includes(item.label);
@@ -679,25 +588,19 @@ export default function OnboardingPage() {
                       );
                     })}
                   </div>
-                </StepWrapper>
+                </>
               )}
 
-              {/* ── LOCATION PERMISSION ── */}
+              {/* LOCATION */}
               {step === 'location' && (
-                <StepWrapper
-                  title="Enable location?"
-                  subtitle="We'll use it to find nearby places and navigate"
-                  onNext={handleFinish}
-                  nextLabel={locationGranted ? 'Start exploring →' : 'Continue without location'}
-                  nextClassName={locationGranted ? 'bg-emerald-500 text-white' : undefined}
-                >
+                <>
+                  <StepTitle title="Enable location?" subtitle="We'll use it to find nearby places and navigate" />
                   <div className="mt-6 space-y-4">
-                    {/* Explanation card */}
                     <div className="bg-brand-50 rounded-2xl p-4 border border-brand-100 space-y-3">
                       {[
                         { icon: '📍', title: 'Nearby discovery', desc: 'Find hidden gems within walking distance' },
                         { icon: '🧭', title: 'Turn-by-turn navigation', desc: 'Live directions between stops' },
-                        { icon: '🔔', title: 'Smart alerts', desc: 'Know when you\'re close to your next stop' },
+                        { icon: '🔔', title: 'Smart alerts', desc: "Know when you're close to your next stop" },
                       ].map((item) => (
                         <div key={item.title} className="flex items-start gap-3">
                           <span className="text-xl shrink-0">{item.icon}</span>
@@ -708,7 +611,6 @@ export default function OnboardingPage() {
                         </div>
                       ))}
                     </div>
-
                     <AnimatePresence>
                       {locationDenied && (
                         <motion.div
@@ -723,15 +625,10 @@ export default function OnboardingPage() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-
                     {!locationGranted ? (
                       <button
                         onClick={() => {
-                          // Simulate permission flow
-                          setTimeout(() => {
-                            setLocationGranted(true);
-                            setLocationDenied(false);
-                          }, 800);
+                          setTimeout(() => { setLocationGranted(true); setLocationDenied(false); }, 800);
                           setLocationDenied(false);
                         }}
                         className="w-full h-13 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center gap-2 py-3.5"
@@ -752,7 +649,6 @@ export default function OnboardingPage() {
                         </div>
                       </motion.div>
                     )}
-
                     {!locationGranted && (
                       <button
                         onClick={() => setLocationDenied(true)}
@@ -762,46 +658,43 @@ export default function OnboardingPage() {
                       </button>
                     )}
                   </div>
-                </StepWrapper>
+                </>
               )}
+
             </div>
+
+            {/* CTA — always at bottom, outside scroll, never clipped */}
+            {cta && (
+              <div className="px-5 pt-3 pb-8 bg-white shrink-0 border-t border-ink-50 space-y-2">
+                <button
+                  onClick={cta.onClick}
+                  disabled={cta.disabled}
+                  className={`w-full h-14 rounded-2xl font-bold text-base press shadow-glow flex items-center justify-center gap-2 disabled:bg-ink-200 disabled:text-ink-400 disabled:shadow-none ${cta.className ?? 'bg-brand-500 text-white'}`}
+                >
+                  {cta.label} {!cta.className && <ArrowRight className="w-4 h-4" />}
+                </button>
+                {cta.skipLabel && cta.onSkip && (
+                  <button onClick={cta.onSkip} className="w-full text-center text-sm text-ink-400 press py-1">
+                    {cta.skipLabel}
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
+
       </AnimatePresence>
     </div>
   );
 }
 
-// ── Sub-components ────────────────────────────────────────────
+// ── Sub-components ─────────────────────────────────────────────
 
-function StepWrapper({
-  title, subtitle, children, onNext, nextLabel = 'Continue', nextDisabled = false,
-  nextClassName, skipLabel, onSkip,
-}: {
-  title: string; subtitle: string; children: React.ReactNode;
-  onNext: () => void; nextLabel?: string; nextDisabled?: boolean;
-  nextClassName?: string; skipLabel?: string; onSkip?: () => void;
-}) {
+function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="pb-24">
+    <div className="pt-1 pb-2">
       <h2 className="text-2xl font-extrabold text-ink-900 font-display leading-snug">{title}</h2>
       <p className="text-sm text-ink-500 mt-1">{subtitle}</p>
-      {children}
-      {/* Sticky CTA */}
-      <div className="fixed inset-x-5 bottom-8 z-20 space-y-2" style={{ maxWidth: 'calc(100% - 40px)' }}>
-        <button
-          onClick={onNext}
-          disabled={nextDisabled}
-          className={`w-full h-14 rounded-2xl font-bold text-base press shadow-glow flex items-center justify-center gap-2 ${nextClassName ?? 'bg-brand-500 text-white'} disabled:bg-ink-200 disabled:text-ink-400 disabled:shadow-none`}
-        >
-          {nextLabel} {!nextClassName && <ArrowRight className="w-4 h-4" />}
-        </button>
-        {skipLabel && onSkip && (
-          <button onClick={onSkip} className="w-full text-center text-sm text-ink-400 press py-1">
-            {skipLabel}
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -903,4 +796,3 @@ function MiniCalendar({
     </div>
   );
 }
-

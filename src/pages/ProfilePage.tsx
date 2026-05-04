@@ -123,7 +123,7 @@ export default function ProfilePage() {
         <div className="px-5 mt-3">
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl bg-gradient-to-br from-purple-50 to-brand-50 p-4 flex items-center gap-3"
+            className="rounded-3xl bg-brand-50 border border-brand-100 p-4 flex items-center gap-3"
           >
             <div className="w-11 h-11 rounded-2xl bg-white shadow-soft flex items-center justify-center shrink-0">
               <Crown className="w-5 h-5 text-purple-500" />
@@ -132,7 +132,7 @@ export default function ProfilePage() {
               <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Persona Traveler</div>
               <div className="font-bold text-ink-900">{USER.persona.title}</div>
               <div className="mt-2 h-1.5 bg-white/70 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${USER.persona.progress * 100}%` }} transition={{ duration: 0.8 }} className="h-full bg-gradient-to-r from-brand-500 to-purple-500" />
+                <motion.div initial={{ width: 0 }} animate={{ width: `${USER.persona.progress * 100}%` }} transition={{ duration: 0.8 }} className="h-full bg-brand-500 rounded-full" />
               </div>
               <div className="text-[10px] text-ink-500 mt-1">
                 {Math.round(USER.persona.progress * 100)}% · Next: <span className="font-semibold text-purple-600">{USER.persona.nextLevel}</span>
@@ -146,7 +146,7 @@ export default function ProfilePage() {
       {/* New user welcome banner */}
       {isNewUser && (
         <div className="px-5 mt-3">
-          <div className="rounded-3xl bg-gradient-to-br from-brand-50 to-purple-50 p-4 flex items-center gap-3">
+          <div className="rounded-3xl bg-brand-50 border border-brand-100 p-4 flex items-center gap-3">
             <div className="text-3xl shrink-0">✈️</div>
             <div>
               <div className="font-bold text-ink-900 text-sm">Ready to explore?</div>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
               >
                 <div
                   className="relative mx-auto w-12 h-14"
-                  style={{ background: `linear-gradient(180deg, ${b.color} 0%, ${b.color}AA 100%)`, clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
+                  style={{ background: b.color, clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
                 >
                   <div className="absolute inset-0 flex items-center justify-center text-2xl">{b.icon}</div>
                 </div>
