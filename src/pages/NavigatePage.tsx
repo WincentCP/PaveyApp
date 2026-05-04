@@ -25,7 +25,6 @@ export default function NavigatePage() {
   const [arrived, setArrived] = useState(false);
   const [prompt, setPrompt] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [locationError, setLocationError] = useState(false);
   const promptedRef = useRef(false);
 
   const current = itinerary[navIndex];
@@ -161,28 +160,6 @@ export default function NavigatePage() {
                   <div className="text-xs text-ink-500">Tap ▶ to resume</div>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Location error overlay */}
-        <AnimatePresence>
-          {locationError && (
-            <motion.div
-              initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }}
-              className="absolute top-3 left-3 right-3 z-20 bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-start gap-2"
-            >
-              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-              <div className="flex-1">
-                <div className="font-semibold text-amber-800 text-sm">Enable location to continue</div>
-                <div className="text-xs text-amber-700 mt-0.5">Navigation uses your location for accurate directions</div>
-              </div>
-              <button
-                onClick={() => setLocationError(false)}
-                className="text-xs font-bold text-amber-700 px-2 py-1 bg-amber-100 rounded-lg press shrink-0"
-              >
-                Retry
-              </button>
             </motion.div>
           )}
         </AnimatePresence>

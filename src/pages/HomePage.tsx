@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Search, SlidersHorizontal, Sparkles, CloudSun, Bookmark, Palmtree, Flame,
   Diamond, X, Star, MapPin, Clock, Link2, Camera, Play, Pencil,
-  Calendar, ChevronRight, DollarSign, ChevronLeft, Plus, Navigation,
+  ChevronRight, DollarSign, Plus, Navigation,
   ArrowRight, Compass,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -23,13 +23,6 @@ const VIBES: { id: Vibe; label: string; icon: string; tint: string }[] = [
 ];
 
 const CATEGORIES: Category[] = ['Cafe', 'Nature', 'Cultural', 'Historic', 'Foodie', 'Hidden Gem', 'Cozy'];
-
-const TIME_OPTIONS = Array.from({ length: 28 }, (_, i) => {
-  const totalMin = 6 * 60 + i * 30;
-  const h = Math.floor(totalMin / 60) % 24;
-  const m = totalMin % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-});
 
 const SOCIAL_MOCK: Record<string, { platform: string; name: string; category: string; desc: string; image: string; cost: number }> = {
   tiktok: {
@@ -55,7 +48,7 @@ export default function HomePage() {
   const {
     vibe, setVibe, budget, setBudget, itinerary,
     savedPlaces, savePlace, removeSavedPlace, isSaved,
-    setJourneyStart, authUser, onboardingComplete,
+    authUser, onboardingComplete,
     destinations, activeDestIdx, setActiveDestIdx, addDestination,
     isNavigating,
   } = useApp();
@@ -69,24 +62,10 @@ export default function HomePage() {
   const [socialParsing, setSocialParsing] = useState(false);
   const [socialResult, setSocialResult] = useState<typeof SOCIAL_MOCK[string] | null>(null);
   const socialInputRef = useRef<HTMLInputElement>(null);
-  const [planSheet, setPlanSheet] = useState(false);
-  const [planTarget, setPlanTarget] = useState<'ai' | 'manual'>('ai');
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [addDestSheet, setAddDestSheet] = useState(false);
   const [newDestName, setNewDestName] = useState('');
   const [newDestDays, setNewDestDays] = useState(2);
-
-  // Local journey-start form state
-  const [localStartDate, setLocalStartDate] = useState<Date | null>(null);
-  const [localEndDate, setLocalEndDate] = useState<Date | null>(null);
-  const [localTime, setLocalTime] = useState('09:00');
-  const [localEndTime, setLocalEndTime] = useState('18:00');
-  const [calPhase, setCalPhase] = useState<'start' | 'end'>('start');
-
-  const localDays = useMemo(() => {
-    if (!localStartDate || !localEndDate) return 1;
-    return Math.max(1, Math.round((localEndDate.getTime() - localStartDate.getTime()) / 86400000) + 1);
-  }, [localStartDate, localEndDate]);
 
   const sliderPct = useMemo(() => {
     const min = 50_000, max = 1_000_000;
@@ -113,45 +92,6 @@ export default function HomePage() {
   const hasMultiDest = destinations.length > 1;
 
   const displayName = authUser?.name?.split(' ')[0] ?? USER.firstName;
-
-  const openPlanSheet = (target: 'ai' | 'manual') => {
-    setPlanTarget(target);
-    setLocalStartDate(null);
-    setLocalEndDate(null);
-    setLocalTime('09:00');
-    setLocalEndTime('18:00');
-    setCalPhase('start');
-    setPlanSheet(true);
-  };
-
-  const handleCalSelect = (d: Date) => {
-    if (calPhase === 'start') {
-      setLocalStartDate(d);
-      setLocalEndDate(null);
-      setCalPhase('end');
-    } else {
-      if (localStartDate && d < localStartDate) {
-        setLocalStartDate(d);
-        setLocalEndDate(null);
-      } else {
-        setLocalEndDate(d);
-      }
-    }
-  };
-
-  const confirmPlan = () => {
-    const dateStr = localStartDate
-      ? `${localStartDate.getFullYear()}-${String(localStartDate.getMonth() + 1).padStart(2, '0')}-${String(localStartDate.getDate()).padStart(2, '0')}`
-      : 'today';
-    setJourneyStart({ date: dateStr, time: localTime, days: localDays });
-    if (planTarget === 'ai') {
-      setPlanSheet(false);
-      nav('/generate');
-    } else {
-      setPlanSheet(false);
-      nav('/generate?mode=manual');
-    }
-  };
 
   const parseSocialLink = () => {
     if (!socialUrl.trim()) return;
@@ -202,7 +142,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <button className="mt-2 inline-flex items-center gap-1 text-white/90 text-xs font-semibold press drop-shadow">
-                  <MapPin className="w-3 h-3" /> {USER.current} <span className="text-white/60">▾</span>
+                  <MapPin className="w-3 h-3" /> {USER.current}
                 </button>
               )}
             </div>
@@ -415,7 +355,7 @@ export default function HomePage() {
               {/* Edit plan CTA */}
               <div className="mt-4 flex gap-2">
                 <button
-                  onClick={() => nav('/generate')}
+                  onClick={() => nav('/generate?edit=1')}
                   className="flex-1 h-10 rounded-xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5"
                 >
                   <Pencil className="w-3.5 h-3.5" /> Edit Plan
@@ -452,14 +392,14 @@ export default function HomePage() {
                 label="AI Generate"
                 sub="Let Buddy plan it"
                 variant="primary"
-                onClick={() => openPlanSheet('ai')}
+                onClick={() => nav('/generate')}
               />
               <ActionCard
                 icon={<Pencil className="w-5 h-5 text-brand-600" />}
                 label="Plan Manually"
                 sub="Your way, your stops"
                 variant="outline"
-                onClick={() => openPlanSheet('manual')}
+                onClick={() => nav('/generate?mode=manual')}
               />
               <ActionCard
                 icon={<Compass className="w-5 h-5 text-orange-500" />}
@@ -572,7 +512,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-3">
           <motion.button
             whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.01 }}
-            onClick={() => openPlanSheet('ai')}
+            onClick={() => nav('/generate')}
             className="rounded-2xl p-4 text-left flex flex-col gap-2 press bg-brand-500 shadow-glow"
           >
             <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
@@ -588,7 +528,7 @@ export default function HomePage() {
 
           <motion.button
             whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.01 }}
-            onClick={() => openPlanSheet('manual')}
+            onClick={() => nav('/generate?mode=manual')}
             className="rounded-2xl p-4 text-left flex flex-col gap-2 press bg-white border-2 border-brand-200 hover:border-brand-400 transition-colors"
           >
             <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
@@ -719,98 +659,6 @@ export default function HomePage() {
           </AnimatePresence>
         </div>
       </div>
-
-      {/* ── Journey Planning Sheet ── */}
-      <AnimatePresence>
-        {planSheet && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPlanSheet(false)} className="absolute inset-0 z-40 bg-ink-900/40" />
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card flex flex-col max-h-[92%]"
-            >
-              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3 shrink-0" />
-              <div className="px-5 pt-3 pb-2 flex items-center justify-between shrink-0">
-                <div>
-                  <div className="font-bold text-ink-900 font-display flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-brand-500" />
-                    When are you heading out?
-                  </div>
-                  <div className="text-xs text-ink-500 mt-0.5">
-                    {planTarget === 'ai' ? 'AI will plan your journey' : 'You\'ll build it yourself'}
-                  </div>
-                </div>
-                <button onClick={() => setPlanSheet(false)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
-              </div>
-
-              <div className="px-5 space-y-4 overflow-y-auto no-scrollbar pb-8">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-[10px] font-bold tracking-widest text-ink-500">
-                      {calPhase === 'start' ? 'SELECT START DATE' : 'SELECT END DATE'}
-                    </div>
-                    {localStartDate && (
-                      <button onClick={() => { setCalPhase('start'); setLocalStartDate(null); setLocalEndDate(null); }} className="text-[10px] text-brand-500 font-semibold press">Reset</button>
-                    )}
-                  </div>
-                  {(localStartDate || localEndDate) && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border-2 ${calPhase === 'start' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200 bg-ink-50 text-ink-700'}`}>
-                        <div className="text-[10px] text-ink-400">Start</div>
-                        <div>{localStartDate ? localStartDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : '—'}</div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
-                      <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border-2 ${calPhase === 'end' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-200 bg-ink-50 text-ink-700'}`}>
-                        <div className="text-[10px] text-ink-400">End</div>
-                        <div>{localEndDate ? localEndDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : '—'}</div>
-                      </div>
-                      {localStartDate && localEndDate && (
-                        <div className="bg-brand-50 rounded-xl px-3 py-2 text-center text-xs font-bold text-brand-600 border-2 border-brand-100 shrink-0">
-                          {localDays}d
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  <MiniCalendar startDate={localStartDate} endDate={localEndDate} onSelect={handleCalSelect} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">START TIME</div>
-                    <select
-                      value={localTime} onChange={(e) => setLocalTime(e.target.value)}
-                      className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-900 outline-none appearance-none"
-                    >
-                      {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">END TIME</div>
-                    <select
-                      value={localEndTime} onChange={(e) => setLocalEndTime(e.target.value)}
-                      className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-900 outline-none appearance-none"
-                    >
-                      {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  onClick={confirmPlan}
-                  className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2"
-                >
-                  {planTarget === 'ai' ? (
-                    <><Sparkles className="w-4 h-4" /> Generate My Journey</>
-                  ) : (
-                    <><Pencil className="w-4 h-4" /> Start Building</>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* ── Add Destination Sheet ── */}
       <AnimatePresence>
@@ -1026,75 +874,3 @@ function InfoChip({ icon, label, value }: { icon: React.ReactNode; label: string
   );
 }
 
-function MiniCalendar({ startDate, endDate, onSelect }: {
-  startDate: Date | null; endDate: Date | null; onSelect: (d: Date) => void;
-}) {
-  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
-  const [viewYear, setViewYear] = useState(() => today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => today.getMonth());
-
-  const firstDow = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  const cells: (Date | null)[] = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(viewYear, viewMonth, d));
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-    else setViewMonth((m) => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-    else setViewMonth((m) => m + 1);
-  };
-
-  return (
-    <div className="bg-ink-50 rounded-2xl p-3">
-      <div className="flex items-center justify-between mb-2">
-        <button onClick={prevMonth} className="w-8 h-8 rounded-full bg-white flex items-center justify-center press shadow-soft">
-          <ChevronLeft className="w-4 h-4 text-ink-700" />
-        </button>
-        <span className="text-sm font-bold text-ink-900">{monthLabel}</span>
-        <button onClick={nextMonth} className="w-8 h-8 rounded-full bg-white flex items-center justify-center press shadow-soft">
-          <ChevronRight className="w-4 h-4 text-ink-700" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 mb-1">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] font-bold text-ink-400 py-1">{d}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} />;
-          const isStart = startDate ? isSameDay(d, startDate) : false;
-          const isEnd = endDate ? isSameDay(d, endDate) : false;
-          const inRange = startDate && endDate ? d > startDate && d < endDate : false;
-          const isPast = d < today;
-          const isToday = isSameDay(d, today);
-          return (
-            <button
-              key={i}
-              onClick={() => !isPast && onSelect(d)}
-              disabled={isPast}
-              className={[
-                'relative aspect-square flex items-center justify-center text-[11px] font-semibold transition-colors',
-                isStart || isEnd ? 'bg-brand-500 text-white rounded-full z-10' : '',
-                inRange ? 'bg-brand-100 text-brand-700 rounded-none' : '',
-                !isStart && !isEnd && !inRange && !isPast ? `rounded-full hover:bg-ink-200 ${isToday ? 'ring-1 ring-brand-400' : ''}` : '',
-                isPast ? 'text-ink-300 cursor-default' : 'text-ink-800',
-              ].filter(Boolean).join(' ')}
-            >
-              {d.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}

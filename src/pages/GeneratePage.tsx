@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, Check, GripVertical, Plus, RefreshCw, Sparkles, X,
-  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown, Tag,
+  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -12,7 +12,7 @@ import { PLACES } from '../data/places';
 import { formatRp } from '../lib/format';
 import { useToast } from '../components/Toast';
 import { getCulturalIntel, type CulturalIntel } from '../data/cultural';
-import { getDealsForPlace } from '../data/deals';
+import TimePicker from '../components/TimePicker';
 
 const STEPS = [
   'Finding nearby places…',
@@ -20,13 +20,6 @@ const STEPS = [
   'Optimizing route…',
   'Crafting your perfect journey…',
 ];
-
-const TIME_OPTIONS = Array.from({ length: 28 }, (_, i) => {
-  const totalMin = 6 * 60 + i * 30;
-  const h = Math.floor(totalMin / 60) % 24;
-  const m = totalMin % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-});
 
 export default function GeneratePage() {
   const nav = useNavigate();
@@ -36,7 +29,8 @@ export default function GeneratePage() {
   const { vibe, budget, buildItinerary, setItinerary, itinerary, removeStop, replaceStop, addStop, reorderStop, alternatives } = useApp();
   const { show } = useToast();
 
-  const [phase, setPhase] = useState<'loading' | 'reveal'>(isManualMode ? 'reveal' : 'loading');
+  const isEditMode = searchParams.get('edit') === '1';
+  const [phase, setPhase] = useState<'loading' | 'reveal'>((isManualMode || isEditMode) ? 'reveal' : 'loading');
   const [stepIdx, setStepIdx] = useState(0);
   const [replaceFor, setReplaceFor] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -83,7 +77,7 @@ export default function GeneratePage() {
   const [showCustomForm, setShowCustomForm] = useState(false);
 
   useEffect(() => {
-    if (!isManualMode) setItinerary(buildItinerary());
+    if (!isManualMode && !isEditMode) setItinerary(buildItinerary());
   }, []); // eslint-disable-line
 
   useEffect(() => {
@@ -140,7 +134,7 @@ export default function GeneratePage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="font-bold text-ink-900 font-display">
-          {isManualMode ? 'Build Your Journey' : 'Your Journey'}
+          {isManualMode ? 'Build Your Journey' : isEditMode ? 'Edit Journey' : 'Your Journey'}
         </div>
         <div className="text-xs text-brand-600 font-semibold capitalize bg-brand-50 px-2 py-1 rounded-full">
           {isManualMode ? 'Manual' : `${vibe} · ${formatRp(budget)}`}
@@ -194,21 +188,17 @@ export default function GeneratePage() {
                       <AnimatePresence>
                         {itinerary.map((p, i) => {
                           const intel = getCulturalIntel(p.id, p.category);
-                          const deals = getDealsForPlace(p.id);
-                          const hasDeal = deals.length > 0;
                           return (
                             <div key={p.id}>
                               <StopCard
                                 index={i} total={itinerary.length} place={p}
                                 scheduledTime={getTime(p.id, i)}
-                                hasDeal={hasDeal}
                                 onTimeEdit={() => setEditingTimeFor(p.id)}
                                 onRemove={() => removeWithUndo(p, i, false)}
                                 onReplace={() => setReplaceFor(p.id)}
                                 onMoveUp={() => reorderStop(i, Math.max(0, i - 1))}
                                 onMoveDown={() => reorderStop(i, Math.min(itinerary.length - 1, i + 1))}
                               />
-                              {/* Cultural card */}
                               {intel && !dismissedCultural.has(p.id) && (
                                 <div className="mb-2">
                                   <CulturalCard
@@ -217,11 +207,6 @@ export default function GeneratePage() {
                                   />
                                 </div>
                               )}
-                              {/* Deal badge */}
-                              {hasDeal && (
-                                <DealInlineRow deals={deals} />
-                              )}
-                              {/* Visual connector */}
                               {i < itinerary.length - 1 && (
                                 <StopConnector
                                   distanceKm={itinerary[i + 1].distanceKm}
@@ -250,37 +235,29 @@ export default function GeneratePage() {
                           <span className="text-[10px] text-ink-400">Tap + to add to plan</span>
                         </div>
                         <div className="space-y-2">
-                          {alternatives(itinerary.map((p) => p.id)).slice(0, 4).map((p) => {
-                            const deals = getDealsForPlace(p.id);
-                            return (
-                              <motion.div
-                                key={p.id}
-                                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                                className="bg-ink-50/60 border border-ink-100 rounded-2xl p-3 flex items-center gap-3"
-                              >
-                                <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
-                                  <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
-                                    <span className="text-ink-300">·</span>{p.category}
-                                  </div>
-                                  <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(p.cost)}</div>
-                                  {deals.length > 0 && (
-                                    <div className="mt-1 inline-flex items-center gap-1 bg-amber-50 rounded-full px-2 py-0.5 text-[10px] font-bold text-amber-700">
-                                      <Tag className="w-3 h-3" /> {deals[0].discount}
-                                    </div>
-                                  )}
+                          {alternatives(itinerary.map((p) => p.id)).slice(0, 4).map((p) => (
+                            <motion.div
+                              key={p.id}
+                              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                              className="bg-ink-50/60 border border-ink-100 rounded-2xl p-3 flex items-center gap-3"
+                            >
+                              <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
+                                <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
+                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
+                                  <span className="text-ink-300">·</span>{p.category}
                                 </div>
-                                <button
-                                  onClick={() => { addStop(p); show(`${p.name} added`, 'success'); }}
-                                  className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              </motion.div>
-                            );
-                          })}
+                                <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(p.cost)}</div>
+                              </div>
+                              <button
+                                onClick={() => { addStop(p); show(`${p.name} added`, 'success'); }}
+                                className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </motion.div>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -306,16 +283,69 @@ export default function GeneratePage() {
         ) : (
           /* ── MANUAL FLOW ── */
           <motion.div key="manual" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col overflow-hidden">
+            {/* Summary bar */}
             {manualStops.length > 0 && (
-              <div className="mx-5 mb-2 p-3 rounded-2xl bg-ink-50 flex items-center justify-between shrink-0">
-                <div className="text-sm font-semibold text-ink-700">{manualStops.length} stops · {formatRp(totals.cost)}</div>
-                <button onClick={importAi} className="text-xs text-brand-600 font-semibold press flex items-center gap-1">
+              <div className="mx-5 mb-2 p-3 rounded-2xl bg-brand-600 text-white shrink-0 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold opacity-80">Your Plan</div>
+                  <div className="text-sm font-bold">{manualStops.length} stops · {formatRp(totals.cost)}</div>
+                </div>
+                <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> Mix AI
                 </button>
               </div>
             )}
 
             <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-28">
+
+              {/* ── YOUR PLAN (TOP PRIORITY) ── */}
+              {manualStops.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between mb-2 mt-1">
+                    <span className="text-[11px] font-bold tracking-widest text-ink-500">YOUR PLAN · {manualStops.length} STOPS</span>
+                    <span className="text-[11px] text-ink-400">← swipe to remove</span>
+                  </div>
+                  <div className="space-y-0 mb-4">
+                    <AnimatePresence>
+                      {manualStops.map((p, i) => {
+                        const intel = getCulturalIntel(p.id, p.category);
+                        return (
+                          <div key={p.id}>
+                            <StopCard
+                              index={i} total={manualStops.length} place={p}
+                              scheduledTime={getTime(p.id, i)}
+                              onTimeEdit={() => setEditingTimeFor(p.id)}
+                              onRemove={() => removeWithUndo(p, i, true)}
+                              onReplace={() => {}}
+                              isManual
+                              onMoveUp={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.max(0, i - 1), 0, x); return n; })}
+                              onMoveDown={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.min(prev.length - 1, i + 1), 0, x); return n; })}
+                            />
+                            {intel && !dismissedCultural.has(p.id) && (
+                              <div className="mb-2">
+                                <CulturalCard
+                                  intel={intel}
+                                  onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
+                                />
+                              </div>
+                            )}
+                            {i < manualStops.length - 1 && (
+                              <StopConnector distanceKm={manualStops[i + 1].distanceKm} fromTime={getTime(p.id, i)} durationMin={p.durationMin} />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex-1 h-px bg-ink-100" />
+                    <span className="text-[11px] text-ink-400 font-semibold shrink-0">ADD MORE STOPS</span>
+                    <div className="flex-1 h-px bg-ink-100" />
+                  </div>
+                </>
+              )}
+
+              {/* ── SEARCH & ADD ── */}
               <div className="bg-ink-50 rounded-2xl px-3 py-2.5 flex items-center gap-2 mb-3">
                 <Search className="w-4 h-4 text-ink-400 shrink-0" />
                 <input
@@ -324,38 +354,40 @@ export default function GeneratePage() {
                   placeholder="Search and add a place…"
                   className="flex-1 bg-transparent text-sm text-ink-800 placeholder:text-ink-400 outline-none"
                 />
+                {manualSearch && (
+                  <button onClick={() => setManualSearch('')} className="press">
+                    <X className="w-3.5 h-3.5 text-ink-400" />
+                  </button>
+                )}
               </div>
 
-              <div className="space-y-2 mb-4">
-                {manualSearchResults.map((p) => {
-                  const inPlan = manualStops.some((s) => s.id === p.id);
-                  return (
-                    <button
-                      key={p.id} disabled={inPlan}
-                      onClick={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
-                      className={`w-full flex items-center gap-3 rounded-2xl border p-2.5 text-left press transition-colors ${inPlan ? 'border-brand-200 bg-brand-50 opacity-60' : 'border-ink-100 bg-white hover:border-brand-200'}`}
-                    >
-                      <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-ink-900 truncate text-sm">{p.name}</div>
-                        <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-                          <span>{p.category}</span>
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          <span>{p.rating}</span>
-                          <span>·</span>
-                          <Clock className="w-3 h-3" />
-                          <span>{p.openingHours}</span>
-                        </div>
-                        <div className="text-xs text-brand-600 font-semibold mt-0.5">
-                          {formatRp(p.priceRange.min)}{p.priceRange.max !== p.priceRange.min ? ` – ${formatRp(p.priceRange.max)}` : ''}
-                        </div>
+              <div className="space-y-2 mb-3">
+                {manualSearchResults.filter((p) => !manualStops.some((s) => s.id === p.id)).map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
+                    className="w-full flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-2.5 text-left press hover:border-brand-200 transition-colors"
+                  >
+                    <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-ink-900 truncate text-sm">{p.name}</div>
+                      <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
+                        <span>{p.category}</span>
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>{p.rating}</span>
+                        <span>·</span>
+                        <Clock className="w-3 h-3" />
+                        <span>{p.openingHours}</span>
                       </div>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${inPlan ? 'bg-brand-500' : 'bg-ink-50'}`}>
-                        {inPlan ? <Check className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-ink-500" />}
+                      <div className="text-xs text-brand-600 font-semibold mt-0.5">
+                        {formatRp(p.priceRange.min)}{p.priceRange.max !== p.priceRange.min ? ` – ${formatRp(p.priceRange.max)}` : ''}
                       </div>
-                    </button>
-                  );
-                })}
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
+                      <Plus className="w-4 h-4 text-white" />
+                    </div>
+                  </button>
+                ))}
               </div>
 
               <button
@@ -373,40 +405,47 @@ export default function GeneratePage() {
                 )}
               </AnimatePresence>
 
-              {manualStops.length > 0 ? (
-                <>
-                  <div className="text-[11px] font-bold tracking-widest text-ink-500 mb-2">YOUR PLAN · {manualStops.length} STOPS</div>
-                  <div className="mb-2 flex items-center gap-1.5 text-[11px] text-ink-400">
-                    <span>←</span><span>Swipe left to remove · Use arrows to reorder</span>
+              {/* ── RECOMMENDATIONS (secondary) ── */}
+              {alternatives(manualStops.map((p) => p.id)).length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold tracking-widest text-ink-500">RECOMMENDATIONS</span>
+                    <span className="text-[10px] text-ink-400">Tap + to add</span>
                   </div>
-                  <div className="space-y-0">
-                    <AnimatePresence>
-                      {manualStops.map((p, i) => (
-                        <div key={p.id}>
-                          <StopCard
-                            index={i} total={manualStops.length} place={p}
-                            scheduledTime={getTime(p.id, i)}
-                            hasDeal={false}
-                            onTimeEdit={() => setEditingTimeFor(p.id)}
-                            onRemove={() => removeWithUndo(p, i, true)}
-                            onReplace={() => {}}
-                            isManual
-                            onMoveUp={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.max(0, i - 1), 0, x); return n; })}
-                            onMoveDown={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.min(prev.length - 1, i + 1), 0, x); return n; })}
-                          />
-                          {i < manualStops.length - 1 && (
-                            <StopConnector distanceKm={manualStops[i + 1].distanceKm} fromTime={getTime(p.id, i)} durationMin={p.durationMin} />
-                          )}
+                  <div className="space-y-2">
+                    {alternatives(manualStops.map((p) => p.id)).slice(0, 4).map((p) => (
+                      <motion.div
+                        key={p.id}
+                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className="bg-ink-50/60 border border-ink-100 rounded-2xl p-3 flex items-center gap-3"
+                      >
+                        <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
+                          <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
+                            <span className="text-ink-300">·</span>{p.category}
+                          </div>
+                          <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(p.cost)}</div>
                         </div>
-                      ))}
-                    </AnimatePresence>
+                        <button
+                          onClick={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
+                          className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </motion.div>
+                    ))}
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-10">
+                </div>
+              )}
+
+              {/* Empty state */}
+              {manualStops.length === 0 && !manualSearch && (
+                <div className="text-center py-6">
                   <div className="text-4xl mb-3">📝</div>
                   <div className="font-semibold text-ink-700">No stops yet</div>
-                  <div className="text-sm text-ink-500 mt-1">Search above or add a custom place</div>
+                  <div className="text-sm text-ink-500 mt-1">Search above or pick from recommendations</div>
                   <button onClick={importAi} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-sm font-semibold press">
                     <Sparkles className="w-4 h-4" /> Import AI suggestions
                   </button>
@@ -439,14 +478,20 @@ export default function GeneratePage() {
               className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl pb-8"
             >
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
-              <div className="px-5 pt-3 pb-4 font-bold text-ink-900 font-display">Set arrival time</div>
-              <div className="grid grid-cols-4 gap-2 px-5 max-h-52 overflow-y-auto no-scrollbar">
-                {TIME_OPTIONS.map((t) => (
-                  <button key={t} onClick={() => { setStopTimes((prev) => ({ ...prev, [editingTimeFor]: t })); setEditingTimeFor(null); }}
-                    className={`py-2.5 rounded-xl text-sm font-semibold press transition-colors ${stopTimes[editingTimeFor] === t ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700'}`}>
-                    {t}
-                  </button>
-                ))}
+              <div className="px-5 pt-3 pb-2 flex items-center justify-between">
+                <div className="font-bold text-ink-900 font-display">Set arrival time</div>
+                <button
+                  onClick={() => setEditingTimeFor(null)}
+                  className="h-8 px-4 rounded-full bg-brand-500 text-white text-xs font-bold press"
+                >
+                  Done
+                </button>
+              </div>
+              <div className="px-5 py-4 flex justify-center">
+                <TimePicker
+                  value={stopTimes[editingTimeFor] ?? getTime(editingTimeFor, activeItinerary.findIndex((p) => p.id === editingTimeFor))}
+                  onChange={(t) => setStopTimes((prev) => ({ ...prev, [editingTimeFor]: t }))}
+                />
               </div>
             </motion.div>
           </>
@@ -607,27 +652,12 @@ function CulturalCard({ intel, onDismiss }: { intel: CulturalIntel; onDismiss: (
   );
 }
 
-/* ── Deal inline row ── */
-function DealInlineRow({ deals }: { deals: ReturnType<typeof getDealsForPlace> }) {
-  const d = deals[0];
-  return (
-    <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
-      <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-xl px-2.5 py-1.5">
-        <Tag className="w-3.5 h-3.5 text-amber-600" />
-        <span className="text-xs font-bold text-amber-700">{d.discount}</span>
-        <span className="text-xs text-amber-600">· {d.title}</span>
-        <span className="text-[10px] text-amber-500">· {d.validUntil}</span>
-      </div>
-    </div>
-  );
-}
-
 /* ── Stop Card ── */
 function StopCard({
-  index, total, place, scheduledTime, hasDeal, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual,
+  index, total, place, scheduledTime, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual,
 }: {
   index: number; total: number; place: Place;
-  scheduledTime: string; hasDeal: boolean; onTimeEdit: () => void;
+  scheduledTime: string; onTimeEdit: () => void;
   onRemove: () => void; onReplace: () => void; onMoveUp: () => void; onMoveDown: () => void;
   isManual?: boolean;
 }) {
@@ -669,9 +699,6 @@ function StopCard({
 
         <div className="relative shrink-0">
           <img src={place.image} alt={place.name} className="w-16 h-16 rounded-xl object-cover" />
-          {hasDeal && (
-            <div className="absolute -top-1.5 -right-1.5 bg-amber-400 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">DEAL</div>
-          )}
           {isManual && (
             <div className="absolute -bottom-1.5 -right-1.5 bg-ink-700 text-white text-[9px] font-bold px-1 py-0.5 rounded-full">✎</div>
           )}
@@ -744,7 +771,13 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
   open: boolean; onClose: () => void; excludeIds: string[]; title: string;
   onPick: (p: Place) => void; alternatives: (ids: string[]) => Place[];
 }) {
-  const list = alternatives(excludeIds);
+  const [query, setQuery] = useState('');
+  const list = useMemo(() => {
+    if (!query.trim()) return alternatives(excludeIds);
+    const q = query.toLowerCase();
+    return PLACES.filter((p) => !excludeIds.includes(p.id) && (p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))).slice(0, 12);
+  }, [query, excludeIds, alternatives]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -753,15 +786,28 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-            className="absolute inset-x-0 bottom-0 z-50 max-h-[72%] bg-white rounded-t-3xl shadow-card flex flex-col"
+            className="absolute inset-x-0 bottom-0 z-50 max-h-[80%] bg-white rounded-t-3xl shadow-card flex flex-col"
           >
             <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
             <div className="px-5 pt-3 pb-2 flex items-center justify-between shrink-0">
               <div className="font-bold text-ink-900 font-display">{title}</div>
               <button onClick={onClose} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
             </div>
-            <div className="overflow-y-auto px-5 pb-6 space-y-3 no-scrollbar">
-              {list.length === 0 && <div className="text-sm text-ink-500 py-10 text-center">No more alternatives nearby.</div>}
+            <div className="px-5 pb-2 shrink-0">
+              <div className="bg-ink-50 rounded-2xl px-3 py-2.5 flex items-center gap-2">
+                <Search className="w-4 h-4 text-ink-400 shrink-0" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search places by name or category…"
+                  className="flex-1 bg-transparent text-sm text-ink-800 placeholder:text-ink-400 outline-none"
+                  autoFocus
+                />
+                {query && <button onClick={() => setQuery('')} className="p-0.5 press"><X className="w-3.5 h-3.5 text-ink-400" /></button>}
+              </div>
+            </div>
+            <div className="overflow-y-auto px-5 pb-6 space-y-2 no-scrollbar">
+              {list.length === 0 && <div className="text-sm text-ink-500 py-10 text-center">No places found.</div>}
               {list.map((p) => (
                 <button key={p.id} onClick={() => onPick(p)} className="w-full bg-white border border-ink-100 hover:border-brand-300 rounded-2xl p-3 flex items-center gap-3 text-left press">
                   <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />

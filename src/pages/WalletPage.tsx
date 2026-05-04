@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import StatusBar from '../components/StatusBar';
+import PageHeader from '../components/PageHeader';
 import { useApp } from '../context/AppContext';
 import {
   CATEGORY_COLORS, type Transaction, type TxnCategory,
@@ -60,19 +61,17 @@ export default function WalletPage() {
       <StatusBar />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-2 pb-3">
-        <div className="font-bold text-ink-900 text-lg font-display flex items-center gap-2">
-          <Wallet className="w-5 h-5 text-brand-500" /> Trip Budget
-          {tripCompleted && (
-            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-1">
-              COMPLETED
-            </span>
-          )}
-        </div>
-        <button className="w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center press" onClick={() => show('Notifications: 0 new', 'info')}>
-          <Bell className="w-4 h-4 text-ink-700" />
-        </button>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        title="Wallet"
+        right={
+          tripCompleted
+            ? <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">COMPLETED</span>
+            : <button className="w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center press" onClick={() => show('Notifications: 0 new', 'info')}>
+                <Bell className="w-4 h-4 text-ink-700" />
+              </button>
+        }
+      />
 
       {/* Trip selector pills */}
       <div className="px-5 mb-3">
@@ -279,11 +278,21 @@ export default function WalletPage() {
       <div className="px-5 mt-6">
         <div className="flex items-center justify-between">
           <div className="font-bold text-ink-900 font-display">Recent Transactions</div>
-          <button onClick={() => setSheet('history')} className="text-xs text-brand-600 font-semibold press">See all ›</button>
+          {transactions.length > 0 && (
+            <button onClick={() => setSheet('history')} className="text-xs text-brand-600 font-semibold press">See all ›</button>
+          )}
         </div>
-        <div className="mt-3 space-y-2">
-          {transactions.slice(0, 5).map((t) => <TxnRow key={t.id} t={t} currency={currency} />)}
-        </div>
+        {transactions.length === 0 ? (
+          <div className="mt-3 py-8 flex flex-col items-center gap-2 text-center bg-ink-50 rounded-2xl">
+            <span className="text-3xl">💸</span>
+            <div className="font-semibold text-ink-700 text-sm">No expenses yet</div>
+            <div className="text-xs text-ink-400 max-w-[200px] leading-snug">Tap "Add Expense" to track your first spend</div>
+          </div>
+        ) : (
+          <div className="mt-3 space-y-2">
+            {transactions.slice(0, 5).map((t) => <TxnRow key={t.id} t={t} currency={currency} />)}
+          </div>
+        )}
       </div>
 
       {/* Sheets */}

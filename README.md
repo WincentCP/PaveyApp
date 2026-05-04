@@ -29,3 +29,32 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build
 ```
+
+## Key flows
+
+- **Generate My Journey** — press → 100ms press feedback → skeleton-shimmer loading with rotating status copy → spring reveal of itinerary → reorder / replace / remove / add stop → Confirm → glow pulse → Map.
+- **Start Navigation** — press → Navigation Mode with bold route, pulsing user dot, Buddy prompt, dynamic ETA. Mark visited / Skip / Add expense / Next stop. Arrival celebrates with success card.
+- **Wallet** — Top Up, Send, Scan (animated OCR with shimmer + auto-fill), History, **Split bill** with **Add Manually** path. All actions update balance + transactions in real time.
+
+## File map
+
+```
+src/
+  App.tsx                  # routing + providers
+  components/
+    PhoneFrame.tsx         # mobile shell
+    StatusBar.tsx
+    BottomNav.tsx          # 5-tab nav with center Buddy FAB
+    Buddy.tsx              # AI overlay (70% sheet)
+    Toast.tsx              # global toasts
+  pages/
+    HomePage.tsx
+    GeneratePage.tsx       # loading → reveal → edit → confirm
+    MapPage.tsx            # map + pins + itinerary sheet + place card
+    NavigatePage.tsx       # navigation mode
+    WalletPage.tsx
+    ProfilePage.tsx
+  context/AppContext.tsx
+  data/{places,wallet,user}.ts
+  lib/format.ts
+```

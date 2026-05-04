@@ -1,17 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Bell, ChevronDown, Crosshair, List, Navigation, X, MapPin, Smile,
-  Clock, Star, DollarSign, Tag, ChevronDown as ChevDown, Bookmark,
-  ChevronUp, Plus,
+  ChevronDown, Crosshair, List, Navigation, X, MapPin, Smile,
+  Clock, Star, DollarSign, ChevronDown as ChevDown, Bookmark,
+  ChevronUp, Plus, Map, Pencil,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
+import PageHeader from '../components/PageHeader';
 import { useApp } from '../context/AppContext';
 import { formatRp } from '../lib/format';
 import { useToast } from '../components/Toast';
 import type { Place } from '../data/places';
-import { getNearbyDeals, getDealsForPlace } from '../data/deals';
 import { getCulturalIntel } from '../data/cultural';
 
 type ViewMode = 'map' | 'list';
@@ -51,29 +51,31 @@ export default function MapPage() {
       <StatusBar />
 
       {/* Header */}
-      <div className="px-5 pt-2 pb-2 flex items-center justify-between shrink-0">
-        <div>
-          <div className="font-bold text-ink-900 text-lg font-display flex items-center gap-1">
-            MAP <span className="text-ink-300 font-normal text-base">/</span> ITINERARY
-          </div>
-          <div className="text-xs text-ink-500 mt-0.5">
-            {destinations.length > 0
-              ? `${destinations[activeDestIdx]?.name ?? 'My Trip'} · ${activeItinerary.length} stops`
-              : `Day 1 · ${activeItinerary.length} stops`}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setView(view === 'map' ? 'list' : 'map')}
-            className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-ink-50 text-ink-800 text-xs font-semibold"
-          >
-            <List className="w-4 h-4" /> {view === 'map' ? 'List' : 'Map'}
-          </button>
-          <button className="w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center press" aria-label="Alerts">
-            <Bell className="w-4 h-4 text-ink-700" />
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        icon={Map}
+        title="Map"
+        sub={destinations.length > 0
+          ? `${destinations[activeDestIdx]?.name ?? 'My Trip'} · ${activeItinerary.length} stops`
+          : `${activeItinerary.length} stop${activeItinerary.length !== 1 ? 's' : ''}`}
+        right={
+          <>
+            {activeItinerary.length > 0 && (
+              <button
+                onClick={() => nav('/generate?edit=1')}
+                className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold border border-brand-100"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </button>
+            )}
+            <button
+              onClick={() => setView(view === 'map' ? 'list' : 'map')}
+              className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-ink-50 text-ink-800 text-xs font-semibold"
+            >
+              <List className="w-4 h-4" /> {view === 'map' ? 'List' : 'Map'}
+            </button>
+          </>
+        }
+      />
 
       {/* ── Destination Switcher ── */}
       {hasMultiDest && (
@@ -214,15 +216,11 @@ function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) 
   const positions = [
     { x: 70, y: 18 }, { x: 60, y: 34 }, { x: 46, y: 50 }, { x: 62, y: 64 }, { x: 30, y: 72 },
   ];
-  const dealPositions = [
-    { x: 22, y: 26 }, { x: 44, y: 40 }, { x: 80, y: 46 }, { x: 36, y: 60 }, { x: 58, y: 78 },
-  ];
   const pts = itinerary.map((_, i) => positions[i % positions.length]);
   const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const nearbyDeals = getNearbyDeals().slice(0, 5);
 
   return (
-    <div className="absolute inset-0 map-bg">
+    <div className="absolute inset-0 map-bg isolate">
       <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 100 100" preserveAspectRatio="none">
         {Array.from({ length: 10 }).map((_, i) => (
           <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="#C7D2FE" strokeWidth="0.05" />
@@ -256,25 +254,6 @@ function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) 
           <span className="block w-4 h-4 rounded-full bg-brand-500 ring-4 ring-white shadow" />
         </div>
       </div>
-
-      {nearbyDeals.map((deal, i) => {
-        const pos = dealPositions[i % dealPositions.length];
-        return (
-          <motion.div
-            key={deal.id}
-            initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.6 + i * 0.07, type: 'spring', stiffness: 380, damping: 18 }}
-            className="absolute z-10"
-            style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translateX(-50%) translateY(-50%)' }}
-          >
-            <div className="flex items-center gap-1 bg-amber-400 text-white rounded-full px-2 py-0.5 shadow-card text-[10px] font-bold whitespace-nowrap">
-              <Tag className="w-2.5 h-2.5" />
-              {deal.discount}
-            </div>
-            <div className="w-1.5 h-1.5 bg-amber-400 rotate-45 mx-auto -mt-0.5" />
-          </motion.div>
-        );
-      })}
 
       {itinerary.map((p, i) => {
         const pos = pts[i];
@@ -312,7 +291,7 @@ function ItineraryBottomSheet({ itinerary, totals, onStart }: {
     <motion.div
       initial={{ y: 120 }} animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-      className="absolute inset-x-0 bottom-0 z-10 bg-white rounded-t-3xl shadow-card pb-28"
+      className="absolute inset-x-0 bottom-0 z-30 bg-white rounded-t-3xl shadow-card pb-28"
     >
       <button
         onClick={() => setExpanded((e) => !e)}
@@ -406,67 +385,57 @@ function ListView({ itinerary, onStart, totals, onPin }: {
         <Block label="Cost" value={formatRp(totals.cost)} />
       </div>
       <div className="space-y-4">
-        {itinerary.map((p, i) => {
-          const deals = getDealsForPlace(p.id);
-          return (
-            <div key={p.id}>
-              {i > 0 && (
-                <div className="flex items-center gap-2 py-1 px-2">
-                  <div className="flex-1 h-px bg-ink-100" />
-                  <span className="text-[10px] text-ink-400 font-medium shrink-0">
-                    📍 {p.distanceKm} km · ~{Math.round(p.distanceKm * 3)} min drive
-                  </span>
-                  <div className="flex-1 h-px bg-ink-100" />
+        {itinerary.map((p, i) => (
+          <div key={p.id}>
+            {i > 0 && (
+              <div className="flex items-center gap-2 py-1 px-2">
+                <div className="flex-1 h-px bg-ink-100" />
+                <span className="text-[10px] text-ink-400 font-medium shrink-0">
+                  📍 {p.distanceKm} km · ~{Math.round(p.distanceKm * 3)} min drive
+                </span>
+                <div className="flex-1 h-px bg-ink-100" />
+              </div>
+            )}
+            <button
+              onClick={() => onPin(p)}
+              className="w-full rounded-2xl border border-ink-100 overflow-hidden press hover:border-brand-200 transition-colors text-left"
+            >
+              <div className="relative h-28">
+                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute top-2 left-2 w-7 h-7 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center ring-2 ring-white">
+                  {i + 1}
                 </div>
-              )}
-              <button
-                onClick={() => onPin(p)}
-                className="w-full rounded-2xl border border-ink-100 overflow-hidden press hover:border-brand-200 transition-colors text-left"
-              >
-                <div className="relative h-28">
-                  <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <div className="absolute top-2 left-2 w-7 h-7 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center ring-2 ring-white">
-                    {i + 1}
+                <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
+                  <div>
+                    <div className="text-white font-bold text-sm leading-tight">{p.name}</div>
+                    <div className="text-white/80 text-xs">{p.category}</div>
                   </div>
-                  <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                    <div>
-                      <div className="text-white font-bold text-sm leading-tight">{p.name}</div>
-                      <div className="text-white/80 text-xs">{p.category}</div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span className="text-white text-xs font-semibold">{p.rating}</span>
-                    </div>
+                  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span className="text-white text-xs font-semibold">{p.rating}</span>
                   </div>
                 </div>
-                <div className="p-3">
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="flex items-center gap-1 text-ink-600">
-                      <Clock className="w-3.5 h-3.5 text-ink-400" />
-                      <span>{p.openingHours}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-ink-600">
-                      <DollarSign className="w-3.5 h-3.5 text-ink-400" />
-                      <span>{formatRp(p.priceRange.min)}{p.priceRange.max !== p.priceRange.min ? '+' : ''}</span>
-                    </div>
-                    <div className="text-right text-[11px] text-brand-600 font-semibold">
-                      {nineColon(i)} – {nineColon(i, p.durationMin)}
-                    </div>
+              </div>
+              <div className="p-3">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="flex items-center gap-1 text-ink-600">
+                    <Clock className="w-3.5 h-3.5 text-ink-400" />
+                    <span>{p.openingHours}</span>
                   </div>
-                  <div className="text-xs text-ink-500 mt-1.5 line-clamp-2">{p.description}</div>
+                  <div className="flex items-center gap-1 text-ink-600">
+                    <DollarSign className="w-3.5 h-3.5 text-ink-400" />
+                    <span>{formatRp(p.priceRange.min)}{p.priceRange.max !== p.priceRange.min ? '+' : ''}</span>
+                  </div>
+                  <div className="text-right text-[11px] text-brand-600 font-semibold">
+                    {nineColon(i)} – {nineColon(i, p.durationMin)}
+                  </div>
                 </div>
-                {deals.length > 0 && (
-                  <div className="border-t border-amber-100 bg-amber-50 px-3 py-2 flex items-center gap-2">
-                    <Tag className="w-3 h-3 text-amber-600 shrink-0" />
-                    <span className="text-xs text-amber-700 font-semibold">{deals[0].title}</span>
-                    <span className="ml-auto text-[10px] text-amber-600 font-bold bg-amber-100 rounded-full px-2 py-0.5">{deals[0].discount}</span>
-                  </div>
-                )}
-              </button>
-            </div>
-          );
-        })}
+                <div className="text-xs text-ink-500 mt-1.5 line-clamp-2">{p.description}</div>
+              </div>
+            </button>
+          </div>
+        ))}
       </div>
       <button onClick={onStart} className="mt-5 w-full h-12 bg-brand-500 text-white font-bold rounded-2xl shadow-glow press flex items-center justify-center gap-2">
         <Navigation className="w-4 h-4" /> Start Navigation
@@ -483,7 +452,6 @@ function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSa
 }) {
   const [culturalExpanded, setCulturalExpanded] = useState(false);
   const intel = getCulturalIntel(place.id, place.category);
-  const deals = getDealsForPlace(place.id);
 
   return (
     <>
@@ -537,17 +505,6 @@ function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSa
               sub={prevPlace ? `from ${prevPlace.name.split(' ')[0]}` : undefined}
             />
           </div>
-
-          {deals.length > 0 && (
-            <div className="mb-3 flex items-center gap-2 bg-amber-50 rounded-xl px-3 py-2.5 border border-amber-100">
-              <Tag className="w-4 h-4 text-amber-600 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-bold text-amber-700">{deals[0].title}</div>
-                <div className="text-[10px] text-amber-600">{deals[0].validUntil} · Save {formatRp(deals[0].savingsAmount)}</div>
-              </div>
-              <span className="text-xs font-extrabold text-amber-700 bg-amber-200 rounded-full px-2 py-0.5 shrink-0">{deals[0].discount}</span>
-            </div>
-          )}
 
           <p className="text-sm text-ink-600 mb-3 leading-relaxed">{place.description}</p>
 

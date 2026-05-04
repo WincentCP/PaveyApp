@@ -15,6 +15,7 @@ interface AppState {
   isAuthenticated: boolean;
   authUser: { name: string; email: string } | null;
   onboardingComplete: boolean;
+  isOnboarded: boolean;
   signIn: (name: string, email: string) => void;
   completeOnboarding: (data: {
     name: string;
@@ -25,6 +26,7 @@ interface AppState {
     budget: number;
     startDate: string;
   }) => void;
+  logout: () => void;
 
   // Vibe & itinerary
   vibe: Vibe;
@@ -211,12 +213,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isAuthenticated,
     authUser,
     onboardingComplete,
+    isOnboarded: onboardingComplete,
     signIn: (name, email) => {
       setAuthUser({ name, email });
       setIsAuthenticated(true);
       setOnboardingComplete(true);
     },
     completeOnboarding,
+    logout: () => {
+      setIsAuthenticated(false);
+      setAuthUser(null);
+      setOnboardingComplete(false);
+      setItinerary([]);
+      setVisited(new Set());
+      setSavedPlaces([]);
+      setIsNavigating(false);
+      setNavIndex(0);
+    },
 
     vibe, setVibe,
     budget, setBudget,
