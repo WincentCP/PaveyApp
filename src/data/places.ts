@@ -17,6 +17,9 @@ export interface Place {
   rating: number;
   description: string;
   openingHours: string;
+  indoor: boolean;
+  openHour: number;
+  closeHour: number;
 }
 
 export const PLACES: Place[] = [
@@ -28,6 +31,7 @@ export const PLACES: Place[] = [
     lat: -8.5042, lng: 115.2562, rating: 4.8,
     description: 'Lush green ridge with panoramic Ubud views — perfect at sunrise.',
     openingHours: '06:00 – 18:00',
+    indoor: false, openHour: 6, closeHour: 18,
   },
   {
     id: 'p2', name: 'Tirta Empul Temple', category: 'Cultural',
@@ -37,6 +41,7 @@ export const PLACES: Place[] = [
     lat: -8.4156, lng: 115.3147, rating: 4.9,
     description: 'Sacred Balinese water temple known for its purification ritual.',
     openingHours: '07:00 – 17:00',
+    indoor: false, openHour: 7, closeHour: 17,
   },
   {
     id: 'p3', name: 'Seniman Coffee Studio', category: 'Cafe',
@@ -46,6 +51,7 @@ export const PLACES: Place[] = [
     lat: -8.5063, lng: 115.2625, rating: 4.7,
     description: 'Award-winning roaster with single-origin Indonesian beans.',
     openingHours: '08:00 – 22:00',
+    indoor: true, openHour: 8, closeHour: 22,
   },
   {
     id: 'p4', name: 'Ubud Palace', category: 'Historic',
@@ -55,6 +61,7 @@ export const PLACES: Place[] = [
     lat: -8.5070, lng: 115.2624, rating: 4.6,
     description: 'Royal palace with traditional Balinese carvings and dance shows.',
     openingHours: '08:00 – 17:00',
+    indoor: false, openHour: 8, closeHour: 17,
   },
   {
     id: 'p5', name: 'Tegalalang Rice Terrace', category: 'Nature',
@@ -64,6 +71,7 @@ export const PLACES: Place[] = [
     lat: -8.4313, lng: 115.2795, rating: 4.7,
     description: 'Iconic emerald rice paddies cascading down a valley.',
     openingHours: '07:00 – 18:00',
+    indoor: false, openHour: 7, closeHour: 18,
   },
   {
     id: 'p6', name: 'Hujan Locale', category: 'Foodie',
@@ -73,6 +81,7 @@ export const PLACES: Place[] = [
     lat: -8.5085, lng: 115.2590, rating: 4.8,
     description: 'Modern Indonesian dining with seasonal ingredients.',
     openingHours: '12:00 – 22:00',
+    indoor: true, openHour: 12, closeHour: 22,
   },
   {
     id: 'p7', name: 'Sacred Monkey Forest', category: 'Nature',
@@ -82,6 +91,7 @@ export const PLACES: Place[] = [
     lat: -8.5188, lng: 115.2585, rating: 4.5,
     description: 'Ancient temple sanctuary inside a primordial forest.',
     openingHours: '08:30 – 18:00',
+    indoor: false, openHour: 8, closeHour: 18,
   },
   {
     id: 'p8', name: 'Locavore To Go', category: 'Cafe',
@@ -91,6 +101,7 @@ export const PLACES: Place[] = [
     lat: -8.5051, lng: 115.2601, rating: 4.6,
     description: 'Fast, beautifully plated brunch from the Locavore team.',
     openingHours: '08:00 – 16:00',
+    indoor: true, openHour: 8, closeHour: 16,
   },
   {
     id: 'p9', name: 'Goa Gajah (Elephant Cave)', category: 'Hidden Gem',
@@ -100,6 +111,7 @@ export const PLACES: Place[] = [
     lat: -8.5232, lng: 115.2870, rating: 4.5,
     description: '9th-century meditation cave hidden in tropical garden.',
     openingHours: '08:00 – 17:00',
+    indoor: false, openHour: 8, closeHour: 17,
   },
   {
     id: 'p10', name: 'Kopi Joss Ubud', category: 'Cafe',
@@ -109,6 +121,7 @@ export const PLACES: Place[] = [
     lat: -8.5056, lng: 115.2633, rating: 4.4,
     description: 'Local warung famous for charcoal coffee and cheap bites.',
     openingHours: '07:00 – 21:00',
+    indoor: true, openHour: 7, closeHour: 21,
   },
   {
     id: 'p11', name: 'Komaneka Fine Dining', category: 'Foodie',
@@ -118,6 +131,7 @@ export const PLACES: Place[] = [
     lat: -8.5044, lng: 115.2548, rating: 4.9,
     description: 'World-class dining overlooking the Campuhan river valley.',
     openingHours: '12:00 – 22:00',
+    indoor: true, openHour: 12, closeHour: 22,
   },
   {
     id: 'p12', name: 'Ubud Art Market', category: 'Cultural',
@@ -127,6 +141,7 @@ export const PLACES: Place[] = [
     lat: -8.5070, lng: 115.2624, rating: 4.3,
     description: 'Bustling traditional market with batik, crafts, and souvenirs.',
     openingHours: '06:00 – 18:00',
+    indoor: false, openHour: 6, closeHour: 18,
   },
   {
     id: 'p13', name: 'Yoga Barn', category: 'Cozy',
@@ -136,6 +151,7 @@ export const PLACES: Place[] = [
     lat: -8.5191, lng: 115.2601, rating: 4.7,
     description: 'Multi-level open-air yoga studio with daily classes and healings.',
     openingHours: '07:00 – 20:00',
+    indoor: false, openHour: 7, closeHour: 20,
   },
   {
     id: 'p14', name: "Wayan's Night Market", category: 'Foodie',
@@ -145,6 +161,7 @@ export const PLACES: Place[] = [
     lat: -8.5079, lng: 115.2620, rating: 4.4,
     description: 'Lively night market with cheap sate, nasi goreng, and fresh juices.',
     openingHours: '18:00 – 00:00',
+    indoor: false, openHour: 18, closeHour: 24,
   },
   {
     id: 'p15', name: 'Pura Luhur Batukaru', category: 'Hidden Gem',
@@ -154,12 +171,20 @@ export const PLACES: Place[] = [
     lat: -8.3891, lng: 115.1282, rating: 4.8,
     description: "One of Bali's most sacred yet under-visited mountain temples.",
     openingHours: '08:00 – 18:00',
+    indoor: false, openHour: 8, closeHour: 18,
   },
 ];
 
-export function pickItinerary(vibe: Vibe, budget: number): Place[] {
+export function parseOpenHour(s: string): number {
+  const m = s.match(/(\d+):(\d+)/); return m ? parseInt(m[1]) : 0;
+}
+export function parseCloseHour(s: string): number {
+  const m = s.match(/\d+:\d+.*?(\d+):(\d+)/); return m ? parseInt(m[1]) : 24;
+}
+
+export function pickItinerary(vibe: Vibe, budget: number, indoorOnly = false): Place[] {
   let candidates = PLACES.filter(
-    (p) => p.vibes.includes(vibe) && p.cost <= budget,
+    (p) => p.vibes.includes(vibe) && p.cost <= budget && (!indoorOnly || p.indoor),
   ).sort((a, b) => b.rating - a.rating);
 
   if (candidates.length < 3) {

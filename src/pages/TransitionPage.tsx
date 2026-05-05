@@ -18,7 +18,7 @@ export default function TransitionPage() {
   useEffect(() => {
     const t1 = setTimeout(() => setStepIdx(1), 900);
     const t2 = setTimeout(() => setStepIdx(2), 1900);
-    const t3 = setTimeout(() => nav('/map'), 2800);
+    const t3 = setTimeout(() => nav('/map', { replace: true }), 2800);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []); // eslint-disable-line
 

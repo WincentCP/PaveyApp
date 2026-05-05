@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const ITEM_H = 48;
 const VISIBLE = 5;
@@ -7,17 +7,21 @@ const PAD = 2;
 function DrumWheel({ items, value, onChange }: { items: string[]; value: string; onChange: (v: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const currentIdx = Math.max(0, items.indexOf(value));
+  const [activeIdx, setActiveIdx] = useState(() => Math.max(0, items.indexOf(value)));
 
   useEffect(() => {
-    if (ref.current) ref.current.scrollTop = currentIdx * ITEM_H;
-  }, []); // eslint-disable-line
+    const idx = Math.max(0, items.indexOf(value));
+    setActiveIdx(idx);
+    if (ref.current) ref.current.scrollTop = idx * ITEM_H;
+  }, [value, items]);
 
   const handleScroll = () => {
+    if (!ref.current) return;
+    const idx = Math.max(0, Math.min(items.length - 1, Math.round(ref.current.scrollTop / ITEM_H)));
+    setActiveIdx(idx);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       if (!ref.current) return;
-      const idx = Math.max(0, Math.min(items.length - 1, Math.round(ref.current.scrollTop / ITEM_H)));
       ref.current.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
       onChange(items[idx]);
     }, 100);
@@ -38,7 +42,7 @@ function DrumWheel({ items, value, onChange }: { items: string[]; value: string;
           <div key={`pt${i}`} style={{ height: ITEM_H, scrollSnapAlign: 'center' }} />
         ))}
         {items.map((item, i) => {
-          const diff = Math.abs(i - currentIdx);
+          const diff = Math.abs(i - activeIdx);
           return (
             <div
               key={item}
@@ -69,12 +73,12 @@ export default function TimePicker({ value, onChange, label }: { value: string; 
   return (
     <div className="flex flex-col items-center gap-2">
       {label && <div className="text-xs font-bold tracking-widest text-ink-500 mb-1">{label}</div>}
+      <div className="bg-brand-50 border border-brand-200 rounded-xl px-4 py-1.5 text-brand-700 font-bold text-lg mb-1">{value}</div>
       <div className="flex items-center gap-3">
         <DrumWheel items={hours} value={hStr} onChange={(h) => onChange(`${h}:${mStr}`)} />
         <span className="text-3xl font-extrabold text-ink-700 mb-1">:</span>
         <DrumWheel items={minutes} value={mStr} onChange={(m) => onChange(`${hStr}:${m}`)} />
       </div>
-      <div className="text-sm font-bold text-ink-500 mt-1">{value}</div>
     </div>
   );
 }

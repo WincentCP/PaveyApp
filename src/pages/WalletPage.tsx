@@ -28,6 +28,8 @@ export default function WalletPage() {
   } = useApp();
   const { show } = useToast();
 
+  const hasUserTrips = trips.some(t => t.id !== 'trip-default');
+
   const [sheet, setSheet] = useState<null | 'editBudget' | 'addExpense' | 'scan' | 'history' | 'splitBill' | 'newTrip' | 'currencyPicker'>(null);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState<string | null>(null);
 
@@ -55,6 +57,39 @@ export default function WalletPage() {
   const isOnTrack = projectedTotal <= tripBudget;
 
   const fmt = (n: number) => formatCurrencyAmount(n, currency);
+
+  if (!hasUserTrips) {
+    return (
+      <div className="absolute inset-0 bg-white flex flex-col">
+        <StatusBar />
+        <PageHeader icon={Wallet} title="Wallet" right={
+          <button className="w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center press" onClick={() => setSheet('newTrip')}>
+            <Plus className="w-4 h-4 text-ink-700" />
+          </button>
+        } />
+        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
+          <div className="text-6xl">💰</div>
+          <div className="font-bold text-ink-900 text-xl font-display">No wallet yet</div>
+          <div className="text-sm text-ink-500">Create a trip to start tracking your expenses.</div>
+          <button
+            onClick={() => setSheet('newTrip')}
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press"
+          >
+            <Plus className="w-4 h-4" /> Create Your First Trip
+          </button>
+        </div>
+        <Sheet open={sheet === 'newTrip'} title="New Trip" onClose={() => setSheet(null)}>
+          <NewTripSheet
+            onCreate={(data) => {
+              createTrip(data);
+              show(`"${data.name}" created`, 'success');
+              setSheet(null);
+            }}
+          />
+        </Sheet>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 bg-white overflow-y-auto pb-32 no-scrollbar">
@@ -302,6 +337,7 @@ export default function WalletPage() {
           tripName={tripName}
           tripDaysRemaining={tripDaysRemaining}
           currency={currency}
+          hasTransactions={transactions.length > 0}
           onSave={(budget, name, daysRem) => {
             setTripBudget(budget);
             setTripName(name);
@@ -321,11 +357,19 @@ export default function WalletPage() {
       </Sheet>
 
       <Sheet open={sheet === 'scan'} title="Scan receipt" onClose={() => setSheet(null)}>
-        <ScanSheet currency={currency} onResult={(amt, title) => {
-          addTransaction({ title, category: 'Food & Drinks', amount: -amt, icon: '🧾' });
-          show(`Receipt parsed: ${fmt(amt)}`, 'success');
-          setSheet(null);
-        }} />
+        <ScanSheet
+          currency={currency}
+          onResult={(amt, title) => {
+            addTransaction({ title, category: 'Food & Drinks', amount: -amt, icon: '🧾' });
+            show(`Receipt parsed: ${fmt(amt)}`, 'success');
+            setSheet(null);
+          }}
+          onAddAllItems={(items) => {
+            items.forEach(({ name, price }) => addTransaction({ title: name, category: 'Food & Drinks', amount: -price, icon: '🧾' }));
+            show(`Added ${items.length} items`, 'success');
+            setSheet(null);
+          }}
+        />
       </Sheet>
 
       <Sheet open={sheet === 'history'} title="All transactions" onClose={() => setSheet(null)}>
@@ -345,6 +389,7 @@ export default function WalletPage() {
       <Sheet open={sheet === 'currencyPicker'} title="Select Currency" onClose={() => setSheet(null)}>
         <CurrencyPickerSheet
           current={currency}
+          hasTransactions={transactions.length > 0}
           onSelect={(c) => {
             setCurrency(c);
             show(`Currency set to ${c}`, 'success');
@@ -506,8 +551,9 @@ function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () 
 
 /* -------- Edit Budget Sheet -------- */
 
-function EditBudgetSheet({ tripBudget, tripName, tripDaysRemaining, currency, onSave }: {
+function EditBudgetSheet({ tripBudget, tripName, tripDaysRemaining, currency, hasTransactions, onSave }: {
   tripBudget: number; tripName: string; tripDaysRemaining: number; currency: Currency;
+  hasTransactions: boolean;
   onSave: (budget: number, name: string, daysRem: number) => void;
 }) {
   const [budget, setBudget] = useState(tripBudget);
@@ -520,6 +566,15 @@ function EditBudgetSheet({ tripBudget, tripName, tripDaysRemaining, currency, on
     : [100, 200, 500, 1000];
   return (
     <div className="space-y-3">
+      {/* Issue 20: mid-trip warning */}
+      {hasTransactions && (
+        <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-amber-800 leading-snug">
+            You have existing transactions. Changing the budget won't recalculate past expenses.
+          </p>
+        </div>
+      )}
       <div className="bg-ink-50 rounded-2xl p-4">
         <div className="text-xs text-ink-500">Trip Name</div>
         <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-transparent text-lg font-bold text-ink-900 outline-none mt-1" />
@@ -593,7 +648,7 @@ function AddExpenseSheet({ currency, onSubmit }: { currency: Currency; onSubmit:
 
 type ScannedItem = { name: string; price: number; confidence: number };
 
-function ScanSheet({ currency, onResult }: { currency: Currency; onResult: (amt: number, title: string) => void }) {
+function ScanSheet({ currency, onResult, onAddAllItems }: { currency: Currency; onResult: (amt: number, title: string) => void; onAddAllItems: (items: { name: string; price: number }[]) => void }) {
   const [scanning, setScanning] = useState(true);
   const [items] = useState<ScannedItem[]>([
     { name: 'Nasi Goreng Spesial', price: 45_000, confidence: 97 },
@@ -642,9 +697,15 @@ function ScanSheet({ currency, onResult }: { currency: Currency; onResult: (amt:
             <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Medium</div>
             <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" /> Verify</div>
           </div>
-          <button onClick={() => onResult(detectedTotal, 'Warung Babi Guling Ibu Oka')} className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow inline-flex items-center justify-center gap-2">
-            <Check className="w-4 h-4" /> Add {fmt(detectedTotal)} to Expenses
-          </button>
+          {/* Issue 22: two options — add all items or add total */}
+          <div className="flex flex-col gap-2">
+            <button onClick={() => onAddAllItems(items.map(({ name, price }) => ({ name, price })))} className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow inline-flex items-center justify-center gap-2">
+              <Plus className="w-4 h-4" /> Add all items ({items.length})
+            </button>
+            <button onClick={() => onResult(detectedTotal, 'Warung Babi Guling Ibu Oka')} className="w-full h-11 rounded-2xl bg-ink-50 text-ink-800 font-semibold press border border-ink-200 inline-flex items-center justify-center gap-2">
+              <Check className="w-4 h-4" /> Add total only ({fmt(detectedTotal)})
+            </button>
+          </div>
         </motion.div>
       )}
     </div>
@@ -683,7 +744,7 @@ function NewTripSheet({ onCreate }: { onCreate: (data: { name: string; destinati
         />
         {destination && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-2 py-0.5">
-            {CURRENCY_SYMBOLS[currency]} {currency}
+            auto · {CURRENCY_SYMBOLS[currency]} {currency}
           </div>
         )}
       </div>
@@ -721,9 +782,18 @@ const CURRENCIES: { id: Currency; name: string; flag: string }[] = [
   { id: 'AUD', name: 'Australian Dollar', flag: '🇦🇺' },
 ];
 
-function CurrencyPickerSheet({ current, onSelect }: { current: Currency; onSelect: (c: Currency) => void }) {
+function CurrencyPickerSheet({ current, hasTransactions, onSelect }: { current: Currency; hasTransactions: boolean; onSelect: (c: Currency) => void }) {
   return (
     <div className="space-y-2">
+      {/* Issue 23: conversion warning */}
+      {hasTransactions && (
+        <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-1">
+          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+          <p className="text-xs text-amber-800 leading-snug">
+            Changing currency won't convert existing transaction amounts.
+          </p>
+        </div>
+      )}
       {CURRENCIES.map((c) => (
         <button
           key={c.id}
@@ -778,6 +848,7 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('');
   const [newPersonName, setNewPersonName] = useState('');
+  const [confirmUnassigned, setConfirmUnassigned] = useState(false); // Issue 21
 
   useEffect(() => {
     if (open) {
@@ -893,6 +964,14 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
   };
 
   const goNext = () => {
+    // Issue 21: warn about unassigned items before going to review
+    if (step === 'assign' && splitType === 'byItem') {
+      const unassigned = items.filter((i) => i.assignedTo.length === 0);
+      if (unassigned.length > 0) {
+        setConfirmUnassigned(true);
+        return;
+      }
+    }
     const map: Partial<Record<SplitStep, SplitStep>> = {
       edit: 'people', people: splitType === 'byItem' ? 'assign' : 'review', assign: 'review',
     };
@@ -1267,6 +1346,32 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
               </AnimatePresence>
             </div>
           </motion.div>
+
+          {/* Issue 21: unassigned items confirmation modal */}
+          <AnimatePresence>
+            {confirmUnassigned && (
+              <>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmUnassigned(false)} className="absolute inset-0 z-60 bg-ink-900/40 rounded-t-3xl" />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-[61] bg-white rounded-2xl p-5 shadow-card"
+                >
+                  <div className="text-center mb-4">
+                    <div className="text-3xl mb-2">⚠️</div>
+                    <div className="font-bold text-ink-900 font-display">Unassigned items</div>
+                    <div className="text-sm text-ink-500 mt-1">
+                      {items.filter((i) => i.assignedTo.length === 0).length} item(s) aren't assigned to anyone. They'll be split equally.
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setConfirmUnassigned(false)} className="flex-1 h-11 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Go back</button>
+                    <button onClick={() => { setConfirmUnassigned(false); setStep('review'); }} className="flex-1 h-11 rounded-xl bg-brand-500 text-white font-bold press shadow-glow">Continue</button>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </>
       )}
     </AnimatePresence>

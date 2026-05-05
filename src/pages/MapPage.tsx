@@ -2,9 +2,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, Crosshair, List, Navigation, X, MapPin,
   Clock, Star, DollarSign, Bookmark, Smile,
-  ChevronUp, Plus, Map,
+  ChevronUp, Plus, Map, Pencil,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import PageHeader from '../components/PageHeader';
@@ -19,13 +19,29 @@ type ViewMode = 'map' | 'list';
 export default function MapPage() {
   const nav = useNavigate();
   const {
-    itinerary, setIsNavigating, setNavIndex, removeStop,
+    itinerary, setIsNavigating, setNavIndex, removeStop, addStop, isNavigating,
     savePlace, removeSavedPlace, isSaved,
     destinations, activeDestIdx, setActiveDestIdx,
   } = useApp();
   const { show } = useToast();
   const [view, setView] = useState<ViewMode>('map');
   const [selected, setSelected] = useState<Place | null>(null);
+  // Issue 14: undo on remove
+  const [mapUndoItem, setMapUndoItem] = useState<Place | null>(null);
+  const mapUndoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleRemoveStop = (place: Place) => {
+    // Issue 34: block removal during navigation
+    if (isNavigating) {
+      show('Cannot remove stops while navigating', 'info');
+      return;
+    }
+    removeStop(place.id);
+    setMapUndoItem(place);
+    if (mapUndoTimer.current) clearTimeout(mapUndoTimer.current);
+    mapUndoTimer.current = setTimeout(() => setMapUndoItem(null), 4000);
+    show(`Removed ${place.name}`, 'info');
+  };
 
   // Active destination's itinerary: use full itinerary for active tab, empty for others
   const activeItinerary = itinerary;
@@ -38,6 +54,11 @@ export default function MapPage() {
   }, [activeItinerary]);
 
   const startNavigation = () => {
+    // Issue 15: disable when no stops
+    if (activeItinerary.length === 0) {
+      show('Add stops before starting navigation', 'info');
+      return;
+    }
     setIsNavigating(true);
     setNavIndex(0);
     show('Starting your journey…', 'info');
@@ -114,7 +135,10 @@ export default function MapPage() {
             <button onClick={() => show('Recentered on you', 'info')} className="w-10 h-10 rounded-full bg-white shadow-card flex items-center justify-center press">
               <Crosshair className="w-4 h-4 text-ink-700" />
             </button>
-            <button onClick={startNavigation} className="w-10 h-10 rounded-full bg-brand-500 shadow-glow flex items-center justify-center press">
+            <button onClick={() => nav('/generate?edit=1')} className="w-10 h-10 rounded-full bg-white shadow-card flex items-center justify-center press">
+              <Pencil className="w-4 h-4 text-ink-700" />
+            </button>
+            <button onClick={startNavigation} disabled={activeItinerary.length === 0} className="w-10 h-10 rounded-full bg-brand-500 disabled:bg-ink-300 shadow-glow flex items-center justify-center press">
               <Navigation className="w-4 h-4 text-white" />
             </button>
           </div>
@@ -125,7 +149,7 @@ export default function MapPage() {
               onGenerate={() => nav('/generate')}
             />
           ) : (
-            <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={removeStop} />
+            <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} />
           )}
         </div>
       ) : (
@@ -137,7 +161,7 @@ export default function MapPage() {
               inline
             />
           ) : (
-            <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} onRemove={removeStop} />
+            <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} />
           )}
         </div>
       )}
@@ -153,6 +177,24 @@ export default function MapPage() {
             isSaved={isSaved(selected.id)}
             onSave={() => isSaved(selected.id) ? removeSavedPlace(selected.id) : savePlace(selected)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Issue 14: undo snackbar */}
+      <AnimatePresence>
+        {mapUndoItem && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
+            className="absolute bottom-28 inset-x-4 z-50 bg-ink-900 text-white rounded-2xl px-4 py-3 flex items-center justify-between shadow-xl"
+          >
+            <span className="text-sm font-medium truncate mr-3">{mapUndoItem.name} removed</span>
+            <button
+              onClick={() => { addStop(mapUndoItem); if (mapUndoTimer.current) clearTimeout(mapUndoTimer.current); setMapUndoItem(null); show('Stop restored', 'success'); }}
+              className="text-brand-300 font-bold text-sm shrink-0 press"
+            >
+              Undo
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
@@ -272,8 +314,8 @@ function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) 
 
 /* --------------- BOTTOM SHEET (collapsible) --------------- */
 
-function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove }: {
-  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (id: string) => void;
+function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit }: {
+  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (p: Place) => void; onEdit: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -331,7 +373,7 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove }: {
                     )}
                   </div>
                   <button
-                    onClick={() => onRemove(p.id)}
+                    onClick={() => onRemove(p)}
                     className="w-7 h-7 rounded-full bg-ink-50 hover:bg-red-50 flex items-center justify-center press shrink-0 transition-colors"
                     aria-label="Remove stop"
                   >
@@ -344,8 +386,11 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove }: {
         )}
       </AnimatePresence>
 
-      <div className="px-5">
-        <button onClick={onStart} className="w-full h-12 bg-brand-500 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-glow press">
+      <div className="px-5 space-y-2">
+        <button onClick={onEdit} className="w-full h-10 rounded-2xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5">
+          <Pencil className="w-3.5 h-3.5" /> Edit Plan
+        </button>
+        <button onClick={onStart} disabled={itinerary.length === 0} className="w-full h-12 bg-brand-500 disabled:bg-ink-200 disabled:text-ink-400 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-glow press disabled:shadow-none">
           <Navigation className="w-4 h-4" /> Start Navigation
         </button>
       </div>
@@ -371,8 +416,8 @@ function nineColon(i: number, addMin = 0) {
 
 /* ----------------- LIST VIEW ----------------- */
 
-function ListView({ itinerary, onStart, totals, onPin, onRemove }: {
-  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void; onRemove: (id: string) => void;
+function ListView({ itinerary, onStart, totals, onPin, onRemove, onEdit }: {
+  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void; onRemove: (p: Place) => void; onEdit: () => void;
 }) {
   return (
     <div className="pt-2">
@@ -434,7 +479,7 @@ function ListView({ itinerary, onStart, totals, onPin, onRemove }: {
               </button>
               {/* Inline remove button */}
               <button
-                onClick={() => onRemove(p.id)}
+                onClick={() => onRemove(p)}
                 className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center press z-10 transition-colors hover:bg-red-500/70"
                 aria-label="Remove stop"
               >
@@ -444,9 +489,14 @@ function ListView({ itinerary, onStart, totals, onPin, onRemove }: {
           </div>
         ))}
       </div>
-      <button onClick={onStart} className="mt-5 w-full h-12 bg-brand-500 text-white font-bold rounded-2xl shadow-glow press flex items-center justify-center gap-2">
-        <Navigation className="w-4 h-4" /> Start Navigation
-      </button>
+      <div className="mt-5 space-y-2">
+        <button onClick={onEdit} className="w-full h-10 rounded-2xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5">
+          <Pencil className="w-3.5 h-3.5" /> Edit Plan
+        </button>
+        <button onClick={onStart} disabled={itinerary.length === 0} className="w-full h-12 bg-brand-500 disabled:bg-ink-200 disabled:text-ink-400 text-white font-bold rounded-2xl shadow-glow press disabled:shadow-none flex items-center justify-center gap-2">
+          <Navigation className="w-4 h-4" /> Start Navigation
+        </button>
+      </div>
     </div>
   );
 }

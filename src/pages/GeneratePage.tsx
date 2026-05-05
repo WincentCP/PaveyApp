@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeft, Check, GripVertical, Plus, RefreshCw, Sparkles, X,
-  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown,
+  ArrowLeft, ArrowDown, Check, GripVertical, Plus, RefreshCw, Wand2, X,
+  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown, AlertTriangle,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -32,8 +32,12 @@ export default function GeneratePage() {
   const isEditMode = searchParams.get('edit') === '1';
   const [phase, setPhase] = useState<'loading' | 'reveal'>((isManualMode || isEditMode) ? 'reveal' : 'loading');
   const [stepIdx, setStepIdx] = useState(0);
+  // Issue 8: AI generation error state
+  const [generationError, setGenerationError] = useState(false);
   const [replaceFor, setReplaceFor] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  // UI5 — what-if comparison: { currentPlace, alt }
+  const [whatIf, setWhatIf] = useState<{ current: Place; alt: Place } | null>(null);
   const [confirmingPulse, setConfirmingPulse] = useState(false);
   const [stopTimes, setStopTimes] = useState<Record<string, string>>({});
   const [editingTimeFor, setEditingTimeFor] = useState<string | null>(null);
@@ -83,9 +87,14 @@ export default function GeneratePage() {
   useEffect(() => {
     if (phase !== 'loading') return;
     const t1 = setInterval(() => setStepIdx((s) => (s + 1) % STEPS.length), 700);
-    const t2 = setTimeout(() => setPhase('reveal'), 2200);
+    const t2 = setTimeout(() => {
+      setPhase('reveal');
+      if (!isManualMode && !isEditMode && itinerary.length === 0) {
+        setGenerationError(true);
+      }
+    }, 2200);
     return () => { clearInterval(t1); clearTimeout(t2); };
-  }, [phase]);
+  }, [phase]); // eslint-disable-line
 
   const activeItinerary = isManualMode ? manualStops : itinerary;
 
@@ -103,11 +112,23 @@ export default function GeneratePage() {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   };
 
+  // UI2 — conflict detection: returns true if scheduled end time exceeds closeHour
+  const hasConflict = (place: Place, timeStr: string) => {
+    const [hStr, mStr] = timeStr.split(':');
+    const startMin = parseInt(hStr) * 60 + parseInt(mStr);
+    const endMin = startMin + place.durationMin;
+    const closeMin = place.closeHour * 60;
+    return endMin > closeMin;
+  };
+
   const onConfirm = () => {
+    // Issue 9: Cancel pending undo on confirm
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setUndoItem(null);
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
     show('Journey confirmed ✨', 'success');
-    setTimeout(() => nav('/transition'), 700);
+    setTimeout(() => nav('/transition', { replace: true }), 700);
   };
 
   const manualSearchResults = useMemo(() => {
@@ -158,7 +179,7 @@ export default function GeneratePage() {
                   {/* Summary card */}
                   <div className="mx-5 mt-2 p-4 rounded-2xl bg-brand-600 text-white shrink-0">
                     <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
-                      <Sparkles className="w-4 h-4" /> Crafted for your {vibe} day
+                      <Wand2 className="w-4 h-4" /> Crafted for your {vibe} day
                     </div>
                     <div className="grid grid-cols-3 gap-3 mt-3">
                       <SummStat label="Stops" value={String(itinerary.length)} />
@@ -173,6 +194,20 @@ export default function GeneratePage() {
 
                   {/* Stop list */}
                   <div className="flex-1 overflow-y-auto no-scrollbar mt-3 px-5 pb-28">
+                    {/* Issue 8: Error state when generation yields empty itinerary */}
+                    {generationError && itinerary.length === 0 ? (
+                      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4 py-12">
+                        <div className="text-5xl">😕</div>
+                        <div className="font-bold text-ink-900 text-lg font-display">Couldn't generate a plan</div>
+                        <div className="text-sm text-ink-500">Check your vibe and budget settings and try again.</div>
+                        <button
+                          onClick={() => { setGenerationError(false); setPhase('loading'); setItinerary(buildItinerary()); }}
+                          className="h-12 px-6 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center gap-2"
+                        >
+                          <RefreshCw className="w-4 h-4" /> Try Again
+                        </button>
+                      </div>
+                    ) : (<>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-bold tracking-widest text-ink-500">ITINERARY · {itinerary.length} STOPS</span>
                       <button className="text-xs text-brand-600 font-semibold press" onClick={() => setShowAdd(true)}>+ Add stop</button>
@@ -188,11 +223,14 @@ export default function GeneratePage() {
                       <AnimatePresence>
                         {itinerary.map((p, i) => {
                           const intel = getCulturalIntel(p.id, p.category);
+                          const timeStr = getTime(p.id, i);
+                          const conflict = hasConflict(p, timeStr);
                           return (
                             <div key={p.id}>
                               <StopCard
                                 index={i} total={itinerary.length} place={p}
-                                scheduledTime={getTime(p.id, i)}
+                                scheduledTime={timeStr}
+                                hasConflict={conflict}
                                 onTimeEdit={() => setEditingTimeFor(p.id)}
                                 onRemove={() => removeWithUndo(p, i, false)}
                                 onReplace={() => setReplaceFor(p.id)}
@@ -235,32 +273,43 @@ export default function GeneratePage() {
                           <span className="text-[10px] text-ink-400">Tap + to add to plan</span>
                         </div>
                         <div className="space-y-2">
-                          {alternatives(itinerary.map((p) => p.id)).slice(0, 4).map((p) => (
+                          {alternatives(itinerary.map((p) => p.id)).slice(0, 4).map((altP) => (
                             <motion.div
-                              key={p.id}
+                              key={altP.id}
                               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                               className="bg-ink-50/60 border border-ink-100 rounded-2xl p-3 flex items-center gap-3"
                             >
-                              <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                              <img src={altP.image} alt={altP.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
+                                <div className="font-semibold text-ink-900 text-sm truncate">{altP.name}</div>
                                 <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
-                                  <span className="text-ink-300">·</span>{p.category}
+                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{altP.rating}
+                                  <span className="text-ink-300">·</span>{altP.category}
                                 </div>
-                                <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(p.cost)}</div>
+                                <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(altP.cost)}</div>
                               </div>
-                              <button
-                                onClick={() => { addStop(p); show(`${p.name} added`, 'success'); }}
-                                className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
+                              {/* UI5 — "Try instead" opens what-if comparison if plan has stops */}
+                              {itinerary.length > 0 ? (
+                                <button
+                                  onClick={() => setWhatIf({ current: itinerary[itinerary.length - 1], alt: altP })}
+                                  className="text-[10px] font-semibold text-brand-600 bg-brand-50 border border-brand-200 px-2.5 py-1.5 rounded-lg press shrink-0"
+                                >
+                                  Try instead
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => { addStop(altP); show(`${altP.name} added`, 'success'); }}
+                                  className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              )}
                             </motion.div>
                           ))}
                         </div>
                       </div>
                     )}
+                    </>)}
                   </div>
 
                   {/* Sticky CTA — above bottom nav */}
@@ -291,7 +340,7 @@ export default function GeneratePage() {
                   <div className="text-sm font-bold">{manualStops.length} stops · {formatRp(totals.cost)}</div>
                 </div>
                 <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Mix AI
+                  <Wand2 className="w-3.5 h-3.5" /> Mix AI
                 </button>
               </div>
             )}
@@ -343,6 +392,14 @@ export default function GeneratePage() {
                     <div className="flex-1 h-px bg-ink-100" />
                   </div>
                 </>
+              )}
+
+              {/* Issue 10: empty plan nudge */}
+              {manualStops.length === 0 && (
+                <div className="flex flex-col items-center gap-2 py-6 text-ink-400">
+                  <ArrowDown className="w-5 h-5 animate-bounce" />
+                  <p className="text-sm font-medium">Search below to add your first stop</p>
+                </div>
               )}
 
               {/* ── SEARCH & ADD ── */}
@@ -447,7 +504,7 @@ export default function GeneratePage() {
                   <div className="font-semibold text-ink-700">No stops yet</div>
                   <div className="text-sm text-ink-500 mt-1">Search above or pick from recommendations</div>
                   <button onClick={importAi} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-sm font-semibold press">
-                    <Sparkles className="w-4 h-4" /> Import AI suggestions
+                    <Wand2 className="w-4 h-4" /> Import AI suggestions
                   </button>
                 </div>
               )}
@@ -493,6 +550,10 @@ export default function GeneratePage() {
                   onChange={(t) => setStopTimes((prev) => ({ ...prev, [editingTimeFor]: t }))}
                 />
               </div>
+              {/* Issue 11: time picker context */}
+              <p className="text-center text-xs text-ink-400 -mt-2 mb-2 px-4">
+                All stop times are estimated from this departure time.
+              </p>
             </motion.div>
           </>
         )}
@@ -537,6 +598,56 @@ export default function GeneratePage() {
         onPick={(p) => { addStop(p); setShowAdd(false); show(`${p.name} added`, 'success'); }}
         alternatives={alternatives}
       />
+
+      {/* UI5 — What-if comparison modal */}
+      <AnimatePresence>
+        {whatIf && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setWhatIf(null)} className="absolute inset-0 z-40 bg-ink-900/50" />
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+              className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-card overflow-hidden"
+            >
+              <div className="p-4 border-b border-ink-100">
+                <div className="font-bold text-ink-900 font-display text-center">Try instead?</div>
+              </div>
+              <div className="grid grid-cols-2 divide-x divide-ink-100">
+                {[
+                  { label: 'CURRENT', place: whatIf.current, isPrimary: false },
+                  { label: 'ALTERNATIVE', place: whatIf.alt, isPrimary: true },
+                ].map(({ label, place, isPrimary }) => (
+                  <div key={place.id} className={`p-3 ${isPrimary ? 'bg-brand-50/30' : ''}`}>
+                    <div className={`text-[9px] font-bold tracking-widest mb-2 ${isPrimary ? 'text-brand-600' : 'text-ink-400'}`}>{label}</div>
+                    <img src={place.image} alt={place.name} className="w-full h-20 object-cover rounded-xl mb-2" />
+                    <div className="font-semibold text-ink-900 text-xs leading-snug mb-1">{place.name}</div>
+                    <div className="flex items-center gap-1 text-[10px] text-ink-500 mb-0.5">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span className="font-semibold text-ink-700">{place.rating}</span>
+                      <span>· {formatRp(place.cost)}</span>
+                    </div>
+                    <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm}km</div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2 p-3 border-t border-ink-100">
+                <button
+                  onClick={() => setWhatIf(null)}
+                  className="h-10 rounded-xl bg-ink-50 text-ink-700 text-sm font-semibold press"
+                >Keep Current</button>
+                <button
+                  onClick={() => {
+                    replaceStop(whatIf.current.id, whatIf.alt);
+                    setWhatIf(null);
+                    show(`Switched to ${whatIf.alt.name}`, 'success');
+                  }}
+                  className="h-10 rounded-xl bg-brand-500 text-white text-sm font-semibold press shadow-glow"
+                >Switch</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -557,7 +668,7 @@ function LoadingState({ stepIdx }: { stepIdx: number }) {
     <motion.div key="loading" initial={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} className="flex-1 px-5 pt-4 flex flex-col">
       <div className="flex items-center gap-2 text-brand-600 font-semibold">
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}>
-          <Sparkles className="w-5 h-5" />
+          <RefreshCw className="w-5 h-5" />
         </motion.div>
         <AnimatePresence mode="wait">
           <motion.span key={stepIdx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="text-[15px]">
@@ -654,10 +765,10 @@ function CulturalCard({ intel, onDismiss }: { intel: CulturalIntel; onDismiss: (
 
 /* ── Stop Card ── */
 function StopCard({
-  index, total, place, scheduledTime, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual,
+  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual,
 }: {
   index: number; total: number; place: Place;
-  scheduledTime: string; onTimeEdit: () => void;
+  scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
   onRemove: () => void; onReplace: () => void; onMoveUp: () => void; onMoveDown: () => void;
   isManual?: boolean;
 }) {
@@ -715,7 +826,7 @@ function StopCard({
             <span className="text-xs font-semibold text-brand-600">{scheduledTime}</span>
             <Pencil className="w-2.5 h-2.5 text-brand-400" />
           </button>
-          <div className="flex items-center gap-1.5 text-[11px] mt-1.5">
+          <div className="flex items-center gap-1.5 text-[11px] mt-1.5 flex-wrap">
             <Clock className="w-3 h-3 text-ink-400" />
             <span className="text-ink-400">{place.openingHours}</span>
             <span className="text-ink-300">·</span>
@@ -723,6 +834,11 @@ function StopCard({
             <span className="text-brand-600 font-semibold">
               {formatRp(place.priceRange.min)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
             </span>
+            {hasConflict && (
+              <span className="flex items-center gap-0.5 text-amber-600 font-semibold ml-1">
+                <AlertTriangle className="w-3 h-3" /> Closes before visit ends
+              </span>
+            )}
           </div>
         </div>
 
@@ -738,15 +854,25 @@ function StopCard({
 }
 
 /* ── Custom Place Form ── */
+const CUSTOM_CATEGORIES = ['Restaurant', 'Café', 'Temple', 'Market', 'Beach', 'Museum', 'Park', 'Shop', 'Hotel', 'Hidden Gem', 'Other'];
+
 function CustomPlaceForm({ onAdd }: { onAdd: (p: Place) => void }) {
   const [name, setName] = useState('');
   const [cost, setCost] = useState('50000');
   const [dur, setDur] = useState('60');
+  const [category, setCategory] = useState('Restaurant');
   const ref = useRef<HTMLInputElement>(null);
   useEffect(() => { ref.current?.focus(); }, []);
   return (
     <div className="bg-ink-50 rounded-2xl p-3 space-y-2">
       <input ref={ref} value={name} onChange={(e) => setName(e.target.value)} placeholder="Place name" className="w-full bg-white rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-300 border border-ink-100" />
+      {/* Issue 12: category selector */}
+      <div className="bg-white rounded-xl px-3 py-2 border border-ink-100">
+        <div className="text-[10px] text-ink-400 mb-0.5">Category</div>
+        <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-transparent text-sm font-bold text-ink-900 outline-none">
+          {CUSTOM_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-white rounded-xl px-3 py-2 border border-ink-100">
           <div className="text-[10px] text-ink-400">Cost (Rp)</div>
@@ -758,7 +884,7 @@ function CustomPlaceForm({ onAdd }: { onAdd: (p: Place) => void }) {
         </div>
       </div>
       <button disabled={!name.trim()} onClick={() => {
-        onAdd({ id: `custom-${Date.now()}`, name: name.trim(), category: 'Hidden Gem', tags: ['Custom'], vibes: ['chill','chaos','zen','luxury'], image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80', cost: Number(cost) || 0, priceRange: { min: Number(cost) || 0, max: Number(cost) || 0 }, durationMin: Number(dur) || 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 0, description: 'Custom stop.', openingHours: 'All day' });
+        onAdd({ id: `custom-${Date.now()}`, name: name.trim(), category: category as import('../data/places').Category, tags: ['Custom'], vibes: ['chill','chaos','zen','luxury'], image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80', cost: Number(cost) || 0, priceRange: { min: Number(cost) || 0, max: Number(cost) || 0 }, durationMin: Number(dur) || 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 0, description: 'Custom stop.', openingHours: 'All day', indoor: true, openHour: 0, closeHour: 24 });
       }} className="w-full h-10 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white font-semibold press flex items-center justify-center gap-2">
         <Plus className="w-4 h-4" /> Add Custom Stop
       </button>

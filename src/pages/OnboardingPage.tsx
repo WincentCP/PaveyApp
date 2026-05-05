@@ -2,12 +2,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp,
   Diamond, Eye, EyeOff, Flame, GripVertical, Lock,
-  Mail, MapPin, Palmtree, Plus, Sparkles, User, X,
+  Mail, MapPin, Palmtree, Plus, Wind, RefreshCw, User, X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { Vibe } from '../data/places';
+import { suggestCurrency, CURRENCY_SYMBOLS, CURRENCY_RATES_TO_IDR } from '../data/wallet';
 
 type AuthMode = 'signup' | 'login';
 type Step =
@@ -59,6 +60,10 @@ export default function OnboardingPage() {
   const [showPw, setShowPw] = useState(false);
   const [authErrors, setAuthErrors] = useState<Record<string, string>>({});
   const [authLoading, setAuthLoading] = useState(false);
+  // Issue 1: inline validation touch tracking
+  const [confirmTouched, setConfirmTouched] = useState(false);
+  // Issue 2: auth toggle keeps email notice
+  const [justToggled, setJustToggled] = useState(false);
 
   // Onboarding state
   const [selectedVibe, setSelectedVibe] = useState<Vibe>('zen');
@@ -78,6 +83,25 @@ export default function OnboardingPage() {
     if (!startDate || !endDate) return 1;
     return Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86400000) + 1);
   }, [startDate, endDate]);
+
+  // Issue 3: currency-aware budget based on first destination
+  const budgetCurrency = useMemo(() => destList.length > 0 ? suggestCurrency(destList[0]) : 'IDR', [destList]);
+  const currencySymbol = CURRENCY_SYMBOLS[budgetCurrency];
+  const toLocalBudget = (idrAmount: number) => Math.round(idrAmount / CURRENCY_RATES_TO_IDR[budgetCurrency]);
+  const fromLocalBudget = (local: number) => Math.round(local * CURRENCY_RATES_TO_IDR[budgetCurrency]);
+  // Budget presets in local currency
+  const budgetPresets = useMemo(() => {
+    const base = budgetCurrency === 'IDR' ? [150_000, 300_000, 600_000] : budgetCurrency === 'JPY' ? [1500, 3000, 6000] : [10, 25, 50];
+    return base.map((v) => fromLocalBudget(v));
+  }, [budgetCurrency]);
+  const budgetMin = fromLocalBudget(budgetCurrency === 'IDR' ? 50_000 : budgetCurrency === 'JPY' ? 500 : 5);
+  const budgetMax = fromLocalBudget(budgetCurrency === 'IDR' ? 1_000_000 : budgetCurrency === 'JPY' ? 20_000 : 100);
+  const fmtBudget = (n: number) => {
+    const local = toLocalBudget(n);
+    if (budgetCurrency === 'IDR') return local >= 1_000_000 ? `Rp ${(local/1_000_000).toFixed(1)}jt` : `Rp ${Math.round(local/1000)}K`;
+    if (budgetCurrency === 'JPY') return `¥${local.toLocaleString()}`;
+    return `${currencySymbol}${local}`;
+  };
 
   const progressIdx = PROGRESS_STEPS.indexOf(step);
 
@@ -157,9 +181,7 @@ export default function OnboardingPage() {
     });
   };
 
-  const sliderPct = Math.max(0, Math.min(100, ((budget - 50_000) / (1_000_000 - 50_000)) * 100));
-  const fmt = (n: number) =>
-    n >= 1_000_000 ? `Rp ${(n / 1_000_000).toFixed(1)}jt` : `Rp ${Math.round(n / 1000)}K`;
+  const sliderPct = Math.max(0, Math.min(100, ((budget - budgetMin) / (budgetMax - budgetMin)) * 100));
 
   const slideVariants = {
     enter: { x: 40, opacity: 0 },
@@ -174,7 +196,8 @@ export default function OnboardingPage() {
     vibe: { label: 'Continue', onClick: () => go('destinations') },
     destinations: {
       label: 'Continue',
-      onClick: () => { if (destList.length === 0) setDestList(['My Destination']); go('dates'); },
+      onClick: () => go('dates'),
+      disabled: destList.length === 0,
     },
     dates: {
       label: startDate && endDate ? 'Continue' : 'Skip for now',
@@ -246,7 +269,7 @@ export default function OnboardingPage() {
                   onClick={() => { setAuthMode('signup'); go('auth_form'); }}
                   className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2 mb-3"
                 >
-                  <Sparkles className="w-5 h-5" /> Get Started — it's free
+                  <ArrowRight className="w-5 h-5" /> Get Started — it's free
                 </button>
                 <button
                   onClick={() => { setAuthMode('login'); go('auth_form'); }}
@@ -272,9 +295,13 @@ export default function OnboardingPage() {
           >
             {/* Back + title */}
             <div className="px-5 pt-12 pb-4 shrink-0">
-              <button onClick={() => go('welcome')} className="mb-4 w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={() => go('welcome')} className="w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                {/* Issue 7: step indicator */}
+                <span className="text-xs text-ink-400 font-semibold">Step 1 of 8</span>
+              </div>
               <h2 className="text-2xl font-extrabold text-ink-900 font-display">
                 {authMode === 'signup' ? 'Create your account' : 'Welcome back'}
               </h2>
@@ -318,10 +345,14 @@ export default function OnboardingPage() {
                   <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">CONFIRM PASSWORD</div>
                   <input
                     type="password" value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setConfirmTouched(true); }}
                     placeholder="Repeat password"
-                    className={`w-full bg-ink-50 rounded-xl px-3 py-3 text-sm text-ink-900 placeholder:text-ink-400 outline-none border-2 transition-colors ${authErrors.confirmPassword ? 'border-red-400' : 'border-transparent focus:border-brand-400'}`}
+                    className={`w-full bg-ink-50 rounded-xl px-3 py-3 text-sm text-ink-900 placeholder:text-ink-400 outline-none border-2 transition-colors ${(authErrors.confirmPassword || (confirmTouched && confirmPassword && password !== confirmPassword)) ? 'border-red-400' : 'border-transparent focus:border-brand-400'}`}
                   />
+                  {/* Issue 1: on-type mismatch warning */}
+                  {confirmTouched && confirmPassword && password !== confirmPassword && !authErrors.confirmPassword && (
+                    <p className="text-xs text-red-500 mt-1">Passwords don't match</p>
+                  )}
                   {authErrors.confirmPassword && <p className="text-xs text-red-500 mt-1">{authErrors.confirmPassword}</p>}
                 </div>
               )}
@@ -336,20 +367,30 @@ export default function OnboardingPage() {
               >
                 {authLoading ? (
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                    <Sparkles className="w-5 h-5" />
+                    <RefreshCw className="w-5 h-5" />
                   </motion.div>
                 ) : (
                   <>{authMode === 'signup' ? 'Create Account' : 'Sign In'} <ArrowRight className="w-4 h-4" /></>
                 )}
               </button>
               <button
-                onClick={() => setAuthMode(authMode === 'signup' ? 'login' : 'signup')}
+                onClick={() => { setAuthMode(authMode === 'signup' ? 'login' : 'signup'); setJustToggled(true); setTimeout(() => setJustToggled(false), 3000); }}
                 className="w-full text-center text-sm text-ink-500 press py-2"
               >
                 {authMode === 'signup'
                   ? 'Already have an account? Sign in'
                   : "Don't have an account? Sign up"}
               </button>
+              {/* Issue 2: email kept notice after toggle */}
+              <AnimatePresence>
+                {justToggled && email && (
+                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="text-center text-xs text-brand-600 font-medium"
+                  >
+                    Your email has been kept
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         )}
@@ -392,7 +433,7 @@ export default function OnboardingPage() {
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     {VIBES.map((v) => {
                       const active = selectedVibe === v.id;
-                      const Icon = v.id === 'chill' ? Palmtree : v.id === 'chaos' ? Flame : v.id === 'zen' ? Sparkles : Diamond;
+                      const Icon = v.id === 'chill' ? Palmtree : v.id === 'chaos' ? Flame : v.id === 'zen' ? Wind : Diamond;
                       return (
                         <motion.button
                           key={v.id} whileTap={{ scale: 0.96 }}
@@ -439,6 +480,44 @@ export default function OnboardingPage() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+                  {/* UI10 — Country-level detection */}
+                  {(() => {
+                    const COUNTRY_CITIES: Record<string, string[]> = {
+                      japan: ['Tokyo', 'Kyoto', 'Osaka', 'Sapporo', 'Hiroshima'],
+                      france: ['Paris', 'Nice', 'Lyon', 'Bordeaux'],
+                      usa: ['New York', 'Los Angeles', 'San Francisco', 'Chicago'],
+                      australia: ['Sydney', 'Melbourne', 'Brisbane', 'Gold Coast'],
+                      indonesia: ['Bali', 'Jakarta', 'Yogyakarta', 'Lombok'],
+                      bali: ['Ubud', 'Seminyak', 'Canggu', 'Nusa Dua'],
+                      singapore: ['Singapore'],
+                      thailand: ['Bangkok', 'Chiang Mai', 'Phuket', 'Koh Samui'],
+                      korea: ['Seoul', 'Busan', 'Jeju', 'Incheon'],
+                    };
+                    const lower = destInput.toLowerCase().trim();
+                    const match = Object.entries(COUNTRY_CITIES).find(([key]) => lower === key || lower.startsWith(key));
+                    if (!match) return null;
+                    const [country, cities] = match;
+                    return (
+                      <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="mt-2 bg-brand-50 rounded-xl p-3 border border-brand-100">
+                        <div className="text-xs font-semibold text-brand-700 mb-2 capitalize">{country} is a big one! Which cities?</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {cities.map((city) => (
+                            <button
+                              key={city}
+                              onClick={() => { setDestList((prev) => prev.includes(city) ? prev : [...prev, city]); setDestInput(''); }}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-semibold press"
+                            >
+                              <Plus className="w-3 h-3" /> {city}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    );
+                  })()}
+                  {/* Issue 4: prompt when no destination added yet */}
+                  {destList.length === 0 && (
+                    <p className="text-xs text-amber-600 font-medium mt-2">Add at least one destination to continue.</p>
+                  )}
                   {destList.length === 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {['Paris, France', 'Rome, Italy', 'Bali, Indonesia', 'Tokyo, Japan', 'Barcelona, Spain'].map((d) => (
@@ -530,31 +609,32 @@ export default function OnboardingPage() {
               {/* BUDGET */}
               {step === 'budget' && (
                 <>
-                  <StepTitle title="What's your daily budget?" subtitle="Per stop — we'll filter places accordingly" />
+                  {/* Issue 3: currency-aware title */}
+                  <StepTitle title="What's your daily budget?" subtitle={`Per stop · shown in ${budgetCurrency} (${currencySymbol})`} />
                   <div className="mt-6">
                     <div className="text-center mb-6">
-                      <div className="text-4xl font-extrabold text-brand-600 font-display">{fmt(budget)}</div>
+                      <div className="text-4xl font-extrabold text-brand-600 font-display">{fmtBudget(budget)}</div>
                       <div className="text-xs text-ink-500 mt-1">per stop</div>
                     </div>
                     <input
-                      type="range" min={50_000} max={1_000_000} step={10_000}
+                      type="range" min={budgetMin} max={budgetMax} step={Math.round((budgetMax - budgetMin) / 100)}
                       value={budget}
                       onChange={(e) => setBudget(Number(e.target.value))}
                       className="vibe-slider w-full"
                       style={{ ['--val' as any]: `${sliderPct}%` }}
                     />
                     <div className="flex justify-between text-xs text-ink-500 mt-1">
-                      <span>Rp 50K</span>
-                      <span>Rp 1jt+</span>
+                      <span>{fmtBudget(budgetMin)}</span>
+                      <span>{fmtBudget(budgetMax)}+</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 mt-5">
-                      {[150_000, 300_000, 600_000].map((v) => (
+                      {budgetPresets.map((v) => (
                         <button
                           key={v}
                           onClick={() => setBudget(v)}
                           className={`py-2 rounded-xl text-xs font-semibold press transition-colors border ${budget === v ? 'bg-brand-500 text-white border-brand-500' : 'bg-ink-50 text-ink-700 border-ink-100'}`}
                         >
-                          {fmt(v)}
+                          {fmtBudget(v)}
                         </button>
                       ))}
                     </div>
@@ -650,12 +730,16 @@ export default function OnboardingPage() {
                       </motion.div>
                     )}
                     {!locationGranted && (
-                      <button
-                        onClick={() => setLocationDenied(true)}
-                        className="w-full text-center text-sm text-ink-400 press py-1"
-                      >
-                        Skip for now
-                      </button>
+                      <div className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={() => setLocationDenied(true)}
+                          className="w-full text-center text-sm text-ink-400 press py-1"
+                        >
+                          Skip for now
+                        </button>
+                        {/* Issue 6: clarify what skipping means */}
+                        <p className="text-xs text-ink-400 text-center">Navigation will use manual mode</p>
+                      </div>
                     )}
                   </div>
                 </>
@@ -677,6 +761,12 @@ export default function OnboardingPage() {
                   <button onClick={cta.onSkip} className="w-full text-center text-sm text-ink-400 press py-1">
                     {cta.skipLabel}
                   </button>
+                )}
+                {/* Issue 5: dates needed for daily allowance note */}
+                {step === 'dates' && !(startDate && endDate) && (
+                  <p className="text-center text-xs text-ink-400">
+                    Dates are needed to calculate your daily allowance in the wallet.
+                  </p>
                 )}
               </div>
             )}

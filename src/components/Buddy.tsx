@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Send, Sparkles, X, Cloud, Coffee, MapPinned } from 'lucide-react';
+import { Send, Star, X, Cloud, Coffee, MapPinned } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Msg { from: 'buddy' | 'me'; text: string }
@@ -8,7 +8,7 @@ const QUICK = [
   { icon: Cloud, label: 'Indoor cafes nearby' },
   { icon: Coffee, label: 'Best coffee in Ubud' },
   { icon: MapPinned, label: 'Less walking route' },
-  { icon: Sparkles, label: 'Hidden gems' },
+  { icon: Star, label: 'Hidden gems' },
 ];
 
 export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -50,7 +50,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
               <div className="flex items-center gap-2 mt-3">
                 <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white">
-                  <Sparkles className="w-5 h-5" />
+                  <Star className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="text-ink-900 font-bold leading-tight">Buddy</div>

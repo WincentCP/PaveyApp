@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings, Mail, Phone, MapPin, ChevronRight, Bookmark, Clock, CreditCard, HelpCircle, X, Crown,
-  Compass, Sparkles, TrendingDown, Star, Target, LogOut, User,
+  Compass, Footprints, TrendingDown, Star, LogOut, User,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -24,13 +24,33 @@ const LOCKED_BADGES = [
   { id: 'culture', name: 'Culture Kid', sub: 'Visit 2 temples', icon: '🏛️', color: '#E5E7EB' },
 ];
 
+const DEST_FLAG: Record<string, string> = {
+  bali: '🇮🇩', indonesia: '🇮🇩', jakarta: '🇮🇩',
+  japan: '🇯🇵', tokyo: '🇯🇵', osaka: '🇯🇵', kyoto: '🇯🇵',
+  france: '🇫🇷', paris: '🇫🇷',
+  singapore: '🇸🇬',
+  usa: '🇺🇸', 'new york': '🇺🇸', 'los angeles': '🇺🇸',
+  australia: '🇦🇺', sydney: '🇦🇺', melbourne: '🇦🇺',
+  thailand: '🇹🇭', bangkok: '🇹🇭',
+  korea: '🇰🇷', seoul: '🇰🇷',
+};
+
+function getFlag(destination: string): string {
+  const lower = destination.toLowerCase();
+  for (const [key, flag] of Object.entries(DEST_FLAG)) {
+    if (lower.includes(key)) return flag;
+  }
+  return '🗺️';
+}
+
 export default function ProfilePage() {
-  const { visited, savedPlaces, logout, transactions, authUser } = useApp();
+  const { visited, savedPlaces, logout, transactions, authUser, trips, visitedPlaceIds } = useApp();
   const nav = useNavigate();
   const [statDetail, setStatDetail] = useState<null | string>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const totalPlaces = visited.size;
+  const totalPlaces = Math.max(visited.size, visitedPlaceIds.size);
+  const userTrips = trips.filter((t) => t.id !== 'trip-default');
   const isNewUser = visited.size === 0 && transactions.length === 0;
   const displayName = authUser?.name?.split(' ')[0] ?? USER.firstName;
   const displayEmail = authUser?.email ?? USER.email;
@@ -55,7 +75,7 @@ export default function ProfilePage() {
     {
       id: 'places',
       label: 'Places Explored',
-      icon: Sparkles,
+      icon: Footprints,
       color: '#10B981',
       bg: '#ECFDF5',
       value: totalPlaces,
@@ -195,31 +215,49 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Recent Trips — hide if new user */}
-      {!isNewUser && (
+      {/* Passport — Your Trips */}
+      {(userTrips.length > 0 || !isNewUser) && (
         <div className="px-5 mt-5">
           <div className="flex items-center justify-between mb-3">
-            <div className="font-bold text-ink-900 font-display">Recent Trips</div>
-            <button className="text-xs text-brand-600 font-semibold press">See all ›</button>
+            <div className="font-bold text-ink-900 font-display">My Passport</div>
+            <span className="text-xs text-ink-400">{userTrips.length} trip{userTrips.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="space-y-2">
-            {RECENT_TRIPS.map((t, i) => (
+            {userTrips.map((t, i) => {
+              const flag = getFlag(t.destination);
+              const totalSpent = t.transactions.filter((x) => x.amount < 0).reduce((s, x) => s + Math.abs(x.amount), 0);
+              const dateStr = new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              return (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                  className="flex items-center gap-3 bg-white border-l-4 border-brand-500 border border-ink-100 rounded-2xl px-4 py-3"
+                >
+                  <div className="text-2xl shrink-0">{flag}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-ink-900 text-sm leading-snug">{t.name}</div>
+                    <div className="text-[10px] text-ink-500 uppercase tracking-wider mt-0.5">{t.destination}</div>
+                    <div className="text-xs text-ink-400 mt-0.5">Visited {dateStr} · {t.daysTotal}d</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold text-ink-900">{formatRp(totalSpent)}</div>
+                    <div className="text-[10px] text-ink-400">spent</div>
+                  </div>
+                </motion.div>
+              );
+            })}
+            {/* Static past trips if no real trips */}
+            {userTrips.length === 0 && !isNewUser && RECENT_TRIPS.map((t, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 bg-white border border-ink-100 rounded-2xl px-4 py-3 press"
+                className="flex items-center gap-3 bg-white border-l-4 border-ink-300 border border-ink-100 rounded-2xl px-4 py-3"
               >
-                <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                  <Target className="w-5 h-5 text-brand-500" />
-                </div>
+                <div className="text-2xl">🇮🇩</div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-ink-900 text-sm">{t.name}</div>
-                  <div className="text-xs text-ink-500 flex items-center gap-1.5 mt-0.5">
-                    <span>{t.date}</span>
-                    <span className="text-ink-300">·</span>
-                    <span>{t.days}d</span>
-                    <span className="text-ink-300">·</span>
-                    <span>{t.places} places</span>
+                  <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5">
+                    <span>{t.date}</span> · <span>{t.days}d</span> · <span>{t.places} places</span>
                   </div>
                 </div>
                 <div className="text-right shrink-0">

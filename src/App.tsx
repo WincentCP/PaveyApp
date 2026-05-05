@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import PhoneFrame from './components/PhoneFrame';
 import BottomNav from './components/BottomNav';
@@ -16,12 +15,13 @@ import WalletPage from './pages/WalletPage';
 import ProfilePage from './pages/ProfilePage';
 
 function AppShell() {
-  const [buddyOpen, setBuddyOpen] = useState(false);
-  const { onboardingComplete } = useApp();
+  const { onboardingComplete, buddyOpen, setBuddyOpen } = useApp();
   const { pathname } = useLocation();
 
   const hideChrome = pathname.startsWith('/onboarding') || pathname === '/transition';
   const hideNav = pathname.startsWith('/navigate') || hideChrome;
+  // Issue 33: Hide Buddy on /generate (confusing during loading skeleton)
+  const hideBuddy = hideChrome || pathname.startsWith('/generate');
 
   return (
     <div className="flex-1 relative overflow-hidden">
@@ -48,7 +48,7 @@ function AppShell() {
       </Routes>
 
       {!hideNav && <BottomNav onBuddyOpen={() => setBuddyOpen(true)} />}
-      {!hideChrome && <Buddy open={buddyOpen} onClose={() => setBuddyOpen(false)} />}
+      {!hideBuddy && <Buddy open={buddyOpen} onClose={() => setBuddyOpen(false)} />}
     </div>
   );
 }

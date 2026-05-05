@@ -1,6 +1,8 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PLACES, pickItinerary, type Place, type Vibe } from '../data/places';
 import { DEFAULT_TRIP, BUDGET_TOTAL, type Transaction, type Trip, type Currency, suggestCurrency } from '../data/wallet';
+
+export type TransitMode = 'flight' | 'train' | 'bus' | 'drive' | 'ferry';
 
 export interface Destination {
   id: string;
@@ -8,6 +10,13 @@ export interface Destination {
   days: number;
   currency: Currency;
   itinerary: Place[];
+  // new fields:
+  arriveDate?: string;   // ISO date string e.g. '2025-06-14'
+  departDate?: string;
+  transitMode?: TransitMode;
+  isTransitDay?: boolean;  // true = this is a transit leg, not a planning day
+  legBudget?: number;      // per-leg budget override
+  visaNote?: string;       // free-text visa/entry note
 }
 
 interface AppState {
@@ -47,7 +56,7 @@ interface AppState {
   setDestinations: (d: Destination[]) => void;
   activeDestIdx: number;
   setActiveDestIdx: (i: number) => void;
-  addDestination: (dest: { name: string; days: number }) => void;
+  addDestination: (dest: { name: string; days: number; arriveDate?: string; departDate?: string; transitMode?: TransitMode; visaNote?: string }) => void;
   removeDestination: (id: string) => void;
   insertDestination: (afterIdx: number, dest: { name: string; days: number }) => void;
 
@@ -96,41 +105,118 @@ interface AppState {
   // Journey settings
   journeyStart: { date: string; time: string; days: number };
   setJourneyStart: (s: { date: string; time: string; days: number }) => void;
+
+  // Buddy
+  buddyOpen: boolean;
+  setBuddyOpen: (v: boolean) => void;
+
+  // Place ratings (1-4 emoji index)
+  placeRatings: Record<string, number>;
+  ratePlace: (id: string, rating: number) => void;
+
+  // Rainy day mode
+  rainyDayMode: boolean;
+  setRainyDayMode: (v: boolean) => void;
+
+  // Permanently visited places
+  visitedPlaceIds: Set<string>;
+  markVisitedPermanent: (id: string) => void;
 }
 
 const Ctx = createContext<AppState | null>(null);
 
+const PERSIST_KEY = 'pavey_state';
+
+function loadPersistedState() {
+  try {
+    const raw = localStorage.getItem(PERSIST_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as {
+      isAuthenticated: boolean;
+      authUser: { name: string; email: string } | null;
+      onboardingComplete: boolean;
+      vibe: Vibe;
+      budget: number;
+      itinerary: Place[];
+      savedPlaces: Place[];
+      destinations: Destination[];
+      trips: Trip[];
+      activeTripId: string;
+      journeyStart: { date: string; time: string; days: number };
+      placeRatings?: Record<string, number>;
+      visitedPlaceIds?: string[];
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
+  // Issue 35: load persisted state on mount
+  const persisted = useMemo(() => loadPersistedState(), []);
+
   // Auth
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authUser, setAuthUser] = useState<{ name: string; email: string } | null>(null);
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(persisted?.isAuthenticated ?? false);
+  const [authUser, setAuthUser] = useState<{ name: string; email: string } | null>(persisted?.authUser ?? null);
+  const [onboardingComplete, setOnboardingComplete] = useState(persisted?.onboardingComplete ?? false);
 
   // Vibe & itinerary
-  const [vibe, setVibe] = useState<Vibe>('zen');
-  const [budget, setBudget] = useState<number>(500_000);
-  const [itinerary, setItinerary] = useState<Place[]>([
+  const [vibe, setVibe] = useState<Vibe>(persisted?.vibe ?? 'zen');
+  const [budget, setBudget] = useState<number>(persisted?.budget ?? 500_000);
+  const [itinerary, setItinerary] = useState<Place[]>(persisted?.itinerary ?? [
     PLACES[0], PLACES[1], PLACES[2], PLACES[3],
   ]);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [buddyOpen, setBuddyOpen] = useState(false);
   const [navIndex, setNavIndex] = useState(0);
   const [visited, setVisited] = useState<Set<string>>(new Set());
-  const [savedPlaces, setSavedPlaces] = useState<Place[]>([]);
-  const [journeyStart, setJourneyStart] = useState({ date: 'today', time: '09:00', days: 1 });
+  const [savedPlaces, setSavedPlaces] = useState<Place[]>(persisted?.savedPlaces ?? []);
+  const [journeyStart, setJourneyStart] = useState(persisted?.journeyStart ?? { date: 'today', time: '09:00', days: 1 });
 
   // Multi-destination
-  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [destinations, setDestinations] = useState<Destination[]>(persisted?.destinations ?? []);
   const [activeDestIdx, setActiveDestIdx] = useState(0);
 
   // Trip completion
   const [tripCompleted, setTripCompleted] = useState(false);
 
   // Multi-trip state
-  const [trips, setTrips] = useState<Trip[]>([DEFAULT_TRIP]);
-  const [activeTripId, setActiveTripId] = useState<string>(DEFAULT_TRIP.id);
+  const [trips, setTrips] = useState<Trip[]>(persisted?.trips ?? []);
+  const [activeTripId, setActiveTripId] = useState<string>(persisted?.activeTripId ?? DEFAULT_TRIP.id);
+
+  // New state
+  const [placeRatings, setPlaceRatings] = useState<Record<string, number>>(persisted?.placeRatings ?? {});
+  const [rainyDayMode, setRainyDayMode] = useState(false);
+  const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set(persisted?.visitedPlaceIds ?? []));
+
+  // Issue 35: persist key state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify({
+        isAuthenticated, authUser, onboardingComplete,
+        vibe, budget, itinerary, savedPlaces, destinations,
+        trips, activeTripId, journeyStart,
+        placeRatings,
+        visitedPlaceIds: Array.from(visitedPlaceIds),
+      }));
+    } catch { /* storage full — ignore */ }
+  }, [isAuthenticated, authUser, onboardingComplete, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds]);
+
+  // 1.3 — Date-aware active destination
+  useEffect(() => {
+    if (!destinations.length || !destinations[0].arriveDate) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const idx = destinations.findIndex((d) => {
+      if (d.arriveDate && d.departDate) {
+        return today >= d.arriveDate && today < d.departDate;
+      }
+      return false;
+    });
+    if (idx !== -1 && idx !== activeDestIdx) setActiveDestIdx(idx);
+  }, [destinations]); // eslint-disable-line
 
   const activeTrip = useMemo(
-    () => trips.find((t) => t.id === activeTripId) ?? trips[0],
+    () => trips.find((t) => t.id === activeTripId) ?? trips[0] ?? DEFAULT_TRIP,
     [trips, activeTripId],
   );
 
@@ -202,7 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       transactions: [],
       createdAt: new Date().toISOString(),
     };
-    setTrips((prev) => [...prev, newTrip]);
+    setTrips([newTrip]);
     setActiveTripId(id);
 
     setOnboardingComplete(true);
@@ -229,12 +315,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSavedPlaces([]);
       setIsNavigating(false);
       setNavIndex(0);
+      // Issue 31: also clear wallet state on logout
+      setTrips([DEFAULT_TRIP]);
+      setActiveTripId(DEFAULT_TRIP.id);
+      setTripCompleted(false);
+      setDestinations([]);
+      // Clear new state on logout
+      setPlaceRatings({});
+      setVisitedPlaceIds(new Set());
+      setRainyDayMode(false);
+      // Issue 35: clear persisted state on logout
+      try { localStorage.removeItem(PERSIST_KEY); } catch { /* ignore */ }
     },
 
     vibe, setVibe,
     budget, setBudget,
     itinerary, setItinerary,
-    buildItinerary: () => pickItinerary(vibe, budget),
+    buildItinerary: () => pickItinerary(vibe, budget, rainyDayMode),
     reorderStop: (from, to) => {
       setItinerary((cur) => {
         const next = cur.slice();
@@ -262,6 +359,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         days: dest.days,
         currency: suggestCurrency(dest.name),
         itinerary: [],
+        arriveDate: dest.arriveDate,
+        departDate: dest.departDate,
+        transitMode: dest.transitMode,
+        visaNote: dest.visaNote,
       };
       setDestinations((prev) => [...prev, newDest]);
     },
@@ -336,6 +437,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isSaved: (id) => savedPlaces.some((p) => p.id === id),
     journeyStart,
     setJourneyStart,
+
+    buddyOpen,
+    setBuddyOpen,
+
+    // Place ratings
+    placeRatings,
+    ratePlace: (id, r) => setPlaceRatings((prev) => ({ ...prev, [id]: r })),
+
+    // Rainy day mode
+    rainyDayMode,
+    setRainyDayMode,
+
+    // Permanently visited places
+    visitedPlaceIds,
+    markVisitedPermanent: (id) => setVisitedPlaceIds((cur) => new Set(cur).add(id)),
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
