@@ -5,6 +5,24 @@ export const formatRp = (n: number) => {
   return `Rp ${abs}`;
 };
 
+import type { Currency } from '../data/wallet';
+import { CURRENCY_RATES_TO_IDR } from '../data/wallet';
+
+// Convert a place cost (stored in IDR) to the given currency and format it.
+export function formatCost(amountIDR: number, currency: Currency): string {
+  if (currency === 'IDR') return formatRp(amountIDR);
+  const rate = CURRENCY_RATES_TO_IDR[currency] ?? 1;
+  const converted = amountIDR / rate;
+  switch (currency) {
+    case 'JPY': return `¥${Math.round(converted).toLocaleString()}`;
+    case 'USD': return `$${converted < 1 ? converted.toFixed(2) : converted.toFixed(0)}`;
+    case 'EUR': return `€${converted < 1 ? converted.toFixed(2) : converted.toFixed(0)}`;
+    case 'SGD': return `S$${converted < 1 ? converted.toFixed(2) : converted.toFixed(0)}`;
+    case 'AUD': return `A$${converted < 1 ? converted.toFixed(2) : converted.toFixed(0)}`;
+    default: return formatRp(amountIDR);
+  }
+}
+
 export const formatRpFull = (n: number) =>
   `Rp ${Math.abs(n).toLocaleString('id-ID')}`;
 

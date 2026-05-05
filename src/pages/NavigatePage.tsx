@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, CheckCircle2, SkipForward, Smile, ListTree, X,
+  ArrowLeft, CheckCircle2, SkipForward, ListTree, X,
   Navigation, AlertTriangle, Clock,
 } from 'lucide-react';
+import { PaveyLogoMark } from '../components/PaveyLogo';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -309,7 +310,7 @@ export default function NavigatePage() {
               initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }}
               className="absolute top-3 left-3 right-3 bg-white shadow-card rounded-2xl p-3 flex items-start gap-2 z-20"
             >
-              <Smile className="w-5 h-5 text-brand-500 mt-0.5 shrink-0" />
+              <div className="shrink-0 mt-0.5"><PaveyLogoMark size={20} color="#3B5BFF" /></div>
               <div className="text-sm text-ink-800 flex-1">{prompt}</div>
               <button onClick={() => setPrompt(null)} className="text-xs text-ink-500 font-semibold px-2 py-1 press">Dismiss</button>
             </motion.div>
@@ -559,7 +560,7 @@ export default function NavigatePage() {
               <div className="grid grid-cols-3 gap-2 mb-2.5">
                 <ActionBtn icon={<CheckCircle2 className="w-4 h-4" />} label="Visited" onClick={onMarkVisited} />
                 <ActionBtn icon={<SkipForward className="w-4 h-4" />} label="Skip" onClick={onSkip} />
-                <ActionBtn icon={<Smile className="w-4 h-4" />} label="Buddy" onClick={() => setBuddyOpen(true)} />
+                <ActionBtn icon={<PaveyLogoMark size={16} color="#1E293B" />} label="Buddy" onClick={() => setBuddyOpen(true)} />
               </div>
 
               <button

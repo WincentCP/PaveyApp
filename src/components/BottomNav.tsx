@@ -1,7 +1,8 @@
-import { Home, MapPin, Wallet, User, Smile, Navigation, X } from 'lucide-react';
+import { Home, MapPin, Wallet, User, Navigation, X } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
+import { PaveyLogoMark } from './PaveyLogo';
 
 interface Props {
   onBuddyOpen: () => void;
@@ -26,7 +27,7 @@ export default function BottomNav({ onBuddyOpen }: Props) {
               className="pointer-events-auto w-16 h-16 rounded-full bg-brand-500 text-white shadow-glow flex items-center justify-center ring-4 ring-white"
               aria-label="Open Buddy"
             >
-              <Smile className="w-7 h-7" strokeWidth={2.4} />
+              <PaveyLogoMark size={36} color="white" />
             </motion.button>
           </div>
 

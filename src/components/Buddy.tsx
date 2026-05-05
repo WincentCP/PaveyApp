@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Send, Star, X, Cloud, Coffee, MapPinned } from 'lucide-react';
+import { Send, X, Cloud, Coffee, MapPinned, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Msg { from: 'buddy' | 'me'; text: string }
@@ -49,9 +49,8 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
             <div className="px-5 pt-3 pb-2 flex items-center justify-between">
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
               <div className="flex items-center gap-2 mt-3">
-                <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white">
-                  <Star className="w-5 h-5" />
-                </div>
+                {/* public/icon-buddy.svg — replace with your buddy mascot expression */}
+                <BuddyAvatar />
                 <div>
                   <div className="text-ink-900 font-bold leading-tight">Buddy</div>
                   <div className="text-[11px] text-ink-500 leading-tight">Your AI travel companion</div>
@@ -118,6 +117,22 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+function BuddyAvatar() {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white">
+        <Star className="w-5 h-5" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center overflow-hidden">
+      <img src="/icon-buddy.svg" alt="Buddy" className="w-full h-full object-cover" onError={() => setFailed(true)} />
+    </div>
   );
 }
 

@@ -1,15 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, Crosshair, List, Navigation, X, MapPin,
-  Clock, Star, DollarSign, Bookmark, Smile,
-  ChevronUp, Plus, Map, Pencil,
+  Clock, Star, DollarSign, Bookmark,
+  ChevronUp, Plus, Map, Pencil, Wand2,
 } from 'lucide-react';
+import { PaveyLogoMark } from '../components/PaveyLogo';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import PageHeader from '../components/PageHeader';
 import { useApp } from '../context/AppContext';
-import { formatRp } from '../lib/format';
+import { formatCost } from '../lib/format';
+import type { Currency } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import type { Place } from '../data/places';
 import { getCulturalIntel } from '../data/cultural';
@@ -21,7 +23,7 @@ export default function MapPage() {
   const {
     itinerary, setIsNavigating, setNavIndex, removeStop, addStop, isNavigating,
     savePlace, removeSavedPlace, isSaved,
-    destinations, activeDestIdx, setActiveDestIdx,
+    destinations, activeDestIdx, setActiveDestIdx, activeTrip,
   } = useApp();
   const { show } = useToast();
   const [view, setView] = useState<ViewMode>('map');
@@ -146,10 +148,11 @@ export default function MapPage() {
           {activeItinerary.length === 0 ? (
             <EmptyDestState
               destName={destinations[activeDestIdx]?.name.split(',')[0] ?? 'this destination'}
-              onGenerate={() => nav('/generate')}
+              onAiGenerate={() => nav('/generate')}
+              onManual={() => nav('/generate?mode=manual')}
             />
           ) : (
-            <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} />
+            <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} currency={activeTrip.currency} />
           )}
         </div>
       ) : (
@@ -157,11 +160,12 @@ export default function MapPage() {
           {activeItinerary.length === 0 ? (
             <EmptyDestState
               destName={destinations[activeDestIdx]?.name.split(',')[0] ?? 'this destination'}
-              onGenerate={() => nav('/generate')}
+              onAiGenerate={() => nav('/generate')}
+              onManual={() => nav('/generate?mode=manual')}
               inline
             />
           ) : (
-            <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} />
+            <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} currency={activeTrip.currency} />
           )}
         </div>
       )}
@@ -176,6 +180,7 @@ export default function MapPage() {
             onNavigate={() => { setSelected(null); startNavigation(); }}
             isSaved={isSaved(selected.id)}
             onSave={() => isSaved(selected.id) ? removeSavedPlace(selected.id) : savePlace(selected)}
+            currency={activeTrip.currency}
           />
         )}
       </AnimatePresence>
@@ -203,41 +208,41 @@ export default function MapPage() {
 
 /* ── Empty state for a destination with no plan ── */
 function EmptyDestState({
-  destName, onGenerate, inline = false,
+  destName, onAiGenerate, onManual, inline = false,
 }: {
-  destName: string; onGenerate: () => void; inline?: boolean;
+  destName: string; onAiGenerate: () => void; onManual: () => void; inline?: boolean;
 }) {
-  if (inline) {
-    return (
-      <div className="mt-10 text-center py-12">
-        <div className="text-5xl mb-4">🗺️</div>
-        <div className="font-bold text-ink-900 text-lg font-display">No plan for {destName}</div>
-        <div className="text-sm text-ink-500 mt-1 mb-5">Generate or build an itinerary to see stops here</div>
+  const inner = (
+    <>
+      <div className="text-4xl mb-3">🗺️</div>
+      <div className="font-bold text-ink-900 font-display">No plan for {destName}</div>
+      <div className="text-sm text-ink-500 mt-1 mb-4">How do you want to plan your day?</div>
+      <div className="grid grid-cols-2 gap-2">
         <button
-          onClick={onGenerate}
-          className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press"
+          onClick={onAiGenerate}
+          className="h-12 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2"
         >
-          Plan {destName}
+          <Wand2 className="w-4 h-4" /> AI Plan
+        </button>
+        <button
+          onClick={onManual}
+          className="h-12 rounded-2xl border-2 border-brand-200 text-brand-600 font-bold press flex items-center justify-center gap-2"
+        >
+          <Pencil className="w-4 h-4" /> Manual
         </button>
       </div>
-    );
+    </>
+  );
+
+  if (inline) {
+    return <div className="mt-10 text-center py-8 px-4">{inner}</div>;
   }
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       className="absolute inset-x-0 bottom-0 z-10 bg-white rounded-t-3xl shadow-card p-5 pb-28"
     >
-      <div className="text-center">
-        <div className="text-4xl mb-3">🗺️</div>
-        <div className="font-bold text-ink-900 font-display">No plan for {destName}</div>
-        <div className="text-sm text-ink-500 mt-1 mb-4">Create an itinerary to see your stops on the map</div>
-        <button
-          onClick={onGenerate}
-          className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Plan {destName}
-        </button>
-      </div>
+      <div className="text-center">{inner}</div>
     </motion.div>
   );
 }
@@ -314,8 +319,8 @@ function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) 
 
 /* --------------- BOTTOM SHEET (collapsible) --------------- */
 
-function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit }: {
-  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (p: Place) => void; onEdit: () => void;
+function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit, currency }: {
+  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (p: Place) => void; onEdit: () => void; currency: Currency;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -339,7 +344,7 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit }: 
       <div className="px-5 grid grid-cols-3 text-center mb-3">
         <Block label="Est. Time" value={`${Math.floor(totals.time / 60)}h ${totals.time % 60}m`} />
         <Block label="Distance" value={`${totals.dist.toFixed(1)} km`} />
-        <Block label="Est. Cost" value={formatRp(totals.cost)} />
+        <Block label="Est. Cost" value={formatCost(totals.cost, currency)} />
       </div>
 
       <AnimatePresence>
@@ -367,9 +372,9 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit }: 
                     </div>
                   </div>
                   <div className="text-right shrink-0 mr-1">
-                    <div className="text-xs text-brand-600 font-semibold">{formatRp(p.priceRange.min)}</div>
+                    <div className="text-xs text-brand-600 font-semibold">{formatCost(p.priceRange.min, currency)}</div>
                     {p.priceRange.max !== p.priceRange.min && (
-                      <div className="text-[10px] text-ink-400">– {formatRp(p.priceRange.max)}</div>
+                      <div className="text-[10px] text-ink-400">– {formatCost(p.priceRange.max, currency)}</div>
                     )}
                   </div>
                   <button
@@ -416,15 +421,15 @@ function nineColon(i: number, addMin = 0) {
 
 /* ----------------- LIST VIEW ----------------- */
 
-function ListView({ itinerary, onStart, totals, onPin, onRemove, onEdit }: {
-  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void; onRemove: (p: Place) => void; onEdit: () => void;
+function ListView({ itinerary, onStart, totals, onPin, onRemove, onEdit, currency }: {
+  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void; onRemove: (p: Place) => void; onEdit: () => void; currency: Currency;
 }) {
   return (
     <div className="pt-2">
       <div className="grid grid-cols-3 bg-ink-50 rounded-2xl p-3 mb-4">
         <Block label="Time" value={`${Math.floor(totals.time / 60)}h ${totals.time % 60}m`} />
         <Block label="Distance" value={`${totals.dist.toFixed(1)} km`} />
-        <Block label="Cost" value={formatRp(totals.cost)} />
+        <Block label="Cost" value={formatCost(totals.cost, currency)} />
       </div>
       <div className="space-y-4">
         {itinerary.map((p, i) => (
@@ -468,7 +473,7 @@ function ListView({ itinerary, onStart, totals, onPin, onRemove, onEdit }: {
                   </div>
                   <div className="flex items-center gap-1 text-ink-600">
                     <DollarSign className="w-3.5 h-3.5 text-ink-400" />
-                    <span>{formatRp(p.priceRange.min)}{p.priceRange.max !== p.priceRange.min ? '+' : ''}</span>
+                    <span>{formatCost(p.priceRange.min, currency)}{p.priceRange.max !== p.priceRange.min ? '+' : ''}</span>
                   </div>
                   <div className="text-right text-[11px] text-brand-600 font-semibold">
                     {nineColon(i)} – {nineColon(i, p.durationMin)}
@@ -503,9 +508,9 @@ function ListView({ itinerary, onStart, totals, onPin, onRemove, onEdit }: {
 
 /* ----------------- PLACE CARD (slides from bottom) ----------------- */
 
-function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSave }: {
+function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSave, currency }: {
   place: Place; index: number; prevPlace?: Place; onClose: () => void; onNavigate: () => void;
-  isSaved: boolean; onSave: () => void;
+  isSaved: boolean; onSave: () => void; currency: Currency;
 }) {
   const [culturalExpanded, setCulturalExpanded] = useState(false);
   const intel = getCulturalIntel(place.id, place.category);
@@ -553,7 +558,7 @@ function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSa
             <InfoBlock icon={<Clock className="w-3.5 h-3.5 text-brand-500" />} label="Hours" value={place.openingHours} />
             <InfoBlock
               icon={<DollarSign className="w-3.5 h-3.5 text-emerald-500" />} label="Price"
-              value={place.priceRange.min === place.priceRange.max ? formatRp(place.priceRange.min) : `${formatRp(place.priceRange.min)}+`}
+              value={place.priceRange.min === place.priceRange.max ? formatCost(place.priceRange.min, currency) : `${formatCost(place.priceRange.min, currency)}+`}
             />
             <InfoBlock
               icon={<MapPin className="w-3.5 h-3.5 text-orange-500" />}
@@ -626,7 +631,7 @@ function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSa
             </button>
           </div>
           <button className="mt-2.5 w-full h-10 rounded-2xl bg-brand-50 text-brand-700 font-semibold inline-flex items-center justify-center gap-2 press">
-            <Smile className="w-4 h-4" /> Ask Buddy about this
+            <PaveyLogoMark size={16} color="#3B5BFF" /> Ask Buddy about this
           </button>
         </div>
       </motion.div>

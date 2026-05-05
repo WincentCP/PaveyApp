@@ -202,6 +202,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch { /* storage full — ignore */ }
   }, [isAuthenticated, authUser, onboardingComplete, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds]);
 
+  // Per-destination itinerary sync:
+  // When activeDestIdx changes, load that destination's itinerary into global state.
+  useEffect(() => {
+    const dest = destinations[activeDestIdx];
+    if (!dest) return;
+    if (dest.itinerary && dest.itinerary.length > 0) {
+      setItinerary(dest.itinerary);
+    } else {
+      setItinerary([]);
+    }
+  }, [activeDestIdx]); // eslint-disable-line
+
+  // When global itinerary changes, save it back to the active destination.
+  useEffect(() => {
+    if (!destinations[activeDestIdx]) return;
+    setDestinations((prev) =>
+      prev.map((d, i) => i === activeDestIdx ? { ...d, itinerary } : d)
+    );
+  }, [itinerary]); // eslint-disable-line
+
   // 1.3 — Date-aware active destination
   useEffect(() => {
     if (!destinations.length || !destinations[0].arriveDate) return;

@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import PageHeader from '../components/PageHeader';
 import { USER } from '../data/user';
-import { formatRp } from '../lib/format';
+import { formatCost } from '../lib/format';
 import { useApp } from '../context/AppContext';
 
 const RECENT_TRIPS = [
@@ -240,7 +240,7 @@ export default function ProfilePage() {
                     <div className="text-xs text-ink-400 mt-0.5">Visited {dateStr} · {t.daysTotal}d</div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-bold text-ink-900">{formatRp(totalSpent)}</div>
+                    <div className="text-sm font-bold text-ink-900">{formatCost(totalSpent, t.currency ?? 'IDR')}</div>
                     <div className="text-[10px] text-ink-400">spent</div>
                   </div>
                 </motion.div>
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-sm font-bold text-ink-900">{formatRp(t.spent)}</div>
+                  <div className="text-sm font-bold text-ink-900">{formatCost(t.spent, 'IDR')}</div>
                   <div className="text-[10px] text-ink-400">spent</div>
                 </div>
               </motion.div>

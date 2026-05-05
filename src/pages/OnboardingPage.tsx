@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { Vibe } from '../data/places';
+import { pickItinerary } from '../data/places';
 import { suggestCurrency, CURRENCY_SYMBOLS, CURRENCY_RATES_TO_IDR } from '../data/wallet';
 
 type AuthMode = 'signup' | 'login';
@@ -19,7 +20,8 @@ type Step =
   | 'dates'
   | 'budget'
   | 'interests'
-  | 'location';
+  | 'location'
+  | 'generating';
 
 const VIBES: { id: Vibe; label: string; emoji: string; desc: string }[] = [
   { id: 'chill', label: 'Chill', emoji: '🌴', desc: 'Relaxed beaches & slow mornings' },
@@ -37,16 +39,24 @@ const INTEREST_OPTIONS = [
   { label: 'Architecture', emoji: '🏙️' }, { label: 'Local Markets', emoji: '🏪' },
 ];
 
-const FLOW: Step[] = ['welcome', 'auth_form', 'vibe', 'destinations', 'dates', 'budget', 'interests', 'location'];
+const FLOW: Step[] = ['welcome', 'auth_form', 'vibe', 'destinations', 'dates', 'budget', 'interests', 'location', 'generating'];
 const PROGRESS_STEPS: Step[] = ['vibe', 'destinations', 'dates', 'budget', 'interests', 'location'];
+
+const GEN_STEPS = [
+  'Finding top-rated spots…',
+  'Matching your vibe & budget…',
+  'Optimizing your route…',
+  'Crafting your perfect day…',
+];
 
 export default function OnboardingPage() {
   const nav = useNavigate();
-  const { completeOnboarding, onboardingComplete } = useApp();
+  const { completeOnboarding, onboardingComplete, setItinerary } = useApp();
+  const justCompletedRef = useRef(false);
 
-  // Skip onboarding if already authenticated
+  // Skip onboarding if already authenticated (but not if we just completed it)
   useEffect(() => {
-    if (onboardingComplete) nav('/', { replace: true });
+    if (onboardingComplete && !justCompletedRef.current) nav('/', { replace: true });
   }, [onboardingComplete, nav]);
 
   const [step, setStep] = useState<Step>('welcome');
@@ -76,6 +86,9 @@ export default function OnboardingPage() {
   const [interests, setInterests] = useState<string[]>([]);
   const [locationGranted, setLocationGranted] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
+
+  // Generating animation state
+  const [genPhase, setGenPhase] = useState(0);
 
   const destInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,26 +138,54 @@ export default function OnboardingPage() {
     setAuthLoading(true);
     setTimeout(() => {
       setAuthLoading(false);
-      go('vibe');
+      if (authMode === 'login') {
+        justCompletedRef.current = true;
+        completeOnboarding({
+          name: name || email.split('@')[0],
+          email,
+          vibe: 'zen',
+          destinations: [{ name: 'My Destination', days: 3 }],
+          totalDays: 3,
+          budget: 500_000,
+          startDate: 'today',
+        });
+        nav('/', { replace: true });
+      } else {
+        go('vibe');
+      }
     }, 1200);
   };
 
-  const handleFinish = () => {
-    const startStr = startDate
-      ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
-      : 'today';
-    completeOnboarding({
-      name: authMode === 'signup' ? name : (name || 'Traveler'),
-      email,
-      vibe: selectedVibe,
-      destinations: destList.length > 0
-        ? destList.map((d) => ({ name: d, days: Math.max(1, Math.floor(totalDays / Math.max(1, destList.length))) }))
-        : [{ name: 'My Destination', days: totalDays }],
-      totalDays,
-      budget,
-      startDate: startStr,
-    });
-    nav('/');
+  const handleGoToGenerate = () => {
+    go('generating');
+    setGenPhase(0);
+    const generated = pickItinerary(selectedVibe, budget);
+
+    // Animate through steps in sync with GeneratePage's 700ms cycle, 2200ms total
+    const phaseTimer = setInterval(() => setGenPhase((p) => (p + 1) % GEN_STEPS.length), 700);
+    setTimeout(() => {
+      clearInterval(phaseTimer);
+      const startStr = startDate
+        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
+        : 'today';
+      // Complete onboarding setup
+      justCompletedRef.current = true;
+      completeOnboarding({
+        name: authMode === 'signup' ? name : (name || 'Traveler'),
+        email,
+        vibe: selectedVibe,
+        destinations: destList.length > 0
+          ? destList.map((d) => ({ name: d, days: Math.max(1, Math.floor(totalDays / Math.max(1, destList.length))) }))
+          : [{ name: 'My Destination', days: totalDays }],
+        totalDays,
+        budget,
+        startDate: startStr,
+      });
+      // Pre-load generated itinerary so GeneratePage shows it immediately in edit mode
+      setItinerary(generated);
+      // Go to GeneratePage in edit mode — user reviews & confirms there
+      nav('/generate?edit=1&after=onboarding', { replace: true });
+    }, 2200);
   };
 
   const go = (s: Step) => setStep(s);
@@ -211,8 +252,8 @@ export default function OnboardingPage() {
       onSkip: () => go('location'),
     },
     location: {
-      label: locationGranted ? 'Start exploring →' : 'Continue without location',
-      onClick: handleFinish,
+      label: locationGranted ? 'Generate My Trip →' : 'Continue without location',
+      onClick: handleGoToGenerate,
       className: locationGranted ? 'bg-emerald-500 text-white' : undefined,
     },
   };
@@ -240,21 +281,15 @@ export default function OnboardingPage() {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 20 }}
-                  className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center mb-6 shadow-xl"
+                  className="mb-4"
                 >
-                  <span className="text-5xl">✈️</span>
+                  {/* Replace public/mascot.svg with your full mascot logo */}
+                  <img src="/mascot.svg" alt="Pavey" className="w-28 h-28 object-contain" />
                 </motion.div>
-                <motion.h1
-                  initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                  className="text-4xl font-extrabold text-white font-display leading-tight"
-                >
-                  Plan smarter.<br />Travel better.
-                </motion.h1>
                 <motion.p
                   initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.45 }}
-                  className="mt-3 text-white/80 text-base leading-relaxed"
+                  className="mt-4 text-white/80 text-base leading-relaxed"
                 >
                   AI-powered trip planning that adapts to your style — from multi-city adventures to weekend escapes.
                 </motion.p>
@@ -299,15 +334,21 @@ export default function OnboardingPage() {
                 <button onClick={() => go('welcome')} className="w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                {/* Issue 7: step indicator */}
-                <span className="text-xs text-ink-400 font-semibold">Step 1 of 8</span>
+                {/* Issue 7: step indicator — only for sign up flow */}
+                {authMode === 'signup' && <span className="text-xs text-ink-400 font-semibold">Step 1 of 8</span>}
               </div>
-              <h2 className="text-2xl font-extrabold text-ink-900 font-display">
-                {authMode === 'signup' ? 'Create your account' : 'Welcome back'}
-              </h2>
-              <p className="text-sm text-ink-500 mt-1">
-                {authMode === 'signup' ? 'Join thousands of smart travelers' : 'Sign in to continue your journey'}
-              </p>
+              <div className="flex items-center gap-3 mb-3">
+                {/* Replace public/mascot-icon.svg with your mascot icon */}
+                <img src="/mascot-icon.svg" alt="" className="w-9 h-9 object-contain" />
+                <div>
+                  <h2 className="text-2xl font-extrabold text-ink-900 font-display leading-tight">
+                    {authMode === 'signup' ? 'Create your account' : 'Welcome back'}
+                  </h2>
+                  <p className="text-sm text-ink-500">
+                    {authMode === 'signup' ? 'Join thousands of smart travelers' : 'Sign in to continue your journey'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Scrollable fields */}
@@ -770,6 +811,60 @@ export default function OnboardingPage() {
                 )}
               </div>
             )}
+          </motion.div>
+        )}
+
+        {/* ── GENERATING — matches GeneratePage LoadingState style ── */}
+        {step === 'generating' && (
+          <motion.div
+            key="generating"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 flex flex-col bg-white"
+          >
+            {/* Brand header */}
+            <div className="bg-brand-500 px-5 pt-14 pb-5">
+              <div className="flex items-center gap-3 mb-1">
+                <img src="/mascot-icon.svg" alt="" className="w-8 h-8 object-contain brightness-0 invert" />
+                <div className="text-white font-extrabold text-lg font-display leading-tight">
+                  {destList.length > 0 ? `${destList[0].split(',')[0]} awaits` : 'Your trip awaits'}
+                </div>
+              </div>
+              <div className="text-white/70 text-xs mt-1">
+                {selectedVibe.charAt(0).toUpperCase() + selectedVibe.slice(1)} vibes · {totalDays} day{totalDays !== 1 ? 's' : ''}
+              </div>
+            </div>
+            {/* Loading body — same pattern as GeneratePage */}
+            <div className="flex-1 px-5 pt-5 flex flex-col">
+              <div className="flex items-center gap-2 text-brand-600 font-semibold mb-4">
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}>
+                  <RefreshCw className="w-5 h-5" />
+                </motion.div>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={genPhase}
+                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25 }}
+                    className="text-[15px]"
+                  >
+                    {GEN_STEPS[genPhase % GEN_STEPS.length]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+              {/* Shimmer skeleton cards — identical to GeneratePage */}
+              <div className="space-y-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="rounded-2xl border border-ink-100 p-3 flex gap-3 items-center">
+                    <div className="w-16 h-16 rounded-xl shimmer" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-2/3 rounded shimmer" />
+                      <div className="h-3 w-1/3 rounded shimmer" />
+                      <div className="h-3 w-1/4 rounded shimmer" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </motion.div>
         )}
 

@@ -9,7 +9,7 @@ import StatusBar from '../components/StatusBar';
 import { useApp } from '../context/AppContext';
 import type { Place } from '../data/places';
 import { PLACES } from '../data/places';
-import { formatRp } from '../lib/format';
+import { formatRp, formatCost } from '../lib/format';
 import { useToast } from '../components/Toast';
 import { getCulturalIntel, type CulturalIntel } from '../data/cultural';
 import TimePicker from '../components/TimePicker';
@@ -26,10 +26,11 @@ export default function GeneratePage() {
   const [searchParams] = useSearchParams();
   const isManualMode = searchParams.get('mode') === 'manual';
 
-  const { vibe, budget, buildItinerary, setItinerary, itinerary, removeStop, replaceStop, addStop, reorderStop, alternatives } = useApp();
+  const { vibe, budget, buildItinerary, setItinerary, itinerary, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip } = useApp();
   const { show } = useToast();
 
   const isEditMode = searchParams.get('edit') === '1';
+  const isPostOnboarding = searchParams.get('after') === 'onboarding';
   const [phase, setPhase] = useState<'loading' | 'reveal'>((isManualMode || isEditMode) ? 'reveal' : 'loading');
   const [stepIdx, setStepIdx] = useState(0);
   // Issue 8: AI generation error state
@@ -127,8 +128,8 @@ export default function GeneratePage() {
     setUndoItem(null);
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
-    show('Journey confirmed ✨', 'success');
-    setTimeout(() => nav('/transition', { replace: true }), 700);
+    show(isPostOnboarding ? 'Your trip is ready! 🎉' : 'Journey confirmed ✨', 'success');
+    setTimeout(() => nav(isPostOnboarding ? '/' : '/transition', { replace: true }), 700);
   };
 
   const manualSearchResults = useMemo(() => {
@@ -155,10 +156,10 @@ export default function GeneratePage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="font-bold text-ink-900 font-display">
-          {isManualMode ? 'Build Your Journey' : isEditMode ? 'Edit Journey' : 'Your Journey'}
+          {isManualMode ? 'Build Your Journey' : isPostOnboarding ? 'Review Your Plan' : isEditMode ? 'Edit Journey' : 'Your Journey'}
         </div>
         <div className="text-xs text-brand-600 font-semibold capitalize bg-brand-50 px-2 py-1 rounded-full">
-          {isManualMode ? 'Manual' : `${vibe} · ${formatRp(budget)}`}
+          {isManualMode ? 'Manual' : isPostOnboarding ? 'AI Generated' : `${vibe} · ${formatRp(budget)}`}
         </div>
       </div>
 
@@ -188,7 +189,7 @@ export default function GeneratePage() {
                     </div>
                     <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
                       <span className="text-xs opacity-80">Total Budget</span>
-                      <span className="font-bold">{formatRp(totals.cost)}</span>
+                      <span className="font-bold">{formatCost(totals.cost, activeTrip.currency)}</span>
                     </div>
                   </div>
 
@@ -286,7 +287,7 @@ export default function GeneratePage() {
                                   <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{altP.rating}
                                   <span className="text-ink-300">·</span>{altP.category}
                                 </div>
-                                <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(altP.cost)}</div>
+                                <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatCost(altP.cost, activeTrip.currency)}</div>
                               </div>
                               {/* UI5 — "Try instead" opens what-if comparison if plan has stops */}
                               {itinerary.length > 0 ? (
@@ -322,8 +323,14 @@ export default function GeneratePage() {
                       disabled={itinerary.length === 0}
                       className="w-full h-14 rounded-2xl bg-brand-500 disabled:bg-ink-300 text-white font-bold text-base flex items-center justify-center gap-2 pointer-events-auto"
                     >
-                      <Check className="w-5 h-5" /> Confirm My Journey
+                      <Check className="w-5 h-5" />
+                      {isPostOnboarding ? 'Start My Trip →' : 'Confirm My Journey'}
                     </motion.button>
+                    {isPostOnboarding && (
+                      <p className="text-center text-[11px] text-ink-400 mt-1.5 pointer-events-auto">
+                        Edit or add stops above · You can change this anytime
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -337,7 +344,7 @@ export default function GeneratePage() {
               <div className="mx-5 mb-2 p-3 rounded-2xl bg-brand-600 text-white shrink-0 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-semibold opacity-80">Your Plan</div>
-                  <div className="text-sm font-bold">{manualStops.length} stops · {formatRp(totals.cost)}</div>
+                  <div className="text-sm font-bold">{manualStops.length} stops · {formatCost(totals.cost, activeTrip.currency)}</div>
                 </div>
                 <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
                   <Wand2 className="w-3.5 h-3.5" /> Mix AI
@@ -437,7 +444,7 @@ export default function GeneratePage() {
                         <span>{p.openingHours}</span>
                       </div>
                       <div className="text-xs text-brand-600 font-semibold mt-0.5">
-                        {formatRp(p.priceRange.min)}{p.priceRange.max !== p.priceRange.min ? ` – ${formatRp(p.priceRange.max)}` : ''}
+                        {formatCost(p.priceRange.min, activeTrip.currency)}{p.priceRange.max !== p.priceRange.min ? ` – ${formatCost(p.priceRange.max, activeTrip.currency)}` : ''}
                       </div>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
@@ -483,7 +490,7 @@ export default function GeneratePage() {
                             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
                             <span className="text-ink-300">·</span>{p.category}
                           </div>
-                          <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatRp(p.cost)}</div>
+                          <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatCost(p.cost, activeTrip.currency)}</div>
                         </div>
                         <button
                           onClick={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
@@ -624,7 +631,7 @@ export default function GeneratePage() {
                     <div className="flex items-center gap-1 text-[10px] text-ink-500 mb-0.5">
                       <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                       <span className="font-semibold text-ink-700">{place.rating}</span>
-                      <span>· {formatRp(place.cost)}</span>
+                      <span>· {formatCost(place.cost, activeTrip.currency)}</span>
                     </div>
                     <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm}km</div>
                   </div>
@@ -772,6 +779,7 @@ function StopCard({
   onRemove: () => void; onReplace: () => void; onMoveUp: () => void; onMoveDown: () => void;
   isManual?: boolean;
 }) {
+  const { activeTrip } = useApp();
   const [dragX, setDragX] = useState(0);
 
   return (
@@ -832,7 +840,7 @@ function StopCard({
             <span className="text-ink-300">·</span>
             <DollarSign className="w-3 h-3 text-ink-400" />
             <span className="text-brand-600 font-semibold">
-              {formatRp(place.priceRange.min)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
+              {formatCost(place.priceRange.min, activeTrip.currency)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
             </span>
             {hasConflict && (
               <span className="flex items-center gap-0.5 text-amber-600 font-semibold ml-1">
@@ -897,6 +905,7 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
   open: boolean; onClose: () => void; excludeIds: string[]; title: string;
   onPick: (p: Place) => void; alternatives: (ids: string[]) => Place[];
 }) {
+  const { activeTrip } = useApp();
   const [query, setQuery] = useState('');
   const list = useMemo(() => {
     if (!query.trim()) return alternatives(excludeIds);
@@ -948,7 +957,7 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-bold text-brand-600">{formatRp(p.cost)}</div>
+                    <div className="text-sm font-bold text-brand-600">{formatCost(p.cost, activeTrip.currency)}</div>
                     <div className="text-[11px] text-ink-500">{p.distanceKm} km</div>
                   </div>
                   <Plus className="w-4 h-4 text-ink-400 shrink-0" />

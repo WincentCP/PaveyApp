@@ -2,11 +2,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { PaveyLogoMark } from '../components/PaveyLogo';
 
 const STEPS = [
-  { icon: '🗺️', text: 'Building your journey…', sub: 'Gathering the best stops' },
-  { icon: '🔀', text: 'Optimizing route…', sub: 'Minimizing travel time between stops' },
-  { icon: '✨', text: 'Almost ready…', sub: 'Your adventure is loading' },
+  { text: 'Building your journey…', sub: 'Gathering the best stops' },
+  { text: 'Optimizing route…', sub: 'Minimizing travel time between stops' },
+  { text: 'Almost ready…', sub: 'Your adventure is loading' },
 ];
 
 export default function TransitionPage() {
@@ -52,18 +53,12 @@ export default function TransitionPage() {
           transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut', delay: 0.2 }}
         />
         <div className="relative w-24 h-24 rounded-3xl bg-brand-500 flex items-center justify-center shadow-glow">
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={stepIdx}
-              initial={{ y: 12, opacity: 0, scale: 0.8 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: -12, opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-              className="text-5xl"
-            >
-              {STEPS[stepIdx].icon}
-            </motion.span>
-          </AnimatePresence>
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+          >
+            <PaveyLogoMark size={56} color="white" />
+          </motion.div>
         </div>
       </motion.div>
 
