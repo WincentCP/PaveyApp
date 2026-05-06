@@ -1,4 +1,4 @@
-import { Home, MapPin, Wallet, User, Navigation, X } from 'lucide-react';
+import { Home, MapPin, Wallet, User, Navigation } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
@@ -16,115 +16,68 @@ export default function BottomNav({ onBuddyOpen }: Props) {
     <>
       <NavigationBar />
       <div className="absolute inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)]">
-        <div className="relative">
-          <div className="absolute inset-x-0 -top-6 flex justify-center pointer-events-none">
+        <div className="bg-white border-t border-ink-100 grid grid-cols-5 px-2 pt-3 pb-3">
+          <NavTab to="/" icon={Home} label="Home" />
+          <NavTab to="/map" icon={MapPin} label="Map" />
+
+          {/* Buddy FAB — center slot */}
+          <div className="flex flex-col items-center -mt-6">
             <motion.button
               type="button"
               whileTap={{ scale: 0.92 }}
-              whileHover={{ scale: 1.04 }}
+              whileHover={{ scale: 1.06 }}
               transition={{ type: 'spring', stiffness: 400, damping: 18 }}
               onClick={onBuddyOpen}
-              className="pointer-events-auto w-16 h-16 rounded-full bg-brand-500 text-white shadow-glow flex items-center justify-center ring-4 ring-white"
+              className="w-14 h-14 rounded-full bg-brand-500 text-white shadow-glow flex items-center justify-center ring-4 ring-white"
               aria-label="Open Buddy"
             >
-              <PaveyLogoMark size={36} color="white" />
+              <PaveyLogoMark size={30} color="white" />
             </motion.button>
+            <span className="text-[11px] font-medium text-ink-400 mt-1">Buddy</span>
           </div>
 
-          <div className="bg-white border-t border-ink-100 grid grid-cols-5 px-2 pt-3 pb-3">
-            <NavTab to="/" icon={Home} label="Home" />
-            <NavTab to="/map" icon={MapPin} label="Map" />
-            <div />
-            <NavTab to="/wallet" icon={Wallet} label="Wallet" />
-            <NavTab to="/profile" icon={User} label="Profile" />
-          </div>
+          <NavTab to="/wallet" icon={Wallet} label="Wallet" />
+          <NavTab to="/profile" icon={User} label="Profile" />
         </div>
       </div>
     </>
   );
 }
 
-// ── Persistent navigation bar — shows when navigating from non-navigate pages ──
+// ── Persistent navigation pill — shown at TOP when navigating from non-navigate pages ──
 function NavigationBar() {
   const nav = useNavigate();
   const { pathname } = useLocation();
-  const { isNavigating, itinerary, navIndex, setIsNavigating } = useApp();
+  const { isNavigating, itinerary, navIndex } = useApp();
 
   if (!isNavigating || pathname === '/navigate') return null;
 
   const current = itinerary[navIndex];
-  const next = itinerary[navIndex + 1];
-
-  // Estimate remaining from navIndex
-  const stopsLeft = itinerary.length - navIndex;
-
-  const handleCancel = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsNavigating(false);
-  };
 
   return (
     <AnimatePresence>
       <motion.div
-        key="nav-bar"
-        initial={{ y: 80, opacity: 0 }}
+        key="nav-pill"
+        initial={{ y: -48, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 80, opacity: 0 }}
+        exit={{ y: -48, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-        className="absolute inset-x-0 bottom-[72px] z-30 px-4"
+        className="absolute inset-x-4 top-10 z-50"
       >
         <button
           onClick={() => nav('/navigate')}
-          className="w-full bg-brand-500 rounded-2xl shadow-glow overflow-hidden press"
+          className="w-full bg-brand-500 rounded-2xl shadow-glow press flex items-center gap-3 px-4 py-2.5"
         >
-          {/* Progress bar at top */}
-          <div className="h-1 bg-white/20">
-            <motion.div
-              className="h-full bg-white/70"
-              initial={{ width: `${(navIndex / Math.max(itinerary.length, 1)) * 100}%` }}
-              animate={{ width: `${(navIndex / Math.max(itinerary.length, 1)) * 100}%` }}
-            />
-          </div>
-
-          <div className="flex items-center gap-3 px-4 py-3">
-            {/* Navigation icon pulsing */}
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 relative">
-              <motion.span
-                className="absolute inset-0 rounded-full bg-white/20"
-                animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              />
-              <Navigation className="w-5 h-5 text-white" />
-            </div>
-
-            <div className="flex-1 min-w-0 text-left">
-              <div className="text-white/80 text-[11px] font-semibold uppercase tracking-wide">
-                Navigating to
-              </div>
-              <div className="text-white font-bold text-sm leading-tight truncate">
-                {current?.name ?? 'Current stop'}
-              </div>
-              {next && (
-                <div className="text-white/60 text-[11px] truncate">
-                  Then: {next.name}
-                </div>
-              )}
-            </div>
-
-            <div className="text-right shrink-0 mr-1">
-              <div className="text-white font-bold text-sm">{stopsLeft}</div>
-              <div className="text-white/70 text-[11px]">stop{stopsLeft !== 1 ? 's' : ''} left</div>
-            </div>
-
-            {/* Cancel button */}
-            <button
-              onClick={handleCancel}
-              className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center press shrink-0"
-              aria-label="Cancel navigation"
-            >
-              <X className="w-4 h-4 text-white" />
-            </button>
-          </div>
+          <motion.span
+            animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0.3, 0.8] }}
+            transition={{ repeat: Infinity, duration: 1.6 }}
+            className="block w-2 h-2 rounded-full bg-white shrink-0"
+          />
+          <Navigation className="w-4 h-4 text-white shrink-0" />
+          <span className="flex-1 text-white font-semibold text-sm truncate text-left">
+            Navigating to {current?.name ?? 'stop'}
+          </span>
+          <span className="text-white/70 text-xs shrink-0">Tap to open →</span>
         </button>
       </motion.div>
     </AnimatePresence>
@@ -149,3 +102,5 @@ function NavTab({ to, icon: Icon, label }: { to: string; icon: typeof Home; labe
     </NavLink>
   );
 }
+
+

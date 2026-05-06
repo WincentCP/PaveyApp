@@ -11,6 +11,8 @@ const QUICK = [
   { icon: Star, label: 'Hidden gems' },
 ];
 
+const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
+
 export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [text, setText] = useState('');
   const [msgs, setMsgs] = useState<Msg[]>([
@@ -60,6 +62,20 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 <X className="w-4 h-4" />
               </button>
             </div>
+
+            {msgs.length === 1 && (
+              <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => send(s)}
+                    className="press shrink-0 bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-3 space-y-3 no-scrollbar">
               {msgs.map((m, i) => (

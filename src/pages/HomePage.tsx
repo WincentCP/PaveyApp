@@ -1,27 +1,29 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Search, SlidersHorizontal, Wand2, CloudSun, Bookmark, Palmtree, Flame,
-  Diamond, Wind, X, Star, MapPin, Clock, Link2, Pencil,
+  Diamond, Wind, X, Star, MapPin, Clock, Pencil, Scale,
   ChevronRight, DollarSign, Plus, Navigation, RefreshCw,
-  ArrowRight, Compass, Trash2, AlertTriangle, Zap, Umbrella,
+  ArrowRight, Compass, Trash2, Zap, Link2, AlertTriangle, CalendarDays,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import { useApp } from '../context/AppContext';
 import { HERO_IMAGE, USER } from '../data/user';
-import { formatRp, formatCost } from '../lib/format';
+import { formatCost } from '../lib/format';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from '../components/Toast';
 import { PLACES, type Category, type Vibe } from '../data/places';
 import type { Place } from '../data/places';
 import type { TransitMode } from '../context/AppContext';
-import { CURRENCY_SYMBOLS } from '../data/wallet';
+import { formatCurrencyAmount } from '../data/wallet';
+import TimePicker from '../components/TimePicker';
 
 const VIBES: { id: Vibe; label: string; icon: string; tint: string }[] = [
   { id: 'chill', label: 'Chill', icon: '🌴', tint: '#10B981' },
   { id: 'chaos', label: 'Chaos', icon: '🔥', tint: '#F97316' },
   { id: 'zen', label: 'Zen', icon: '🧘', tint: '#3B5BFF' },
   { id: 'luxury', label: 'Luxury', icon: '💎', tint: '#A855F7' },
+  { id: 'balanced', label: 'Balanced', icon: '⚖️', tint: '#6B7280' },
 ];
 
 const CATEGORIES: Category[] = ['Cafe', 'Nature', 'Cultural', 'Historic', 'Foodie', 'Hidden Gem', 'Cozy'];
@@ -68,11 +70,11 @@ export default function HomePage() {
     authUser, onboardingComplete,
     destinations, activeDestIdx, setActiveDestIdx, addDestination, setDestinations, removeDestination,
     isNavigating, activeTrip, totalSpent, tripBudget, tripDaysRemaining, dailyAllowance,
-    currency, setCurrency, rainyDayMode, setRainyDayMode, journeyStart,
+    currency, setCurrency, journeyStart,
   } = useApp();
   const { show } = useToast();
 
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterCats, setFilterCats] = useState<Category[]>([]);
   const [filterMinRating, setFilterMinRating] = useState(0);
@@ -80,8 +82,8 @@ export default function HomePage() {
   const [socialParsing, setSocialParsing] = useState(false);
   const [socialResult, setSocialResult] = useState<typeof SOCIAL_MOCK[string] | null>(null);
   const [socialError, setSocialError] = useState(false);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const socialInputRef = useRef<HTMLInputElement>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [addDestSheet, setAddDestSheet] = useState(false);
   const [newDestName, setNewDestName] = useState('');
@@ -91,8 +93,22 @@ export default function HomePage() {
   const [newDestTransitMode, setNewDestTransitMode] = useState<TransitMode>('flight');
   const [newDestVisaNote, setNewDestVisaNote] = useState('');
   const [showVisaNote, setShowVisaNote] = useState(false);
+  // Pre-generation intent sheet
+  const [intentSheet, setIntentSheet] = useState<'ai' | 'manual' | null>(null);
+  const [intentDest, setIntentDest] = useState('');
+  const [intentDate, setIntentDate] = useState('');
+  const [intentEndDate, setIntentEndDate] = useState('');
+  const [intentStartTime, setIntentStartTime] = useState('09:00');
+  const [intentEndTime, setIntentEndTime] = useState('17:00');
+  const [intentEndTimeSet, setIntentEndTimeSet] = useState(false);
+  const [intentVibe, setIntentVibe] = useState<Vibe | null>(null);
+  const [intentBudget, setIntentBudget] = useState<number | null>(null);
+  const [intentErrors, setIntentErrors] = useState<{ dest?: string; date?: string }>({});
+
   // Issue 27: vibe/budget change prompt
   const [vibeChangedPrompt, setVibeChangedPrompt] = useState(false);
+  // Issue 11: vibe/budget sheet
+  const [vibeSheet, setVibeSheet] = useState(false);
   // Issue 28: explore nearby sheet
   const [exploreSheet, setExploreSheet] = useState(false);
   // Issue 30: manage destinations sheet
@@ -127,7 +143,7 @@ export default function HomePage() {
   }, [budget]);
 
   const searchResults = useMemo(() => {
-    if (!search.trim()) return [];
+    if (!search || !search.trim()) return [];
     const q = search.toLowerCase();
     return PLACES.filter((p) => {
       const matchText = p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.tags.some((t) => t.toLowerCase().includes(q));
@@ -190,6 +206,19 @@ export default function HomePage() {
     return null;
   }, [newDestArriveDate, newDestDepartDate]);
 
+  // Auto-fill end date from start date when end is unset
+  useEffect(() => {
+    if (intentDate && !intentEndDate) setIntentEndDate(intentDate);
+  }, [intentDate, intentEndDate]);
+
+  // Auto-fill end time = start time + 8 hours unless user manually set it
+  useEffect(() => {
+    if (intentEndTimeSet) return;
+    const [h, m] = intentStartTime.split(':').map(Number);
+    const eh = (h + 8) % 24;
+    setIntentEndTime(`${String(eh).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  }, [intentStartTime, intentEndTimeSet]);
+
   const parseSocialLink = () => {
     if (!socialUrl.trim()) return;
     const lower = socialUrl.toLowerCase();
@@ -227,6 +256,23 @@ export default function HomePage() {
     setShowVisaNote(false);
     setAddDestSheet(false);
     show(`${newDestName.trim()} added to your trip`, 'success');
+  };
+
+  const handleIntentConfirm = () => {
+    const errs: { dest?: string; date?: string } = {};
+    if (!intentDest.trim()) errs.dest = 'Please enter your destination to continue';
+    if (!intentDate) errs.date = 'Please pick a start date to continue';
+    if (Object.keys(errs).length > 0) { setIntentErrors(errs); return; }
+    setIntentErrors({});
+    if (intentVibe) setVibe(intentVibe);
+    if (intentBudget) setBudget(intentBudget);
+    const mode = intentSheet;
+    setIntentSheet(null);
+    const params = new URLSearchParams();
+    if (mode === 'manual') params.set('mode', 'manual');
+    if (intentStartTime) params.set('startTime', intentStartTime);
+    if (intentEndTime) params.set('endTime', intentEndTime);
+    nav(`/generate${params.toString() ? `?${params}` : ''}`);
   };
 
   const handleQuickPlan = () => {
@@ -268,10 +314,18 @@ export default function HomePage() {
                 </button>
               )}
             </div>
-            <button className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white press">
-              <img src={USER.avatar} alt="me" className="w-full h-full object-cover" />
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-brand-500 rounded-full ring-2 ring-white" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSearch(search === null ? '' : null as unknown as string)}
+                className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center press"
+              >
+                <Search className="w-5 h-5 text-white" />
+              </button>
+              <button className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white press">
+                <img src={USER.avatar} alt="me" className="w-full h-full object-cover" />
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-brand-500 rounded-full ring-2 ring-white" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -293,38 +347,14 @@ export default function HomePage() {
             <div className="text-[10px] font-bold tracking-widest text-brand-500">TODAY'S VIBE</div>
             <div className="text-ink-900 font-bold leading-snug font-display">Hidden Treasures kind of day ✨</div>
             <div className="text-xs text-ink-500 mt-0.5">3 spots near you · Est. {formatCost(120000, activeTrip.currency)}</div>
+            <div className="text-[9px] text-ink-400 mt-0.5 italic">Sample preview</div>
           </div>
-          <div className="shrink-0 text-right flex flex-col items-end gap-1">
-            <div>
-              <div className="text-[10px] text-ink-400">Humidity</div>
-              <div className="text-sm font-bold text-ink-700">74%</div>
-              <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Great day</div>
-            </div>
-            {/* Rainy Day Mode toggle */}
-            <button
-              onClick={() => { setRainyDayMode(!rainyDayMode); show(rainyDayMode ? 'Rainy day mode off' : 'Rainy day mode on — showing indoor alternatives', 'info'); }}
-              className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold press transition-colors ${rainyDayMode ? 'bg-blue-100 text-blue-700' : 'bg-ink-100 text-ink-500'}`}
-            >
-              <Umbrella className="w-3 h-3" /> {rainyDayMode ? 'Indoor' : 'Rainy?'}
-            </button>
+          <div className="shrink-0 text-right">
+            <div className="text-[10px] text-ink-400">Humidity</div>
+            <div className="text-sm font-bold text-ink-700">74%</div>
           </div>
         </motion.div>
 
-        {/* Rainy Day Banner */}
-        <AnimatePresence>
-          {rainyDayMode && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              className="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2"
-            >
-              <Umbrella className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-              <span className="text-xs text-blue-700 font-medium">Rainy Day Mode on — showing indoor alternatives</span>
-              <button onClick={() => setRainyDayMode(false)} className="ml-auto shrink-0 press">
-                <X className="w-3.5 h-3.5 text-blue-400" />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* Currency switch banner */}
@@ -434,64 +464,81 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Search + Filter */}
-      <div className="px-5 mt-4">
-        <div className="bg-ink-50 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <Search className="w-5 h-5 text-ink-400 shrink-0" />
-          <input
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search places, vibes, activities…"
-            className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
-          />
-          <button
-            className={`relative press w-9 h-9 rounded-xl flex items-center justify-center shadow-soft transition-colors ${activeFilters > 0 ? 'bg-brand-500' : 'bg-white'}`}
-            onClick={() => setFilterOpen(true)}
+      {/* Search — expands from header icon, collapsed by default */}
+      <AnimatePresence>
+        {search !== null && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="px-5 mt-3 overflow-hidden"
           >
-            <SlidersHorizontal className={`w-4 h-4 ${activeFilters > 0 ? 'text-white' : 'text-ink-700'}`} />
-            {activeFilters > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{activeFilters}</span>
-            )}
-          </button>
-        </div>
-        <AnimatePresence>
-          {search.trim() && searchResults.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              className="mt-2 bg-white rounded-2xl border border-ink-100 shadow-card px-4 py-5 text-center"
-            >
-              <div className="text-2xl mb-1">🔍</div>
-              <div className="text-sm font-semibold text-ink-700">No places found</div>
-              <div className="text-xs text-ink-400 mt-0.5">Try a different name, category, or tag</div>
-            </motion.div>
-          )}
-          {searchResults.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              className="mt-2 bg-white rounded-2xl border border-ink-100 shadow-card overflow-hidden"
-            >
-              {searchResults.slice(0, 5).map((p, i) => (
-                <button
-                  key={p.id}
-                  onClick={() => { setSearch(''); setDetailPlace(p); }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 press hover:bg-ink-50 text-left ${i > 0 ? 'border-t border-ink-50' : ''}`}
+            <div className="bg-ink-50 rounded-2xl px-4 py-3 flex items-center gap-3">
+              <Search className="w-5 h-5 text-ink-400 shrink-0" />
+              <input
+                value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search places, vibes, activities…"
+                className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
+                autoFocus
+              />
+              <button
+                className={`relative press w-9 h-9 rounded-xl flex items-center justify-center shadow-soft transition-colors ${activeFilters > 0 ? 'bg-brand-500' : 'bg-white'}`}
+                onClick={() => setFilterOpen(true)}
+              >
+                <SlidersHorizontal className={`w-4 h-4 ${activeFilters > 0 ? 'text-white' : 'text-ink-700'}`} />
+                {activeFilters > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{activeFilters}</span>
+                )}
+              </button>
+              <button onClick={() => setSearch('')} className="press text-ink-400"><X className="w-4 h-4" /></button>
+            </div>
+            <AnimatePresence>
+              {search.trim() && searchResults.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="mt-2 bg-white rounded-2xl border border-ink-100 shadow-card px-4 py-5 text-center"
                 >
-                  <img src={p.image} alt={p.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
-                    <div className="text-xs text-ink-500">{p.category} · ⭐ {p.rating}</div>
-                  </div>
-                  <div className="text-xs font-semibold text-brand-600 shrink-0">{formatCost(p.cost, activeTrip.currency)}</div>
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+                  <div className="text-2xl mb-1">🔍</div>
+                  <div className="text-sm font-semibold text-ink-700">No places found</div>
+                  <div className="text-xs text-ink-400 mt-0.5">Try a different name, category, or tag</div>
+                </motion.div>
+              )}
+              {searchResults.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="mt-2 bg-white rounded-2xl border border-ink-100 shadow-card overflow-hidden"
+                >
+                  {searchResults.slice(0, 5).map((p, i) => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setSearch(''); setDetailPlace(p); }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 press hover:bg-ink-50 text-left ${i > 0 ? 'border-t border-ink-50' : ''}`}
+                    >
+                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
+                        <div className="text-xs text-ink-500">{p.category} · ⭐ {p.rating}</div>
+                      </div>
+                      <div className="text-xs font-semibold text-brand-600 shrink-0">{formatCost(p.cost, activeTrip.currency)}</div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── DYNAMIC PLAN SECTION ── */}
       <div className="px-5 mt-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[11px] font-bold tracking-widest text-ink-500">TODAY'S PLAN</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold tracking-widest text-ink-500">TODAY'S PLAN</span>
+            <button
+              onClick={() => setVibeSheet(true)}
+              className="flex items-center gap-1 bg-brand-50 text-brand-600 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-brand-100 press"
+            >
+              {VIBES.find((v) => v.id === vibe)?.icon} {VIBES.find((v) => v.id === vibe)?.label} Plan ✏️
+            </button>
+          </div>
           {hasTodayPlan && (
             <button className="text-xs text-brand-600 font-semibold press" onClick={() => nav('/map')}>
               View on map ›
@@ -652,52 +699,27 @@ export default function HomePage() {
 
         {/* ── CASE B: No plan today ── */}
         {!hasTodayPlan && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="bg-ink-50 rounded-2xl p-5 text-center mb-4 border border-ink-100">
               <div className="text-4xl mb-3">🗺️</div>
               <div className="font-bold text-ink-900 text-base font-display">No plans for today</div>
               <div className="text-sm text-ink-500 mt-1 leading-snug">
-                {onboardingComplete
-                  ? 'Ready to explore? Build your day below.'
-                  : 'Set up your trip to get started'}
+                {activeDest ? `Ready to explore ${activeDest.name.split(',')[0]}?` : 'Ready to explore?'}
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <ActionCard
-                icon={<MascotIcon src="/icon-ai-generate.svg" fallback={<Wand2 className="w-5 h-5 text-white" />} bg="bg-white/20" />}
-                label="AI Generate"
-                sub="Let Buddy plan it"
-                variant="primary"
-                onClick={() => nav('/generate')}
-              />
-              <ActionCard
-                icon={<MascotIcon src="/icon-plan-manually.svg" fallback={<Pencil className="w-5 h-5 text-brand-600" />} />}
-                label="Plan Manually"
-                sub="Your way, your stops"
-                variant="outline"
-                onClick={() => nav('/generate?mode=manual')}
-              />
-              {/* Issue 28: Explore Nearby opens a sheet */}
-              <ActionCard
-                icon={<Compass className="w-5 h-5 text-orange-500" />}
-                label="Explore Nearby"
-                sub="Discover around you"
-                variant="light"
-                onClick={() => setExploreSheet(true)}
-              />
-              {/* Issue 29: disabled when no saved places */}
-              <ActionCard
-                icon={<Bookmark className={`w-5 h-5 ${savedPlaces.length > 0 ? 'text-purple-500' : 'text-ink-300'}`} />}
-                label="Saved Places"
-                sub={savedPlaces.length > 0 ? `${savedPlaces.length} saved` : 'Bookmark places to see them here'}
-                variant="light"
-                onClick={savedPlaces.length > 0 ? () => {} : undefined}
-                disabled={savedPlaces.length === 0}
-              />
-            </div>
+            <button
+              onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setIntentSheet('ai'); }}
+              className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2 mb-3"
+            >
+              <Wand2 className="w-5 h-5" />
+              Generate my plan
+            </button>
+            <button
+              onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setIntentSheet('manual'); }}
+              className="w-full text-sm text-brand-600 font-semibold press flex items-center justify-center gap-1"
+            >
+              or build it stop by stop <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </motion.div>
         )}
 
@@ -766,11 +788,11 @@ export default function HomePage() {
               </span>
             </div>
             <div className="text-xs text-ink-600">
-              Spent {CURRENCY_SYMBOLS[currency]}{Math.round(totalSpent / 1000)}K of {CURRENCY_SYMBOLS[currency]}{Math.round(tripBudget / 1000)}K
+              Spent {formatCurrencyAmount(totalSpent, currency)} of {formatCurrencyAmount(tripBudget, currency)}
               {tripDaysRemaining > 0 && ` · ${tripDaysRemaining} day${tripDaysRemaining !== 1 ? 's' : ''} left`}
             </div>
             <div className="text-xs text-ink-500 mt-0.5">
-              {CURRENCY_SYMBOLS[currency]}{Math.round(dailyAllowance / 1000)}K/day remaining
+              {formatCurrencyAmount(dailyAllowance, currency)}/day remaining
             </div>
             <div className="mt-2 h-1.5 bg-ink-100 rounded-full overflow-hidden">
               <div
@@ -781,47 +803,6 @@ export default function HomePage() {
           </motion.button>
         </div>
       )}
-
-      {/* Vibe picker */}
-      <div className="px-5 mt-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-bold text-ink-900 font-display">Pick your vibe</h2>
-        </div>
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {VIBES.map((v) => {
-            const active = v.id === vibe;
-            const Icon = v.id === 'chill' ? Palmtree : v.id === 'chaos' ? Flame : v.id === 'zen' ? Wind : Diamond;
-            return (
-              <motion.button
-                key={v.id}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => { setVibe(v.id); if (itinerary.length > 0) setVibeChangedPrompt(true); }}
-                animate={{ scale: active ? 1.04 : 1, opacity: 1 }}
-                className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-colors ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
-              >
-                <Icon className="w-7 h-7" style={{ color: active ? '#3B5BFF' : v.tint }} strokeWidth={2.2} />
-                <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-ink-700'}`}>{v.label}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Budget slider */}
-      <div className="px-5 mt-4">
-        <div className="font-bold text-ink-900 font-display">Budget <span className="text-ink-400 font-normal text-sm">(per stop)</span></div>
-        <input
-          type="range" min={50_000} max={1_000_000} step={10_000}
-          value={budget} onChange={(e) => { setBudget(Number(e.target.value)); if (itinerary.length > 0) setVibeChangedPrompt(true); }}
-          className="vibe-slider mt-2 mb-1"
-          style={{ ['--val' as string]: `${sliderPct}%` } as React.CSSProperties}
-        />
-        <div className="flex justify-between text-xs text-ink-500">
-          <span>{formatCost(50_000, activeTrip.currency)}</span>
-          <span className="text-brand-600 font-semibold">{formatCost(budget, activeTrip.currency)}</span>
-          <span>{formatCost(1_000_000, activeTrip.currency)}+</span>
-        </div>
-      </div>
 
       {/* Issue 27: regenerate prompt when vibe/budget changed */}
       <AnimatePresence>
@@ -849,10 +830,9 @@ export default function HomePage() {
         <div className="grid grid-cols-2 gap-3">
           <motion.button
             whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.01 }}
-            onClick={() => nav('/generate')}
+            onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setIntentSheet('ai'); }}
             className="rounded-2xl p-4 text-left flex flex-col gap-2 press bg-brand-500 shadow-glow"
           >
-            {/* public/icon-ai-generate.svg — replace with your mascot expression */}
             <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
               <MascotIcon src="/icon-ai-generate.svg" fallback={<Wand2 className="w-5 h-5 text-white" />} />
             </div>
@@ -864,10 +844,9 @@ export default function HomePage() {
 
           <motion.button
             whileTap={{ scale: 0.96 }} whileHover={{ scale: 1.01 }}
-            onClick={() => nav('/generate?mode=manual')}
+            onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setIntentSheet('manual'); }}
             className="rounded-2xl p-4 text-left flex flex-col gap-2 press bg-white border-2 border-brand-200 hover:border-brand-400 transition-colors"
           >
-            {/* public/icon-plan-manually.svg — replace with your mascot expression */}
             <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center">
               <MascotIcon src="/icon-plan-manually.svg" fallback={<Pencil className="w-5 h-5 text-brand-600" />} />
             </div>
@@ -948,12 +927,10 @@ export default function HomePage() {
         <div className="bg-ink-50 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-              {/* TikTok logo */}
               <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
               TikTok
             </div>
             <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-              {/* Instagram logo */}
               <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               Instagram
             </div>
@@ -964,7 +941,8 @@ export default function HomePage() {
               <Link2 className="w-4 h-4 text-ink-400 shrink-0" />
               <input
                 ref={socialInputRef}
-                value={socialUrl} onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
+                value={socialUrl}
+                onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
                 placeholder="Paste a TikTok or Instagram link…"
                 className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
               />
@@ -979,7 +957,7 @@ export default function HomePage() {
             </button>
           </div>
           {socialError && (
-            <motion.p initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} className="text-xs text-red-500 mt-2 flex items-center gap-1">
+            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2 flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
             </motion.p>
           )}
@@ -1007,7 +985,6 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 px-3 pb-3">
-                  {/* Issue 26: renamed buttons */}
                   <button
                     onClick={() => {
                       const place: Place = { id: `social-${Date.now()}`, name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['chill','chaos','zen','luxury'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
@@ -1039,6 +1016,193 @@ export default function HomePage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── Pre-Generation Intent Sheet ── */}
+      <AnimatePresence>
+        {intentSheet && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIntentSheet(null)} className="absolute inset-0 z-40 bg-ink-900/40" />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-10 max-h-[92%] flex flex-col"
+            >
+              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3 shrink-0" />
+              <div className="px-5 pt-3 pb-2 flex items-center justify-between shrink-0">
+                <div>
+                  <div className="font-bold text-ink-900 font-display text-base">
+                    {intentSheet === 'ai' ? '✨ Plan with AI' : '🗺️ Build your plan'}
+                  </div>
+                  <div className="text-xs text-ink-500 mt-0.5">
+                    Fields marked <span className="text-red-400 font-semibold">*</span> are required
+                  </div>
+                </div>
+                <button onClick={() => setIntentSheet(null)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
+              </div>
+
+              <div className="overflow-y-auto no-scrollbar px-5 pb-4 space-y-5 flex-1">
+
+                {/* WHERE */}
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">
+                    WHERE <span className="text-red-400 font-bold">*</span>
+                  </div>
+                  <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border-2 transition-colors ${intentErrors.dest ? 'bg-red-50 border-red-400' : 'bg-ink-50 border-transparent focus-within:border-brand-400'}`}>
+                    <MapPin className={`w-4 h-4 shrink-0 ${intentErrors.dest ? 'text-red-400' : 'text-ink-400'}`} />
+                    <input
+                      value={intentDest}
+                      onChange={(e) => { setIntentDest(e.target.value); if (e.target.value.trim()) setIntentErrors((p) => ({ ...p, dest: undefined })); }}
+                      placeholder={activeDest?.name.split(',')[0] ?? 'e.g. Ubud, Bali'}
+                      className="flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 outline-none"
+                    />
+                    {intentDest && <button onClick={() => setIntentDest('')}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
+                  </div>
+                  {intentErrors.dest && (
+                    <div className="flex items-center gap-1.5 text-xs text-red-600 mt-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {intentErrors.dest}
+                    </div>
+                  )}
+                  {destinations.length > 1 && (
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                      {destinations.map((d) => (
+                        <button
+                          key={d.id}
+                          onClick={() => { setIntentDest(d.name.split(',')[0]); setIntentErrors((p) => ({ ...p, dest: undefined })); }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold press border transition-colors ${intentDest === d.name.split(',')[0] ? 'bg-brand-500 text-white border-brand-500' : 'bg-ink-50 text-ink-700 border-ink-100'}`}
+                        >
+                          {d.name.split(',')[0]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* WHEN */}
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-3">WHEN</div>
+
+                  {/* Dates */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div>
+                      <div className="text-[10px] font-semibold text-ink-500 mb-1.5 flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" /> Start date <span className="text-red-400">*</span>
+                      </div>
+                      <input
+                        type="date"
+                        value={intentDate}
+                        onChange={(e) => { setIntentDate(e.target.value); if (e.target.value) setIntentErrors((p) => ({ ...p, date: undefined })); }}
+                        className={`w-full rounded-xl px-3 py-2 text-xs border outline-none focus:border-brand-400 ${intentErrors.date ? 'border-red-400 bg-red-50 text-red-700' : 'bg-ink-50 text-ink-700 border-ink-200'}`}
+                      />
+                      {intentErrors.date && (
+                        <div className="flex items-center gap-1 text-xs text-red-600 mt-1.5">
+                          <AlertTriangle className="w-3 h-3 shrink-0" /> {intentErrors.date}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-semibold text-ink-500 mb-1.5 flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" /> End date
+                      </div>
+                      <input
+                        type="date"
+                        value={intentEndDate}
+                        min={intentDate || undefined}
+                        onChange={(e) => setIntentEndDate(e.target.value)}
+                        className="w-full bg-ink-50 rounded-xl px-3 py-2 text-xs text-ink-700 border border-ink-200 outline-none focus:border-brand-400"
+                      />
+                      <div className="text-[9px] text-ink-400 mt-1">Defaults to same day</div>
+                    </div>
+                  </div>
+
+                  {/* Time pickers */}
+                  <TimePicker
+                    label="START TIME"
+                    value={intentStartTime}
+                    onChange={(v) => setIntentStartTime(v)}
+                  />
+                  <div className="mt-3">
+                    <TimePicker
+                      label="END TIME"
+                      value={intentEndTime}
+                      onChange={(v) => { setIntentEndTime(v); setIntentEndTimeSet(true); }}
+                      warnIfBefore={intentDate === intentEndDate ? intentStartTime : undefined}
+                    />
+                  </div>
+
+                  {intentDate === intentEndDate && intentEndTime && intentEndTime <= intentStartTime && (
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 rounded-xl px-3 py-2">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      End time is before start time — the schedule may be incorrect.
+                    </div>
+                  )}
+                </div>
+
+                {/* Vibe */}
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">VIBE</div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {VIBES.map((v) => {
+                      const Icon = v.id === 'chill' ? Palmtree : v.id === 'chaos' ? Flame : v.id === 'zen' ? Wind : v.id === 'balanced' ? Scale : Diamond;
+                      const active = intentVibe === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setIntentVibe(v.id)}
+                          className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 press transition-colors ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
+                        >
+                          <Icon className="w-6 h-6" style={{ color: active ? '#3B5BFF' : v.tint }} strokeWidth={2.2} />
+                          <span className={`text-[10px] font-semibold ${active ? 'text-brand-600' : 'text-ink-700'}`}>{v.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Budget */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] font-bold tracking-widest text-ink-500">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per stop)</span></div>
+                    <div className="text-sm font-bold text-brand-600">{formatCost(intentBudget ?? budget, activeTrip.currency)}</div>
+                  </div>
+                  <input
+                    type="range" min={50_000} max={1_000_000} step={10_000}
+                    value={intentBudget ?? budget}
+                    onChange={(e) => setIntentBudget(Number(e.target.value))}
+                    className="vibe-slider w-full"
+                    style={{ ['--val' as string]: `${Math.max(0, Math.min(100, (((intentBudget ?? budget) - 50_000) / 950_000) * 100))}%` } as React.CSSProperties}
+                  />
+                  <div className="flex justify-between text-xs text-ink-500 mt-1">
+                    <span>{formatCost(50_000, activeTrip.currency)}</span>
+                    <span>{formatCost(1_000_000, activeTrip.currency)}+</span>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    {[150_000, 300_000, 600_000].map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setIntentBudget(v)}
+                        className={`flex-1 py-1.5 rounded-xl text-xs font-semibold press border transition-colors ${(intentBudget ?? budget) === v ? 'bg-brand-500 text-white border-brand-500' : 'bg-ink-50 text-ink-700 border-ink-100'}`}
+                      >
+                        {formatCost(v, activeTrip.currency)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* CTA */}
+              <div className="px-5 pt-3 shrink-0 border-t border-ink-100">
+                <button
+                  onClick={handleIntentConfirm}
+                  className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2"
+                >
+                  {intentSheet === 'ai' ? <><Wand2 className="w-5 h-5" /> Generate my plan</> : <><Pencil className="w-5 h-5" /> Start planning</>}
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Add Destination Sheet ── */}
       <AnimatePresence>
@@ -1207,6 +1371,69 @@ export default function HomePage() {
                   className="w-full h-12 rounded-2xl bg-amber-500 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
                 >
                   <Zap className="w-4 h-4" /> Generate & Go
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Vibe & Budget Sheet (Issue 11) ── */}
+      <AnimatePresence>
+        {vibeSheet && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setVibeSheet(false)} className="absolute inset-0 z-40 bg-ink-900/40" />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-10"
+            >
+              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
+              <div className="px-5 pt-3 pb-4 flex items-center justify-between">
+                <div className="font-bold text-ink-900 font-display">Vibe & Budget</div>
+                <button onClick={() => setVibeSheet(false)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="px-5 space-y-5">
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">VIBE</div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {VIBES.map((v) => {
+                      const active = v.id === vibe;
+                      const Icon = v.id === 'chill' ? Palmtree : v.id === 'chaos' ? Flame : v.id === 'zen' ? Wind : v.id === 'balanced' ? Scale : Diamond;
+                      return (
+                        <motion.button
+                          key={v.id}
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => { setVibe(v.id); if (itinerary.length > 0) setVibeChangedPrompt(true); }}
+                          animate={{ scale: active ? 1.04 : 1 }}
+                          className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-colors ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
+                        >
+                          <Icon className="w-7 h-7" style={{ color: active ? '#3B5BFF' : v.tint }} strokeWidth={2.2} />
+                          <span className={`text-xs font-semibold ${active ? 'text-brand-600' : 'text-ink-700'}`}>{v.label}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per stop)</span></div>
+                  <input
+                    type="range" min={50_000} max={1_000_000} step={10_000}
+                    value={budget} onChange={(e) => { setBudget(Number(e.target.value)); if (itinerary.length > 0) setVibeChangedPrompt(true); }}
+                    className="vibe-slider mb-1"
+                    style={{ ['--val' as string]: `${sliderPct}%` } as React.CSSProperties}
+                  />
+                  <div className="flex justify-between text-xs text-ink-500">
+                    <span>{formatCost(50_000, activeTrip.currency)}</span>
+                    <span className="text-brand-600 font-semibold">{formatCost(budget, activeTrip.currency)}</span>
+                    <span>{formatCost(1_000_000, activeTrip.currency)}+</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setVibeSheet(false); nav('/generate'); }}
+                  className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
+                >
+                  <Wand2 className="w-4 h-4" /> Regenerate Plan
                 </button>
               </div>
             </motion.div>
@@ -1432,7 +1659,7 @@ export default function HomePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => { setFilterCats([]); setFilterMinRating(0); }} className="h-11 rounded-2xl bg-ink-50 text-ink-700 font-semibold press">Clear All</button>
-                  <button onClick={() => { setFilterOpen(false); if (search.trim()) show(`Filters applied (${activeFilters})`, 'success'); }} className="h-11 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press">
+                  <button onClick={() => { setFilterOpen(false); if (search?.trim()) show(`Filters applied (${activeFilters})`, 'success'); }} className="h-11 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press">
                     Apply{activeFilters > 0 ? ` (${activeFilters})` : ''}
                   </button>
                 </div>
@@ -1445,32 +1672,7 @@ export default function HomePage() {
   );
 }
 
-function ActionCard({
-  icon, label, sub, variant, onClick, disabled,
-}: {
-  icon: React.ReactNode; label: string; sub: string;
-  variant: 'primary' | 'outline' | 'light';
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  const base = 'rounded-2xl p-4 text-left flex flex-col gap-2 press';
-  const styles = {
-    primary: 'bg-brand-500 shadow-glow',
-    outline: 'bg-white border-2 border-brand-200 hover:border-brand-400 transition-colors',
-    light: `bg-ink-50 border border-ink-100 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`,
-  };
-  return (
-    <motion.button whileTap={{ scale: disabled ? 1 : 0.96 }} onClick={disabled ? undefined : onClick} className={`${base} ${styles[variant]}`}>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${variant === 'primary' ? 'bg-white/20' : 'bg-white'}`}>
-        {icon}
-      </div>
-      <div>
-        <div className={`font-bold text-sm font-display leading-tight ${variant === 'primary' ? 'text-white' : 'text-ink-900'}`}>{label}</div>
-        <div className={`text-[11px] mt-0.5 leading-tight ${variant === 'primary' ? 'text-white/75' : 'text-ink-500'}`}>{sub}</div>
-      </div>
-    </motion.button>
-  );
-}
+
 
 /* Renders your custom mascot SVG, falls back to the given element if file isn't added yet */
 function MascotIcon({ src, fallback }: { src: string; fallback: React.ReactNode }) {

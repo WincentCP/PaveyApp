@@ -25,6 +25,7 @@ export default function GeneratePage() {
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
   const isManualMode = searchParams.get('mode') === 'manual';
+  const startTimeParam = searchParams.get('startTime'); // e.g. "09:00"
 
   const { vibe, budget, buildItinerary, setItinerary, itinerary, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip } = useApp();
   const { show } = useToast();
@@ -56,7 +57,7 @@ export default function GeneratePage() {
     }
     setUndoItem({ place, index: idx });
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => setUndoItem(null), 4000);
+    undoTimerRef.current = setTimeout(() => setUndoItem(null), 6000);
   };
 
   const handleUndo = () => {
@@ -107,7 +108,10 @@ export default function GeneratePage() {
 
   const getTime = (id: string, idx: number) => {
     if (stopTimes[id]) return stopTimes[id];
-    const start = 10 * 60 + 30 + idx * 90;
+    const baseMin = startTimeParam
+      ? parseInt(startTimeParam.split(':')[0]) * 60 + parseInt(startTimeParam.split(':')[1])
+      : 10 * 60 + 30;
+    const start = baseMin + idx * 90;
     const h = Math.floor(start / 60) % 24;
     const m = start % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -129,7 +133,7 @@ export default function GeneratePage() {
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
     show(isPostOnboarding ? 'Your trip is ready! 🎉' : 'Journey confirmed ✨', 'success');
-    setTimeout(() => nav(isPostOnboarding ? '/' : '/transition', { replace: true }), 700);
+    setTimeout(() => nav(isPostOnboarding ? '/' : '/map', { replace: true }), 700);
   };
 
   const manualSearchResults = useMemo(() => {
@@ -242,6 +246,7 @@ export default function GeneratePage() {
                                 <div className="mb-2">
                                   <CulturalCard
                                     intel={intel}
+                                    autoExpand={i === 0}
                                     onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
                                   />
                                 </div>
@@ -324,7 +329,7 @@ export default function GeneratePage() {
                       className="w-full h-14 rounded-2xl bg-brand-500 disabled:bg-ink-300 text-white font-bold text-base flex items-center justify-center gap-2 pointer-events-auto"
                     >
                       <Check className="w-5 h-5" />
-                      {isPostOnboarding ? 'Start My Trip →' : 'Confirm My Journey'}
+                      {isPostOnboarding ? 'Start My Trip →' : isEditMode ? 'Save Changes' : 'Confirm My Journey'}
                     </motion.button>
                     {isPostOnboarding && (
                       <p className="text-center text-[11px] text-ink-400 mt-1.5 pointer-events-auto">
@@ -381,6 +386,7 @@ export default function GeneratePage() {
                               <div className="mb-2">
                                 <CulturalCard
                                   intel={intel}
+                                  autoExpand={i === 0}
                                   onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
                                 />
                               </div>
@@ -544,21 +550,15 @@ export default function GeneratePage() {
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
               <div className="px-5 pt-3 pb-2 flex items-center justify-between">
                 <div className="font-bold text-ink-900 font-display">Set arrival time</div>
-                <button
-                  onClick={() => setEditingTimeFor(null)}
-                  className="h-8 px-4 rounded-full bg-brand-500 text-white text-xs font-bold press"
-                >
-                  Done
-                </button>
+                <button onClick={() => setEditingTimeFor(null)} className="h-8 px-4 rounded-full bg-brand-500 text-white text-xs font-bold press">Done</button>
               </div>
-              <div className="px-5 py-4 flex justify-center">
+              <div className="px-8 pb-2">
                 <TimePicker
                   value={stopTimes[editingTimeFor] ?? getTime(editingTimeFor, activeItinerary.findIndex((p) => p.id === editingTimeFor))}
                   onChange={(t) => setStopTimes((prev) => ({ ...prev, [editingTimeFor]: t }))}
                 />
               </div>
-              {/* Issue 11: time picker context */}
-              <p className="text-center text-xs text-ink-400 -mt-2 mb-2 px-4">
+              <p className="text-center text-xs text-ink-400 mt-1 mb-1 px-4">
                 All stop times are estimated from this departure time.
               </p>
             </motion.div>
@@ -683,6 +683,7 @@ function LoadingState({ stepIdx }: { stepIdx: number }) {
           </motion.span>
         </AnimatePresence>
       </div>
+      <p className="text-xs text-ink-400 mt-1 mb-3">Generating your plan with AI — just a moment…</p>
       <div className="mt-4 space-y-3">
         {[0, 1, 2].map((i) => (
           <div key={i} className="rounded-2xl border border-ink-100 p-3 flex gap-3 items-center">
@@ -724,8 +725,8 @@ function StopConnector({ distanceKm, fromTime, durationMin }: { distanceKm: numb
 }
 
 /* ── Cultural Intelligence Card ── */
-function CulturalCard({ intel, onDismiss }: { intel: CulturalIntel; onDismiss: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+function CulturalCard({ intel, autoExpand, onDismiss }: { intel: CulturalIntel; autoExpand?: boolean; onDismiss: () => void }) {
+  const [expanded, setExpanded] = useState(autoExpand ?? false);
   const visibleTips = expanded ? intel.tips : intel.tips.slice(0, 1);
   const extraCount = intel.tips.length - 1;
 
@@ -970,3 +971,4 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
     </AnimatePresence>
   );
 }
+

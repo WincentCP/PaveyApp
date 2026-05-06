@@ -8,7 +8,6 @@ import Buddy from './components/Buddy';
 import OnboardingPage from './pages/OnboardingPage';
 import HomePage from './pages/HomePage';
 import GeneratePage from './pages/GeneratePage';
-import TransitionPage from './pages/TransitionPage';
 import MapPage from './pages/MapPage';
 import NavigatePage from './pages/NavigatePage';
 import WalletPage from './pages/WalletPage';
@@ -18,7 +17,7 @@ function AppShell() {
   const { onboardingComplete, buddyOpen, setBuddyOpen } = useApp();
   const { pathname } = useLocation();
 
-  const hideChrome = pathname.startsWith('/onboarding') || pathname === '/transition';
+  const hideChrome = pathname.startsWith('/onboarding');
   const hideNav = pathname.startsWith('/navigate') || hideChrome;
   // Issue 33: Hide Buddy on /generate (confusing during loading skeleton)
   const hideBuddy = hideChrome || pathname.startsWith('/generate');
@@ -37,7 +36,6 @@ function AppShell() {
         {/* Main app routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/generate" element={<GeneratePage />} />
-        <Route path="/transition" element={<TransitionPage />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/navigate" element={<NavigatePage />} />
         <Route path="/wallet" element={<WalletPage />} />

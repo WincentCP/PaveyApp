@@ -382,12 +382,16 @@ export default function NavigatePage() {
           {itinerary.map((p, i) => (
             <div
               key={p.id}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-soft ${
-                i === navIndex ? 'bg-brand-500 text-white' : i < navIndex ? 'bg-emerald-500/80 text-white' : 'bg-white/90 text-ink-600'
-              }`}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-soft bg-white/95"
             >
-              <span>{i < navIndex ? '✓' : i === navIndex ? '→' : String(i + 1)}</span>
-              <span className="max-w-[80px] truncate">{p.name.split(' ')[0]}</span>
+              <span
+                className={`w-3.5 h-3.5 rounded-full shrink-0 ${
+                  i < navIndex ? 'bg-emerald-500' : i === navIndex ? 'bg-brand-500' : 'border-2 border-ink-300 bg-white'
+                }`}
+              />
+              <span className={`max-w-[72px] truncate ${i === navIndex ? 'text-brand-600 font-bold' : i < navIndex ? 'text-emerald-600' : 'text-ink-500'}`}>
+                {p.name.split(' ')[0]}
+              </span>
             </div>
           ))}
         </div>
@@ -463,12 +467,12 @@ export default function NavigatePage() {
             >
               <div className="text-center mb-4">
                 <div className="text-4xl mb-2">🛑</div>
-                <div className="font-bold text-ink-900 font-display text-lg">Cancel navigation?</div>
+                <div className="font-bold text-ink-900 font-display text-lg">Stop navigating?</div>
                 <div className="text-sm text-ink-500 mt-1">You've visited {navIndex} of {itinerary.length} stops. Progress will be saved.</div>
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowCancelConfirm(false)} className="flex-1 h-12 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Keep Going</button>
-                <button onClick={confirmCancel} className="flex-1 h-12 rounded-xl bg-red-500 text-white font-semibold press">Cancel Trip</button>
+              <div className="flex flex-col gap-2">
+                <button onClick={() => setShowCancelConfirm(false)} className="w-full h-12 rounded-xl bg-brand-500 text-white font-bold press shadow-glow">Continue navigating</button>
+                <button onClick={confirmCancel} className="w-full h-12 rounded-xl text-red-500 font-semibold press text-sm">Stop and go to map</button>
               </div>
             </motion.div>
           </>

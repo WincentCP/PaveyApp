@@ -1,15 +1,17 @@
 export type TxnTag = 'Great deal' | 'Over budget' | 'Saved' | 'Top up' | 'you owe' | 'owed to you' | 'settled';
 export type TxnCategory = 'Food & Drinks' | 'Attractions' | 'Transport' | 'Shopping' | 'Top up';
 
-export type Currency = 'IDR' | 'USD' | 'EUR' | 'JPY' | 'SGD' | 'AUD';
+export type Currency = 'IDR' | 'USD' | 'EUR' | 'JPY' | 'SGD' | 'AUD' | 'GBP' | 'THB' | 'MYR' | 'KRW' | 'HKD' | 'CNY' | 'INR' | 'NZD' | 'CAD';
 
 export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   IDR: 'Rp', USD: '$', EUR: '€', JPY: '¥', SGD: 'S$', AUD: 'A$',
+  GBP: '£', THB: '฿', MYR: 'RM', KRW: '₩', HKD: 'HK$', CNY: '¥', INR: '₹', NZD: 'NZ$', CAD: 'C$',
 };
 
 // Approximate rates (base: 1 unit of currency → IDR)
 export const CURRENCY_RATES_TO_IDR: Record<Currency, number> = {
   IDR: 1, USD: 15800, EUR: 17200, JPY: 106, SGD: 11700, AUD: 10300,
+  GBP: 19900, THB: 445, MYR: 3400, KRW: 11.9, HKD: 2020, CNY: 2200, INR: 190, NZD: 9700, CAD: 11600,
 };
 
 // Auto-suggest currency by destination keyword
@@ -31,21 +33,17 @@ export function suggestCurrency(destination: string): Currency {
 }
 
 export function formatCurrencyAmount(amount: number, currency: Currency): string {
+  const sym = CURRENCY_SYMBOLS[currency];
   switch (currency) {
     case 'IDR':
       if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(1)}jt`;
       if (amount >= 1_000) return `Rp ${Math.round(amount / 1_000)}K`;
       return `Rp ${Math.round(amount)}`;
     case 'JPY':
-      return `¥${Math.round(amount).toLocaleString()}`;
-    case 'USD':
-      return `$${amount.toFixed(2)}`;
-    case 'EUR':
-      return `€${amount.toFixed(2)}`;
-    case 'SGD':
-      return `S$${amount.toFixed(2)}`;
-    case 'AUD':
-      return `A$${amount.toFixed(2)}`;
+    case 'KRW':
+      return `${sym}${Math.round(amount).toLocaleString()}`;
+    default:
+      return `${sym}${amount < 1 ? amount.toFixed(2) : amount.toFixed(0)}`;
   }
 }
 

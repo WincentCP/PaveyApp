@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp,
-  Diamond, Eye, EyeOff, Flame, GripVertical, Lock,
-  Mail, MapPin, Palmtree, Plus, Wind, RefreshCw, User, X,
+  Eye, EyeOff, Lock,
+  Mail, MapPin, Plus, RefreshCw, User, X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -28,6 +28,7 @@ const VIBES: { id: Vibe; label: string; emoji: string; desc: string }[] = [
   { id: 'chaos', label: 'Chaos', emoji: '🔥', desc: 'Full days & hidden street food' },
   { id: 'zen', label: 'Zen', emoji: '🧘', desc: 'Temples, nature & mindful walks' },
   { id: 'luxury', label: 'Luxury', emoji: '💎', desc: 'Boutique stays & fine dining' },
+  { id: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'A little of everything — no strong preference' },
 ];
 
 const INTEREST_OPTIONS = [
@@ -78,7 +79,7 @@ export default function OnboardingPage() {
   // Onboarding state
   const [selectedVibe, setSelectedVibe] = useState<Vibe>('zen');
   const [destInput, setDestInput] = useState('');
-  const [destList, setDestList] = useState<string[]>([]);
+  const [destList, setDestList] = useState<{ name: string; days: number }[]>([]);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [calPhase, setCalPhase] = useState<'start' | 'end'>('start');
@@ -98,7 +99,7 @@ export default function OnboardingPage() {
   }, [startDate, endDate]);
 
   // Issue 3: currency-aware budget based on first destination
-  const budgetCurrency = useMemo(() => destList.length > 0 ? suggestCurrency(destList[0]) : 'IDR', [destList]);
+  const budgetCurrency = useMemo(() => destList.length > 0 ? suggestCurrency(destList[0].name) : 'IDR', [destList]);
   const currencySymbol = CURRENCY_SYMBOLS[budgetCurrency];
   const toLocalBudget = (idrAmount: number) => Math.round(idrAmount / CURRENCY_RATES_TO_IDR[budgetCurrency]);
   const fromLocalBudget = (local: number) => Math.round(local * CURRENCY_RATES_TO_IDR[budgetCurrency]);
@@ -175,7 +176,7 @@ export default function OnboardingPage() {
         email,
         vibe: selectedVibe,
         destinations: destList.length > 0
-          ? destList.map((d) => ({ name: d, days: Math.max(1, Math.floor(totalDays / Math.max(1, destList.length))) }))
+          ? destList.map((d) => ({ name: d.name, days: d.days }))
           : [{ name: 'My Destination', days: totalDays }],
         totalDays,
         budget,
@@ -205,8 +206,8 @@ export default function OnboardingPage() {
 
   const addDest = () => {
     const val = destInput.trim();
-    if (!val || destList.includes(val)) return;
-    setDestList((prev) => [...prev, val]);
+    if (!val || destList.some((d) => d.name === val)) return;
+    setDestList((prev) => [...prev, { name: val, days: 2 }]);
     setDestInput('');
     destInputRef.current?.focus();
   };
@@ -272,33 +273,22 @@ export default function OnboardingPage() {
             transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="flex-1 flex flex-col"
           >
-            <div className="relative flex-1 flex flex-col bg-brand-500">
-              <div className="absolute top-[-80px] right-[-60px] w-64 h-64 rounded-full bg-white/5" />
-              <div className="absolute top-[60px] left-[-40px] w-40 h-40 rounded-full bg-white/5" />
-
+            <div className="relative flex-1 flex flex-col bg-white">
               <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8 text-center">
                 <motion.div
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.2, type: 'spring', stiffness: 260, damping: 20 }}
-                  className="mb-4"
                 >
-                  {/* Replace public/mascot.svg with your full mascot logo */}
-                  <img src="/mascot.svg" alt="Pavey" className="w-28 h-28 object-contain" />
+                  {/* Replace public/mascot.svg with your logo */}
+                  <img src="/mascot.svg" alt="Pavey" className="w-64 h-64 object-contain drop-shadow-xl" />
                 </motion.div>
-                <motion.p
-                  initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.45 }}
-                  className="mt-4 text-white/80 text-base leading-relaxed"
-                >
-                  AI-powered trip planning that adapts to your style — from multi-city adventures to weekend escapes.
-                </motion.p>
               </div>
 
               <motion.div
                 initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.55, type: 'spring', stiffness: 280, damping: 30 }}
-                className="relative z-10 bg-white rounded-t-3xl px-6 pt-6 pb-10"
+                className="relative z-10 px-6 pt-6 pb-10"
               >
                 <button
                   onClick={() => { setAuthMode('signup'); go('auth_form'); }}
@@ -362,7 +352,7 @@ export default function OnboardingPage() {
               <FormField
                 label="Email Address" icon={<Mail className="w-4 h-4" />}
                 value={email} onChange={setEmail} placeholder="you@email.com"
-                type="email" error={authErrors.email}
+                type="email" error={authErrors.email} autoFocus
               />
               <div>
                 <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5 flex items-center gap-1.5">
@@ -474,20 +464,18 @@ export default function OnboardingPage() {
                   <div className="grid grid-cols-2 gap-3 mt-4">
                     {VIBES.map((v) => {
                       const active = selectedVibe === v.id;
-                      const Icon = v.id === 'chill' ? Palmtree : v.id === 'chaos' ? Flame : v.id === 'zen' ? Wind : Diamond;
                       return (
                         <motion.button
                           key={v.id} whileTap={{ scale: 0.96 }}
                           onClick={() => setSelectedVibe(v.id)}
-                          className={`relative p-4 rounded-2xl border-2 text-left transition-colors press ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
+                          className={`relative p-4 rounded-2xl border-2 text-left transition-colors press ${v.id === 'balanced' ? 'col-span-2' : ''} ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
                         >
                           {active && (
                             <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center">
                               <Check className="w-3 h-3 text-white" />
                             </div>
                           )}
-                          <div className="text-3xl mb-2">{v.emoji}</div>
-                          <Icon className="hidden" />
+                          <div className={`text-3xl mb-2 ${v.id === 'balanced' ? 'inline-block' : ''}`}>{v.emoji}</div>
                           <div className="font-bold text-ink-900 font-display">{v.label}</div>
                           <div className="text-xs text-ink-500 mt-0.5 leading-snug">{v.desc}</div>
                         </motion.button>
@@ -545,7 +533,7 @@ export default function OnboardingPage() {
                           {cities.map((city) => (
                             <button
                               key={city}
-                              onClick={() => { setDestList((prev) => prev.includes(city) ? prev : [...prev, city]); setDestInput(''); }}
+                              onClick={() => { setDestList((prev) => prev.some((d) => d.name === city) ? prev : [...prev, { name: city, days: 2 }]); setDestInput(''); }}
                               className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-brand-200 text-brand-700 text-xs font-semibold press"
                             >
                               <Plus className="w-3 h-3" /> {city}
@@ -564,7 +552,7 @@ export default function OnboardingPage() {
                       {['Paris, France', 'Rome, Italy', 'Bali, Indonesia', 'Tokyo, Japan', 'Barcelona, Spain'].map((d) => (
                         <button
                           key={d}
-                          onClick={() => setDestList((prev) => prev.includes(d) ? prev : [...prev, d])}
+                          onClick={() => setDestList((prev) => prev.some((x) => x.name === d) ? prev : [...prev, { name: d, days: 2 }])}
                           className="px-3 py-1.5 rounded-full bg-ink-50 text-ink-700 text-xs font-semibold press border border-ink-100"
                         >
                           {d}
@@ -578,13 +566,13 @@ export default function OnboardingPage() {
                       <AnimatePresence>
                         {destList.map((d, i) => (
                           <motion.div
-                            key={d} layout
+                            key={d.name} layout
                             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, height: 0 }}
                             className="flex items-center gap-2 bg-white border border-ink-100 rounded-xl px-3 py-2.5"
                           >
                             <div className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</div>
-                            <span className="flex-1 text-sm font-semibold text-ink-900">{d}</span>
+                            <span className="flex-1 text-sm font-semibold text-ink-900 truncate">{d.name}</span>
                             <div className="flex items-center gap-0.5 shrink-0">
                               <button onClick={() => moveDest(i, i - 1)} disabled={i === 0} className="w-6 h-6 flex items-center justify-center text-ink-300 disabled:opacity-20 press">
                                 <ChevronUp className="w-3.5 h-3.5" />
@@ -592,7 +580,6 @@ export default function OnboardingPage() {
                               <button onClick={() => moveDest(i, i + 1)} disabled={i === destList.length - 1} className="w-6 h-6 flex items-center justify-center text-ink-300 disabled:opacity-20 press">
                                 <ChevronDown className="w-3.5 h-3.5" />
                               </button>
-                              <GripVertical className="w-4 h-4 text-ink-200 mx-0.5" />
                               <button onClick={() => removeDest(i)} className="w-6 h-6 flex items-center justify-center text-ink-400 hover:text-red-500 press">
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -620,12 +607,12 @@ export default function OnboardingPage() {
                     <div className="flex items-center gap-2 mb-3">
                       <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border-2 transition-colors ${calPhase === 'start' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-100 bg-ink-50 text-ink-600'}`}>
                         <div className="text-[9px] text-ink-400 mb-0.5">DEPART</div>
-                        {startDate ? startDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Select'}
+                        {startDate ? startDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: startDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }) : 'Select'}
                       </div>
                       <span className="text-ink-300 font-bold">→</span>
                       <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border-2 transition-colors ${calPhase === 'end' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-ink-100 bg-ink-50 text-ink-600'}`}>
                         <div className="text-[9px] text-ink-400 mb-0.5">RETURN</div>
-                        {endDate ? endDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Select'}
+                        {endDate ? endDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: endDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined }) : 'Select'}
                       </div>
                       {startDate && endDate && (
                         <div className="bg-brand-50 border-2 border-brand-100 rounded-xl px-3 py-2 text-center shrink-0">
@@ -679,6 +666,17 @@ export default function OnboardingPage() {
                         </button>
                       ))}
                     </div>
+                    {/* Issue 4: wallet budget preview */}
+                    {totalDays > 1 && (
+                      <div className="mt-4 flex items-center gap-3 bg-brand-50 border border-brand-100 rounded-2xl p-3">
+                        <span className="text-xl shrink-0">💰</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-ink-500">Est. total trip budget</div>
+                          <div className="font-bold text-brand-700 text-sm">{fmtBudget(budget * 3 * totalDays)}</div>
+                          <div className="text-[10px] text-ink-400">~3 stops/day × {totalDays} day{totalDays !== 1 ? 's' : ''}</div>
+                        </div>
+                      </div>
+                    )}
                     <div className="mt-4 flex items-start gap-2.5 bg-ink-50 rounded-2xl p-3">
                       <span className="text-lg shrink-0">💡</span>
                       <p className="text-xs text-ink-600 leading-relaxed">
@@ -827,7 +825,7 @@ export default function OnboardingPage() {
               <div className="flex items-center gap-3 mb-1">
                 <img src="/mascot-icon.svg" alt="" className="w-8 h-8 object-contain brightness-0 invert" />
                 <div className="text-white font-extrabold text-lg font-display leading-tight">
-                  {destList.length > 0 ? `${destList[0].split(',')[0]} awaits` : 'Your trip awaits'}
+                  {destList.length > 0 ? `${destList[0].name.split(',')[0]} awaits` : 'Your trip awaits'}
                 </div>
               </div>
               <div className="text-white/70 text-xs mt-1">
@@ -885,11 +883,11 @@ function StepTitle({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 function FormField({
-  label, icon, value, onChange, placeholder, type = 'text', error,
+  label, icon, value, onChange, placeholder, type = 'text', error, autoFocus,
 }: {
   label: string; icon: React.ReactNode; value: string;
   onChange: (v: string) => void; placeholder: string;
-  type?: string; error?: string;
+  type?: string; error?: string; autoFocus?: boolean;
 }) {
   return (
     <div>
@@ -900,6 +898,7 @@ function FormField({
         type={type} value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        autoFocus={autoFocus}
         className={`w-full bg-ink-50 rounded-xl px-3 py-3 text-sm text-ink-900 placeholder:text-ink-400 outline-none border-2 transition-colors ${error ? 'border-red-400' : 'border-transparent focus:border-brand-400'}`}
       />
       {error && <p className="text-xs text-red-500 mt-1">{error}</p>}

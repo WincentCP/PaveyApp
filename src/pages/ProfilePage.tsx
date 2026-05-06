@@ -351,10 +351,8 @@ export default function ProfilePage() {
               </div>
               <div className="text-center mb-1 font-bold text-ink-900 font-display text-lg">Log out?</div>
               <div className="text-center text-sm text-ink-500 mb-6">You'll be taken back to the welcome screen.</div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setShowLogoutConfirm(false)} className="h-12 rounded-2xl bg-ink-50 text-ink-700 font-semibold press">Cancel</button>
-                <button onClick={handleLogout} className="h-12 rounded-2xl bg-red-500 text-white font-semibold press shadow-sm">Log Out</button>
-              </div>
+              <button onClick={() => setShowLogoutConfirm(false)} className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow mb-3">Stay logged in</button>
+              <button onClick={handleLogout} className="w-full h-10 text-red-500 font-semibold text-sm press">Log out</button>
             </motion.div>
           </>
         )}

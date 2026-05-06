@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell, Plus, Scan, Clock, X, Check, Users, Receipt,
   Pencil, Trash2, Share2, ChevronRight, ChevronLeft, Wallet, CalendarDays,
-  TrendingDown, Globe, AlertTriangle,
+  TrendingDown, Globe, AlertTriangle, Search,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import StatusBar from '../components/StatusBar';
@@ -30,7 +30,7 @@ export default function WalletPage() {
 
   const hasUserTrips = trips.some(t => t.id !== 'trip-default');
 
-  const [sheet, setSheet] = useState<null | 'editBudget' | 'addExpense' | 'scan' | 'history' | 'splitBill' | 'newTrip' | 'currencyPicker'>(null);
+  const [sheet, setSheet] = useState<null | 'editBudget' | 'addExpense' | 'scan' | 'history' | 'splitBill' | 'newTrip' | 'currencyPicker' | 'manageTrips'>(null);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState<string | null>(null);
 
   const breakdown = useMemo(() => {
@@ -112,24 +112,14 @@ export default function WalletPage() {
       <div className="px-5 mb-3">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
           {trips.map((t) => (
-            <div key={t.id} className="shrink-0 flex items-center">
-              <button
-                onClick={() => setActiveTripId(t.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors ${t.id === activeTripId ? 'bg-brand-500 text-white shadow-glow' : 'bg-ink-50 text-ink-700 border border-ink-100'}`}
-              >
-                {t.id === activeTripId && <span className="w-1.5 h-1.5 rounded-full bg-white/80" />}
-                {t.name}
-              </button>
-              {trips.length > 1 && (
-                <button
-                  onClick={() => setConfirmDeleteTrip(t.id)}
-                  className="ml-1 w-5 h-5 rounded-full flex items-center justify-center hover:bg-red-50 press text-ink-400 hover:text-red-500 transition-colors"
-                  aria-label="Delete trip"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+            <button
+              key={t.id}
+              onClick={() => setActiveTripId(t.id)}
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors ${t.id === activeTripId ? 'bg-brand-500 text-white shadow-glow' : 'bg-ink-50 text-ink-700 border border-ink-100'}`}
+            >
+              {t.id === activeTripId && <span className="w-1.5 h-1.5 rounded-full bg-white/80" />}
+              {t.name}
+            </button>
           ))}
           <button
             onClick={() => setSheet('newTrip')}
@@ -137,6 +127,14 @@ export default function WalletPage() {
           >
             <Plus className="w-3 h-3" /> New Trip
           </button>
+          {trips.length > 1 && (
+            <button
+              onClick={() => setSheet('manageTrips')}
+              className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold text-ink-500 border border-ink-200 bg-white press"
+            >
+              Manage
+            </button>
+          )}
         </div>
       </div>
 
@@ -442,6 +440,56 @@ export default function WalletPage() {
                 >
                   Delete
                 </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Manage Trips sheet (Issue 23) */}
+      <AnimatePresence>
+        {sheet === 'manageTrips' && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSheet(null)} className="absolute inset-0 z-40 bg-ink-900/40" />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-10"
+            >
+              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
+              <div className="px-5 pt-3 pb-4 flex items-center justify-between">
+                <div className="font-bold text-ink-900 font-display">Manage Trips</div>
+                <button onClick={() => setSheet(null)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="px-5 space-y-2 pb-4">
+                {trips.map((t) => (
+                  <div key={t.id} className="flex items-center gap-3 bg-white border border-ink-100 rounded-2xl px-4 py-3">
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-semibold text-sm ${t.id === activeTripId ? 'text-brand-600' : 'text-ink-900'}`}>{t.name}</div>
+                      <div className="text-xs text-ink-500 mt-0.5">{t.transactions.length} transaction{t.transactions.length !== 1 ? 's' : ''}</div>
+                    </div>
+                    {t.id !== activeTripId && (
+                      <button
+                        onClick={() => { setActiveTripId(t.id); setSheet(null); }}
+                        className="text-xs text-brand-600 font-semibold press px-2 py-1 rounded-lg bg-brand-50"
+                      >
+                        Switch
+                      </button>
+                    )}
+                    {t.id === activeTripId && (
+                      <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-2 py-0.5 rounded-full">Active</span>
+                    )}
+                    {trips.length > 1 && (
+                      <button
+                        onClick={() => setConfirmDeleteTrip(t.id)}
+                        className="w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center press text-ink-400 hover:text-red-500"
+                        aria-label="Delete trip"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </motion.div>
           </>
@@ -780,9 +828,22 @@ const CURRENCIES: { id: Currency; name: string; flag: string }[] = [
   { id: 'JPY', name: 'Japanese Yen', flag: '🇯🇵' },
   { id: 'SGD', name: 'Singapore Dollar', flag: '🇸🇬' },
   { id: 'AUD', name: 'Australian Dollar', flag: '🇦🇺' },
+  { id: 'GBP', name: 'British Pound', flag: '🇬🇧' },
+  { id: 'THB', name: 'Thai Baht', flag: '🇹🇭' },
+  { id: 'MYR', name: 'Malaysian Ringgit', flag: '🇲🇾' },
+  { id: 'KRW', name: 'South Korean Won', flag: '🇰🇷' },
+  { id: 'HKD', name: 'Hong Kong Dollar', flag: '🇭🇰' },
+  { id: 'CNY', name: 'Chinese Yuan', flag: '🇨🇳' },
+  { id: 'INR', name: 'Indian Rupee', flag: '🇮🇳' },
+  { id: 'NZD', name: 'New Zealand Dollar', flag: '🇳🇿' },
+  { id: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦' },
 ];
 
 function CurrencyPickerSheet({ current, hasTransactions, onSelect }: { current: Currency; hasTransactions: boolean; onSelect: (c: Currency) => void }) {
+  const [query, setQuery] = useState('');
+  const filtered = query.trim()
+    ? CURRENCIES.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()) || c.id.toLowerCase().includes(query.toLowerCase()))
+    : CURRENCIES;
   return (
     <div className="space-y-2">
       {/* Issue 23: conversion warning */}
@@ -794,7 +855,19 @@ function CurrencyPickerSheet({ current, hasTransactions, onSelect }: { current: 
           </p>
         </div>
       )}
-      {CURRENCIES.map((c) => (
+      <div className="flex items-center gap-2 bg-ink-50 rounded-xl px-3 py-2.5 border border-ink-200 mb-1">
+        <Search className="w-4 h-4 text-ink-400 shrink-0" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search currency…"
+          className="flex-1 bg-transparent text-sm text-ink-800 placeholder:text-ink-400 outline-none"
+        />
+      </div>
+      {filtered.length === 0 && (
+        <div className="py-4 text-center text-sm text-ink-400">No currencies found</div>
+      )}
+      {filtered.map((c) => (
         <button
           key={c.id}
           onClick={() => onSelect(c.id)}

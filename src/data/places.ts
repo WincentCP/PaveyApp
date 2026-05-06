@@ -1,4 +1,4 @@
-export type Vibe = 'chill' | 'chaos' | 'zen' | 'luxury';
+export type Vibe = 'chill' | 'chaos' | 'zen' | 'luxury' | 'balanced';
 export type Category = 'Cafe' | 'Nature' | 'Cultural' | 'Historic' | 'Scenic' | 'Cozy' | 'Foodie' | 'Hidden Gem';
 
 export interface Place {
@@ -184,7 +184,7 @@ export function parseCloseHour(s: string): number {
 
 export function pickItinerary(vibe: Vibe, budget: number, indoorOnly = false): Place[] {
   let candidates = PLACES.filter(
-    (p) => p.vibes.includes(vibe) && p.cost <= budget && (!indoorOnly || p.indoor),
+    (p) => (vibe === 'balanced' || p.vibes.includes(vibe)) && p.cost <= budget && (!indoorOnly || p.indoor),
   ).sort((a, b) => b.rating - a.rating);
 
   if (candidates.length < 3) {

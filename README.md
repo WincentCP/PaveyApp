@@ -56,7 +56,7 @@ App
                 │   ├── /onboarding   → OnboardingPage
                 │   ├── /             → HomePage
                 │   ├── /generate     → GeneratePage
-                │   ├── /transition   → TransitionPage
+
                 │   ├── /map          → MapPage
                 │   ├── /navigate     → NavigatePage
                 │   ├── /wallet       → WalletPage
@@ -67,7 +67,11 @@ App
 
 **Auth Guard:** `AppShell` reads `onboardingComplete` from context. If false, all routes redirect to `/onboarding`. Onboarding is always accessible regardless of auth state.
 
-**BottomNav tabs:** Home · Map · [Buddy FAB center] · Wallet · Profile
+**BottomNav tabs:** Home · Map · Wallet · Profile (4-tab grid, no center FAB)
+
+**Buddy FAB:** Floating button anchored at `bottom-[72px] right-4` — outside the nav bar, always accessible.
+
+**Persistent Navigation Bar:** When `isNavigating = true`, a compact pill appears at the **top** of the screen (`inset-x-4 top-10`) showing the current destination. Tapping it returns to `/navigate`.
 
 ---
 
@@ -121,7 +125,7 @@ App
 | `tripBudget` | number | Active trip total budget |
 | `totalSpent` | number | Sum of negative transactions |
 | `dailyAllowance` | number | Remaining budget ÷ days remaining |
-| `currency` | `Currency` | Active trip currency (IDR, USD, EUR, JPY, SGD, AUD) |
+| `currency` | `Currency` | Active trip currency (IDR, USD, EUR, JPY, SGD, AUD, GBP, THB, MYR, KRW, HKD, CNY, INR, NZD, CAD) |
 | `createTrip(data)` | fn | Create new wallet trip |
 | `deleteTrip(id)` | fn | Delete trip (minimum 1 must remain) |
 
@@ -177,7 +181,7 @@ The CTA is **outside** the scroll container — it is always visible regardless 
 
 #### Step: `welcome`
 
-**Design:** Solid brand-blue (`bg-brand-500`) full-screen background. White logo card (✈️ on white rounded square). Bottom white sheet slides up with two CTAs.
+**Design:** White (`bg-white`) full-screen background. Centered SVG logo placeholder (`/mascot.svg`, 160×160) — no app description or tagline text. Two CTAs slide up from the bottom.
 
 **Actions:**
 - "Get Started — it's free" → sets `authMode = 'signup'`, goes to `auth_form`
@@ -228,8 +232,8 @@ Active card shows brand-500 border + background + checkmark badge. Default: Zen.
 
 **Destination list features:**
 - Numbered badges (1, 2, 3…)
+- Editable day count per destination (−/+ stepper, min 1)
 - Up/Down reorder arrows (disabled at boundaries)
-- Grip icon (visual affordance)
 - X remove button
 - Multi-city divider banner when 2+ destinations added
 
@@ -266,7 +270,10 @@ Active card shows brand-500 border + background + checkmark badge. Default: Zen.
 **Range:** Rp 50K → Rp 1jt+ (IDR, 50,000 to 1,000,000 in 10,000 steps)
 **Default:** Rp 500,000
 **Presets:** Rp 150K / Rp 300K / Rp 600K
+**Wallet preview:** When `totalDays > 1`, shows estimated total trip budget (`budget × 3 stops/day × days`).
 **Info note:** "Budget covers entry fees, food, and activities. Transport is extra."
+
+**Date display** shows year when the selected date is in a different calendar year.
 
 **Continue** → `interests`
 
@@ -322,12 +329,14 @@ Multi-select. Active chips show brand-500 fill + checkmark.
 - Hero image with dark overlay
 - Greeting: "Good morning, [FirstName] 👋"
 - Current location chip (from `activeDest` or fallback USER.current)
+- Search icon button (top right, next to avatar) — expands inline search bar when tapped, collapses on tap again
 - Avatar button (top right)
 
 **Daily Vibe Card** (overlaps hero bottom):
 - Weather: 28° Partly Cloudy, Humidity 74%
 - "Today's Vibe" label with dynamic text
 - Estimated cost for nearby spots
+- "Sample preview" italic note (clarifies the weather card is placeholder data)
 
 ---
 
@@ -345,7 +354,7 @@ Tapping a destination pill calls `setActiveDestIdx(i)` to switch context.
 
 #### Section: Search + Filter
 
-Full-width search input with filter button.
+**Collapsed by default.** Tapping the Search icon in the hero header expands an inline search bar with AnimatePresence transition.
 
 **Search behavior:** Real-time filtering of `PLACES[]` by name, category, and tags. Results appear as dropdown list (max 5). Tapping a result opens the Place Detail sheet.
 
@@ -355,35 +364,32 @@ Full-width search input with filter button.
 
 #### Section: TODAY'S PLAN
 
+**Header:** "TODAY'S PLAN" label + inline vibe chip (e.g., "🌴 Chill Plan ✏️"). Tapping the chip opens the Vibe & Budget sheet.
+
+**Vibe & Budget Sheet** (bottom sheet):
+- 4-vibe grid picker
+- Budget range slider
+- "Regenerate Plan" CTA → `/generate`
+
 **Case A — Plan exists (`itinerary.length > 0`):**
 - If navigating: "Navigation active" banner → taps to `/navigate`
+- Day header: DAY N — date — city name
 - Vertical timeline of stops with time estimates and distance gaps
 - Each stop: tap opens Place Detail sheet, bookmark button toggles saved
-- **Edit Plan** and **View Map** buttons below timeline (outside timeline container, so the vertical line doesn't bleed into buttons)
+- Clear, **Edit Plan**, and **View Map** buttons below timeline
 - Edit Plan → `/generate?edit=1` (opens GeneratePage in edit mode, no rebuild)
 - View Map → `/map`
 
 **Case B — No plan:**
-- Empty state card with 🗺️ and contextual message
-- 2×2 action grid: AI Generate, Plan Manually, Explore Nearby, Saved Places
+- Empty state card 🗺️ with contextual message
+- "Generate my plan" primary CTA (brand-500, full-width, shadow-glow) → `/generate`
+- "or build it stop by stop" text link → `/generate?mode=manual`
 
 **Case C — Next destination preview:**
 Shown when `nextDest` exists. Card with destination name, days, currency. "Plan →" button switches active destination.
 
 **Case D — Add destination CTA:**
 Shown when single-destination trip and user is onboarded. Dashed border "Add another destination" button.
-
----
-
-#### Section: Vibe Picker
-
-4-column grid matching onboarding vibes. Selecting updates `vibe` in context, which affects `buildItinerary()` output.
-
----
-
-#### Section: Budget Slider
-
-Range slider (Rp 50K–1M). Updates `budget` in context. Values shown at endpoints and as current value label.
 
 ---
 
@@ -398,14 +404,6 @@ Two cards side by side:
 #### Section: Saved Places
 
 Shown only when `savedPlaces.length > 0`. Horizontal scroll of place cards with remove (×) button. Tapping opens Place Detail sheet.
-
----
-
-#### Section: Import from Social
-
-TikTok / Instagram link parser. Paste a URL, hit Parse → 1.8s simulation → shows detected place card with name, image, description, cost, platform badge.
-
-Actions: "Add to Map" (navigates to `/map`) or "Add to Itinerary" (adds to context).
 
 ---
 
@@ -461,7 +459,7 @@ Full-screen loading skeleton (1.2s delay) → 2.3s total → transitions to reve
 - × remove button (4s undo toast)
 - Cultural intelligence row (collapsible) — shows local tips, etiquette, language phrases
 
-**Undo system:** Removed stops show "Undo" toast for 4 seconds. Tapping restores the stop in its original position.
+**Undo system:** Removed stops show "Undo" toast for 6 seconds. Tapping restores the stop in its original position.
 
 **Alternatives section** (bottom): "Try instead" recommendations — 2-column grid of places not in current plan. Tap to add.
 
@@ -473,7 +471,7 @@ Full-screen loading skeleton (1.2s delay) → 2.3s total → transitions to reve
 - Results list with add buttons
 - "Add custom place" at bottom
 
-**Confirm Plan** → navigates to `/transition` (TransitionPage loading screen) then `/map`
+**Confirm Plan** → navigates directly to `/map` (TransitionPage removed)
 
 ---
 
@@ -494,30 +492,13 @@ Cultural intel shown inline on each plan stop — same as AI reveal mode.
 
 #### Shared Features (both modes)
 
-**Start time picker:** Drum-roll time picker (scroll-snap) for departure time. Hours 00–23, minutes in 5-minute increments.
+**Start time picker:** Preset time chips (08:00–15:00) for quick selection, plus a "Custom" option that reveals a native `<input type="time">` field.
 
-**Cultural Intelligence per stop:** Collapsible row showing locale-specific tips (etiquette, language, food, transport). Color-coded by category.
-
----
-
-### 4. TransitionPage (`/transition`)
-
-**Purpose:** Animated loading screen between GeneratePage and MapPage. Runs for 2.8 seconds.
-
-**Design:** White background. Brand-blue central icon square with animated pulse rings. Step text animates between 3 messages:
-1. 🗺️ "Building your journey…" (0–0.9s)
-2. 🔀 "Optimizing route…" (0.9–1.9s)
-3. ✨ "Almost ready…" (1.9–2.8s)
-
-**Dots loader:** 3 brand-blue dots, active dot pulses.
-
-**Stop preview strip:** If `itinerary.length > 0`, shows circular place images with stop numbers at bottom of screen.
-
-**On complete:** Auto-navigates to `/map`.
+**Cultural Intelligence per stop:** Collapsible row showing locale-specific tips (etiquette, language, food, transport). Color-coded by category. **First stop auto-expands** on initial load.
 
 ---
 
-### 5. MapPage (`/map`)
+### 4. MapPage (`/map`)
 
 **Purpose:** Visualize itinerary on map. Switch between map view and list view. Start navigation. Remove stops inline.
 
@@ -664,11 +645,11 @@ Full-width emerald card:
 #### Cancel Navigation Modal
 
 Confirmation sheet:
-- 🛑 "Cancel navigation?"
-- Progress summary: "You've visited X of Y stops. Progress will be saved."
-- "Keep Going" | "Cancel Trip"
+- "Stop navigating?" header
+- "Continue navigating" — full-width brand-500 primary button (top)
+- "Stop and go to map" — red text link below (no button shape)
 
-Cancel Trip → `setIsNavigating(false)`, navigates to `/map`.
+Stop and go to map → `setIsNavigating(false)`, navigates to `/map`.
 
 ---
 
@@ -691,11 +672,11 @@ If `itinerary` is empty or `navIndex` is out of range, shows full-screen fallbac
 
 #### Trip Selector Pills
 
-Horizontal scrollable pill row of all trips. Active trip: brand-500 filled. Inactive: ink-50 outlined.
-
-Each pill has an × delete button when `trips.length > 1`. Deleting shows confirmation modal.
+Horizontal scrollable pill row of all trips. Active trip: brand-500 filled. Inactive: ink-50 outlined. No inline delete buttons.
 
 "New Trip +" button opens NewTripSheet.
+
+**"Manage" button** appears when `trips.length > 1` and opens a Manage Trips bottom sheet — allows switching active trip and deleting trips (with confirmation modal).
 
 ---
 
@@ -752,7 +733,7 @@ Last 5 transactions with icon, title, date (relative), amount, optional tag badg
 
 **NewTripSheet:** Trip name, destination (auto-suggests currency), budget input, day count stepper.
 
-**CurrencyPickerSheet:** List of 6 currencies (IDR, USD, EUR, JPY, SGD, AUD) with flag, name, symbol. Checkmark on current.
+**CurrencyPickerSheet:** Searchable list of 15 currencies (IDR, USD, EUR, JPY, SGD, AUD, GBP, THB, MYR, KRW, HKD, CNY, INR, NZD, CAD) with flag, name, symbol. Live search filters by name or code. Checkmark on current selection. Warning banner when existing transactions are present (currency change won't convert historical amounts).
 
 **SplitBillSheet:** Multi-step flow:
 1. **Entry** — Choose: Scan Receipt / Upload Photo / Add Manually
@@ -843,8 +824,9 @@ Red-tinted row button → shows confirmation bottom sheet.
 
 **Logout confirmation:**
 - 🚪 "Log out?" with message "You'll be taken back to the welcome screen."
-- Cancel / Log Out buttons
-- "Log Out" calls `logout()` + `nav('/onboarding', { replace: true })`
+- "Stay logged in" — full-width brand-500 primary button (top, shadow-glow)
+- "Log out" — red text link below (no button shape)
+- "Log out" calls `logout()` + `nav('/onboarding', { replace: true })`
 
 `logout()` clears: `isAuthenticated`, `authUser`, `onboardingComplete`, `itinerary`, `visited`, `savedPlaces`, `isNavigating`, `navIndex`.
 
@@ -864,7 +846,7 @@ Red-tinted row button → shows confirmation bottom sheet.
      └──→ /map                   (View Map button)
 
 /generate
-     └──→ /transition ──→ /map   (Confirm Plan)
+     └──→ /map                   (Confirm Plan — TransitionPage removed)
 
 /map
      ├──→ /generate?edit=1       (edit now inline on cards)
@@ -878,11 +860,11 @@ Red-tinted row button → shows confirmation bottom sheet.
 /profile — self-contained, sheets only; logout → /onboarding
 ```
 
-**BottomNav** links: `/` · `/map` · `/wallet` · `/profile` (hidden on `/navigate` and `/onboarding`)
+**BottomNav** links: `/` · `/map` · `/wallet` · `/profile` (4-tab grid, hidden on `/navigate` and `/onboarding`)
 
-**Buddy FAB** (center of BottomNav): Opens Buddy AI assistant overlay. Hidden on `/onboarding` and `/transition`.
+**Buddy FAB:** Floating `bottom-[72px] right-4` button. Hidden on `/onboarding`.
 
-**Persistent Navigation Bar** (above BottomNav): Shown when `isNavigating = true` on any non-navigate page. Shows current stop, next stop, stops remaining, cancel button. Tapping the bar goes to `/navigate`.
+**Persistent Navigation Bar:** Compact top pill shown when `isNavigating = true` on any non-navigate page. Tapping goes to `/navigate`.
 
 ---
 
@@ -892,7 +874,7 @@ Red-tinted row button → shows confirmation bottom sheet.
 
 | Scenario | UI |
 |---|---|
-| No itinerary on Home | 🗺️ card + AI Generate / Plan Manually / Explore / Saved action grid |
+| No itinerary on Home | 🗺️ card + "Generate my plan" primary CTA + "or build it stop by stop" text link |
 | No itinerary on Map (map view) | Animated bottom card with "Plan [Destination]" CTA |
 | No itinerary on Map (list view) | Centered empty state with same CTA |
 | No transactions in Wallet | 💸 "No expenses yet" card with helper text |
@@ -905,9 +887,7 @@ Red-tinted row button → shows confirmation bottom sheet.
 |---|---|
 | AI itinerary generation | 1.2s delay → shimmer skeleton cards → reveal with animation |
 | Auth form submission | Rotating Sparkles spinner on button for 1.2s |
-| Social link parsing | Sparkles spinner + shimmer bar for 1.8s |
 | Receipt scanning | Animated scan line for 2.2s |
-| TransitionPage | 2.8s animated 3-step progress then auto-navigate |
 
 ### Edge Cases
 
@@ -959,8 +939,8 @@ Red-tinted row button → shows confirmation bottom sheet.
 10. Taps continue → `completeOnboarding()` → lands on `/`
 11. HomePage: empty plan, sees action grid with AI Generate and Plan Manually
 12. Taps "AI Generate" → `/generate` → 2.3s loading → itinerary revealed
-13. Reviews stops, maybe removes one, taps "Confirm Plan"
-14. TransitionPage (white bg, 2.8s) → `/map` with itinerary on map
+13. Reviews stops, maybe removes one, taps "Confirm My Journey"
+14. Navigates directly to `/map` with itinerary on map
 15. Taps "Start Navigation" → `/navigate`
 16. Follows route, marks stops visited, finishes → redirected to `/profile`
 
@@ -972,8 +952,8 @@ Red-tinted row button → shows confirmation bottom sheet.
 2. HomePage shows existing itinerary with timeline
 3. User wants to change a stop → taps "Edit Plan" → `/generate?edit=1`
 4. GeneratePage loads in reveal phase (no rebuild) showing existing stops
-5. User removes a stop (4s undo toast shown), swaps another via AlternativesSheet
-6. Taps Confirm → TransitionPage → `/map`
+5. User removes a stop (6s undo toast shown), swaps another via AlternativesSheet
+6. Taps "Confirm My Journey" → directly to `/map`
 
 ---
 
@@ -1015,13 +995,13 @@ Red-tinted row button → shows confirmation bottom sheet.
 
 ---
 
-### Scenario 6: Adding a Stop from Social Media
+### Scenario 6: Changing Vibe Mid-Trip
 
-1. On HomePage, scrolls to "Import from Social" section
-2. Pastes TikTok URL
-3. Taps "Parse" → 1.8s loading → detected place card appears with image, name, description, cost
-4. Taps "Add to Itinerary" → place added to `itinerary` via context
-5. Toast: "[Place name] added to itinerary"
+1. On HomePage, taps the "🌴 Chill Plan ✏️" chip next to "TODAY'S PLAN"
+2. Vibe & Budget sheet slides up
+3. Taps "🔥 Chaos" vibe
+4. Adjusts budget slider to Rp 600K
+5. Taps "Regenerate Plan" → navigates to `/generate` with updated vibe + budget
 
 ---
 
@@ -1037,7 +1017,7 @@ Red-tinted row button → shows confirmation bottom sheet.
 | Timeline vertical line bled into Edit Plan button | Buttons moved outside timeline `relative` container |
 | Purple gradient backgrounds throughout app | All color gradients replaced with solid brand/ink colors |
 | Welcome screen: blue→purple gradient | Solid `bg-brand-500` blue |
-| TransitionPage: purple gradient | `bg-white` with brand-blue icon |
+| TransitionPage existed as loading screen | Removed; Confirm Plan navigates directly to `/map` |
 | Gradient in persona progress, badges, banners | Solid colors throughout |
 
 ---
