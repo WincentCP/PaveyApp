@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Settings, Mail, Phone, MapPin, ChevronRight, Bookmark, Clock, CreditCard, HelpCircle, X, Crown,
-  Compass, Footprints, TrendingDown, Star, LogOut, User,
+  Mail, Phone, MapPin, ChevronRight, Bookmark, Clock, CreditCard, HelpCircle, X, Crown,
+  Compass, Footprints, Star, LogOut, User,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -48,6 +48,7 @@ export default function ProfilePage() {
   const nav = useNavigate();
   const [statDetail, setStatDetail] = useState<null | string>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSavedPlaces, setShowSavedPlaces] = useState(false);
 
   const totalPlaces = Math.max(visited.size, visitedPlaceIds.size);
   const userTrips = trips.filter((t) => t.id !== 'trip-default');
@@ -97,7 +98,7 @@ export default function ProfilePage() {
     {
       id: 'saved',
       label: 'Saved Places',
-      icon: TrendingDown,
+      icon: Bookmark,
       color: '#F59E0B',
       bg: '#FFFBEB',
       value: savedPlaces.length,
@@ -112,25 +113,14 @@ export default function ProfilePage() {
       <StatusBar />
 
       {/* Header */}
-      <PageHeader
-        icon={User}
-        title="Profile"
-        right={
-          <button className="w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center press">
-            <Settings className="w-4 h-4 text-ink-700" />
-          </button>
-        }
-      />
+      <PageHeader icon={User} title="Profile" />
 
       {/* User card */}
       <div className="px-5">
         <div className="bg-white rounded-3xl p-4 border border-ink-100 shadow-soft flex gap-3">
           <motion.img whileHover={{ scale: 1.04 }} src={USER.avatar} alt="me" className="w-16 h-16 rounded-2xl object-cover" />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <div className="font-bold text-ink-900 font-display truncate">{displayName}</div>
-              <button className="text-xs text-brand-600 font-semibold press shrink-0 ml-2">Edit</button>
-            </div>
+            <div className="font-bold text-ink-900 font-display truncate">{displayName}</div>
             <div className="text-xs text-ink-500 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" /> {USER.location}</div>
             <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3 shrink-0" /> <span className="truncate">{displayEmail}</span></div>
             <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3 shrink-0" /> {USER.phone}</div>
@@ -180,7 +170,6 @@ export default function ProfilePage() {
       <div className="px-5 mt-5">
         <div className="flex items-center justify-between mb-3">
           <div className="font-bold text-ink-900 font-display">My Stats</div>
-          {!isNewUser && <button className="text-xs text-brand-600 font-semibold press">Full report ›</button>}
         </div>
         <div className="grid grid-cols-2 gap-3">
           {STAT_CARDS.map((s, i) => {
@@ -274,7 +263,6 @@ export default function ProfilePage() {
       <div className="px-5 mt-5">
         <div className="flex items-center justify-between mb-3">
           <div className="font-bold text-ink-900 font-display">My Badges</div>
-          {!isNewUser && <button className="text-xs text-brand-600 font-semibold press">See all ›</button>}
         </div>
         {isNewUser ? (
           <div className="grid grid-cols-4 gap-2">
@@ -316,10 +304,15 @@ export default function ProfilePage() {
 
       {/* Settings list */}
       <div className="px-5 mt-5 space-y-2">
-        <Row icon={<Bookmark className="w-4 h-4" />} label="Saved Places" badge={savedPlaces.length > 0 ? savedPlaces.length : undefined} />
-        <Row icon={<Clock className="w-4 h-4" />} label="Travel History" />
-        <Row icon={<CreditCard className="w-4 h-4" />} label="Payment Methods" />
-        <Row icon={<HelpCircle className="w-4 h-4" />} label="Help & Support" />
+        <Row
+          icon={<Bookmark className="w-4 h-4" />}
+          label="Saved Places"
+          badge={savedPlaces.length > 0 ? savedPlaces.length : undefined}
+          onClick={() => setShowSavedPlaces(true)}
+        />
+        <Row icon={<Clock className="w-4 h-4" />} label="Travel History" comingSoon />
+        <Row icon={<CreditCard className="w-4 h-4" />} label="Payment Methods" comingSoon />
+        <Row icon={<HelpCircle className="w-4 h-4" />} label="Help & Support" comingSoon />
       </div>
 
       {/* Logout */}
@@ -358,6 +351,48 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
 
+      {/* Saved Places sheet */}
+      <AnimatePresence>
+        {showSavedPlaces && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowSavedPlaces(false)} className="absolute inset-0 z-40 bg-ink-900/40" />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card flex flex-col max-h-[80%]"
+            >
+              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3 shrink-0" />
+              <div className="px-5 pt-3 pb-3 flex items-center justify-between shrink-0">
+                <div className="font-bold text-ink-900 font-display">Saved Places · {savedPlaces.length}</div>
+                <button onClick={() => setShowSavedPlaces(false)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="px-5 pb-6 overflow-y-auto space-y-2 no-scrollbar">
+                {savedPlaces.length === 0 && (
+                  <div className="text-center py-10">
+                    <div className="text-4xl mb-2">🔖</div>
+                    <div className="text-sm font-semibold text-ink-700">No saved places yet</div>
+                    <div className="text-xs text-ink-500 mt-1">Tap the bookmark icon on any place to save it here.</div>
+                  </div>
+                )}
+                {savedPlaces.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 bg-white border border-ink-100 rounded-2xl p-2.5">
+                    <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-ink-900 truncate text-sm">{p.name}</div>
+                      <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
+                        <span>{p.category}</span>
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>{p.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Stat detail sheet */}
       <AnimatePresence>
         {statDetail && (
@@ -389,15 +424,22 @@ export default function ProfilePage() {
   );
 }
 
-function Row({ icon, label, badge }: { icon: React.ReactNode; label: string; badge?: number }) {
+function Row({ icon, label, badge, onClick, comingSoon }: { icon: React.ReactNode; label: string; badge?: number; onClick?: () => void; comingSoon?: boolean }) {
   return (
-    <button className="w-full bg-white border border-ink-100 rounded-2xl px-4 py-3 flex items-center gap-3 press">
+    <button
+      onClick={comingSoon ? undefined : onClick}
+      className={`w-full bg-white border border-ink-100 rounded-2xl px-4 py-3 flex items-center gap-3 ${comingSoon ? 'cursor-default opacity-70' : 'press'}`}
+    >
       <span className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center text-ink-700">{icon}</span>
       <span className="flex-1 text-left text-sm font-semibold text-ink-900">{label}</span>
-      {badge !== undefined && (
+      {badge !== undefined && !comingSoon && (
         <span className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center">{badge}</span>
       )}
-      <ChevronRight className="w-4 h-4 text-ink-400" />
+      {comingSoon ? (
+        <span className="text-[10px] font-bold text-ink-400 bg-ink-50 px-2 py-0.5 rounded-full">Coming soon</span>
+      ) : (
+        <ChevronRight className="w-4 h-4 text-ink-400" />
+      )}
     </button>
   );
 }

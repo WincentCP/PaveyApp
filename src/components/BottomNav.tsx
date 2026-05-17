@@ -1,14 +1,9 @@
-import { Home, MapPin, Wallet, User, Navigation } from 'lucide-react';
+import { Home, MapPin, Wallet, User, Navigation, CalendarDays } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
-import { PaveyLogoMark } from './PaveyLogo';
 
-interface Props {
-  onBuddyOpen: () => void;
-}
-
-export default function BottomNav({ onBuddyOpen }: Props) {
+export default function BottomNav() {
   const { pathname } = useLocation();
   if (pathname.startsWith('/navigate')) return null;
 
@@ -16,26 +11,10 @@ export default function BottomNav({ onBuddyOpen }: Props) {
     <>
       <NavigationBar />
       <div className="absolute inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)]">
-        <div className="bg-white border-t border-ink-100 grid grid-cols-5 px-2 pt-3 pb-3">
+        <div className="bg-white border-t border-ink-100 grid grid-cols-5 px-2 pt-1 pb-3 items-end overflow-visible">
           <NavTab to="/" icon={Home} label="Home" />
           <NavTab to="/map" icon={MapPin} label="Map" />
-
-          {/* Buddy FAB — center slot */}
-          <div className="flex flex-col items-center -mt-6">
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.92 }}
-              whileHover={{ scale: 1.06 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 18 }}
-              onClick={onBuddyOpen}
-              className="w-14 h-14 rounded-full bg-brand-500 text-white shadow-glow flex items-center justify-center ring-4 ring-white"
-              aria-label="Open Buddy"
-            >
-              <PaveyLogoMark size={30} color="white" />
-            </motion.button>
-            <span className="text-[11px] font-medium text-ink-400 mt-1">Buddy</span>
-          </div>
-
+          <CenterNavTab to="/trips" />
           <NavTab to="/wallet" icon={Wallet} label="Wallet" />
           <NavTab to="/profile" icon={User} label="Profile" />
         </div>
@@ -81,6 +60,21 @@ function NavigationBar() {
         </button>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+function CenterNavTab({ to }: { to: string }) {
+  return (
+    <NavLink to={to} className="flex flex-col items-center gap-1 -translate-y-3">
+      {({ isActive }) => (
+        <>
+          <span className={`w-14 h-14 rounded-full flex items-center justify-center shadow-glow transition-colors ${isActive ? 'bg-brand-600' : 'bg-brand-500'}`}>
+            <CalendarDays className="w-7 h-7 text-white" strokeWidth={2} />
+          </span>
+          <span className={`text-[11px] font-semibold ${isActive ? 'text-brand-700' : 'text-brand-500'}`}>My Plan</span>
+        </>
+      )}
+    </NavLink>
   );
 }
 

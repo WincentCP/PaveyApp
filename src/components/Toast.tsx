@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
-import { CheckCircle2, Info, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
 
 type ToastTone = 'success' | 'info' | 'warn';
 interface ToastItem { id: number; msg: string; tone: ToastTone }
@@ -9,6 +9,9 @@ const C = createContext<ToastCtx | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
+  const dismiss = useCallback((id: number) => {
+    setItems((s) => s.filter((x) => x.id !== id));
+  }, []);
   const show = useCallback((msg: string, tone: ToastTone = 'success') => {
     const id = Date.now() + Math.random();
     setItems((s) => [...s, { id, msg, tone }]);
@@ -32,10 +35,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={{ y: -8, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 350, damping: 22 }}
-                className={`pointer-events-auto flex items-center gap-2 ${tones} rounded-full px-4 py-2 shadow-card text-sm font-medium`}
+                className={`pointer-events-auto flex items-center gap-2 ${tones} rounded-full pl-4 pr-2 py-2 shadow-card text-sm font-medium`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-4 h-4 shrink-0" />
                 <span>{t.msg}</span>
+                <button
+                  onClick={() => dismiss(t.id)}
+                  className="ml-1 w-6 h-6 rounded-full flex items-center justify-center hover:bg-white/15 press shrink-0"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </motion.div>
             );
           })}

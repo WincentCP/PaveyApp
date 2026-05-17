@@ -35,3 +35,23 @@ export const relativeDay = (d: string | Date) => {
   if (diff < 1000 * 60 * 60 * 36) return `Yesterday, ${formatTime(date)}`;
   return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
 };
+
+export function isDuplicateDestination(
+  name: string,
+  list: ReadonlyArray<{ name: string }>,
+): boolean {
+  const norm = name.trim().toLowerCase();
+  if (!norm) return false;
+  return list.some((d) => d.name.trim().toLowerCase() === norm);
+}
+
+export function tripsOverlap(
+  startA: string, daysA: number,
+  startB: string, daysB: number,
+): boolean {
+  const aStart = new Date(startA).getTime();
+  const aEnd = aStart + (daysA - 1) * 86400000;
+  const bStart = new Date(startB).getTime();
+  const bEnd = bStart + (daysB - 1) * 86400000;
+  return aStart <= bEnd && bStart <= aEnd;
+}

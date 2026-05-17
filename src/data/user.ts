@@ -27,4 +27,4 @@ export const USER = {
 };
 
 export const HERO_IMAGE =
-  'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=1200&q=80';
+  'https://images.unsplash.com/photo-1506929562872-bb421503ef21?auto=format&fit=crop&w=1200&q=80';

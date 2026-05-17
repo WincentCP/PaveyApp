@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PLACES, pickItinerary, type Place, type Vibe } from '../data/places';
+import { PLACES, pickItinerary, pickDayItinerary, type Place, type Vibe } from '../data/places';
 import { DEFAULT_TRIP, BUDGET_TOTAL, type Transaction, type Trip, type Currency, suggestCurrency } from '../data/wallet';
 
 export type TransitMode = 'flight' | 'train' | 'bus' | 'drive' | 'ferry';
+export type TripPace = 'relaxed' | 'balanced' | 'fast';
+export const PACE_STOPS: Record<TripPace, number> = { relaxed: 2, balanced: 3, fast: 4 };
 
 export interface Destination {
   id: string;
@@ -24,6 +26,7 @@ interface AppState {
   isAuthenticated: boolean;
   authUser: { name: string; email: string } | null;
   onboardingComplete: boolean;
+  everOnboarded: boolean;
   isOnboarded: boolean;
   signIn: (name: string, email: string) => void;
   completeOnboarding: (data: {
@@ -45,6 +48,9 @@ interface AppState {
   itinerary: Place[];
   setItinerary: (p: Place[]) => void;
   buildItinerary: () => Place[];
+  perDayItineraries: Place[][];
+  setPerDayItineraries: (p: Place[][]) => void;
+  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string) => void;
   reorderStop: (from: number, to: number) => void;
   removeStop: (id: string) => void;
   replaceStop: (id: string, withPlace: Place) => void;
@@ -56,7 +62,7 @@ interface AppState {
   setDestinations: (d: Destination[]) => void;
   activeDestIdx: number;
   setActiveDestIdx: (i: number) => void;
-  addDestination: (dest: { name: string; days: number; arriveDate?: string; departDate?: string; transitMode?: TransitMode; visaNote?: string }) => void;
+  addDestination: (dest: { name: string; days: number; arriveDate?: string; departDate?: string }) => void;
   removeDestination: (id: string) => void;
   insertDestination: (afterIdx: number, dest: { name: string; days: number }) => void;
 
@@ -103,8 +109,12 @@ interface AppState {
   isSaved: (id: string) => boolean;
 
   // Journey settings
-  journeyStart: { date: string; time: string; days: number };
-  setJourneyStart: (s: { date: string; time: string; days: number }) => void;
+  journeyStart: { date: string; time: string; days: number; endTime?: string };
+  setJourneyStart: (s: { date: string; time: string; days: number; endTime?: string }) => void;
+
+  // Trip pace
+  pace: TripPace;
+  setPace: (p: TripPace) => void;
 
   // Buddy
   buddyOpen: boolean;
@@ -135,6 +145,7 @@ function loadPersistedState() {
       isAuthenticated: boolean;
       authUser: { name: string; email: string } | null;
       onboardingComplete: boolean;
+      everOnboarded?: boolean;
       vibe: Vibe;
       budget: number;
       itinerary: Place[];
@@ -142,9 +153,11 @@ function loadPersistedState() {
       destinations: Destination[];
       trips: Trip[];
       activeTripId: string;
-      journeyStart: { date: string; time: string; days: number };
+      journeyStart: { date: string; time: string; days: number; endTime?: string };
       placeRatings?: Record<string, number>;
       visitedPlaceIds?: string[];
+      perDayItineraries?: Place[][];
+      pace?: TripPace;
     };
   } catch {
     return null;
@@ -159,9 +172,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(persisted?.isAuthenticated ?? false);
   const [authUser, setAuthUser] = useState<{ name: string; email: string } | null>(persisted?.authUser ?? null);
   const [onboardingComplete, setOnboardingComplete] = useState(persisted?.onboardingComplete ?? false);
+  const [everOnboarded, setEverOnboarded] = useState(persisted?.everOnboarded ?? false);
 
   // Vibe & itinerary
-  const [vibe, setVibe] = useState<Vibe>(persisted?.vibe ?? 'zen');
+  const [vibe, setVibe] = useState<Vibe>(persisted?.vibe ?? 'balanced');
   const [budget, setBudget] = useState<number>(persisted?.budget ?? 500_000);
   const [itinerary, setItinerary] = useState<Place[]>(persisted?.itinerary ?? [
     PLACES[0], PLACES[1], PLACES[2], PLACES[3],
@@ -172,6 +186,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [visited, setVisited] = useState<Set<string>>(new Set());
   const [savedPlaces, setSavedPlaces] = useState<Place[]>(persisted?.savedPlaces ?? []);
   const [journeyStart, setJourneyStart] = useState(persisted?.journeyStart ?? { date: 'today', time: '09:00', days: 1 });
+  const [perDayItineraries, setPerDayItineraries] = useState<Place[][]>(persisted?.perDayItineraries ?? []);
 
   // Multi-destination
   const [destinations, setDestinations] = useState<Destination[]>(persisted?.destinations ?? []);
@@ -188,19 +203,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [placeRatings, setPlaceRatings] = useState<Record<string, number>>(persisted?.placeRatings ?? {});
   const [rainyDayMode, setRainyDayMode] = useState(false);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set(persisted?.visitedPlaceIds ?? []));
+  const [pace, setPace] = useState<TripPace>(persisted?.pace ?? 'balanced');
 
   // Issue 35: persist key state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(PERSIST_KEY, JSON.stringify({
-        isAuthenticated, authUser, onboardingComplete,
+        isAuthenticated, authUser, onboardingComplete, everOnboarded,
         vibe, budget, itinerary, savedPlaces, destinations,
         trips, activeTripId, journeyStart,
         placeRatings,
         visitedPlaceIds: Array.from(visitedPlaceIds),
+        perDayItineraries,
+        pace,
       }));
     } catch { /* storage full — ignore */ }
-  }, [isAuthenticated, authUser, onboardingComplete, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds]);
+  }, [isAuthenticated, authUser, onboardingComplete, everOnboarded, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds, perDayItineraries, pace]);
 
   // Per-destination itinerary sync:
   // When activeDestIdx changes, load that destination's itinerary into global state.
@@ -302,7 +320,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       name: tripName,
       destination: tripDest,
       currency: newDests[0]?.currency ?? 'IDR',
-      budget: data.budget * data.totalDays,
+      budget: data.budget * Math.max(1, data.totalDays),
       daysTotal: data.totalDays,
       daysRemaining: data.totalDays,
       transactions: [],
@@ -312,6 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setActiveTripId(id);
 
     setOnboardingComplete(true);
+    setEverOnboarded(true);
   };
 
   const value: AppState = {
@@ -319,39 +338,72 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isAuthenticated,
     authUser,
     onboardingComplete,
+    everOnboarded,
     isOnboarded: onboardingComplete,
     signIn: (name, email) => {
       setAuthUser({ name, email });
       setIsAuthenticated(true);
       setOnboardingComplete(true);
+      setEverOnboarded(true);
     },
     completeOnboarding,
     logout: () => {
       setIsAuthenticated(false);
       setAuthUser(null);
       setOnboardingComplete(false);
+      // keep everOnboarded = true so re-login lands on auth form only
       setItinerary([]);
       setVisited(new Set());
       setSavedPlaces([]);
       setIsNavigating(false);
       setNavIndex(0);
-      // Issue 31: also clear wallet state on logout
       setTrips([DEFAULT_TRIP]);
       setActiveTripId(DEFAULT_TRIP.id);
       setTripCompleted(false);
       setDestinations([]);
-      // Clear new state on logout
       setPlaceRatings({});
       setVisitedPlaceIds(new Set());
       setRainyDayMode(false);
-      // Issue 35: clear persisted state on logout
-      try { localStorage.removeItem(PERSIST_KEY); } catch { /* ignore */ }
+      setPerDayItineraries([]);
+      // Preserve everOnboarded flag in localStorage by re-writing only that key
+      try {
+        localStorage.setItem(PERSIST_KEY, JSON.stringify({ everOnboarded: true }));
+      } catch { /* ignore */ }
     },
 
     vibe, setVibe,
     budget, setBudget,
     itinerary, setItinerary,
     buildItinerary: () => pickItinerary(vibe, budget, rainyDayMode),
+    perDayItineraries,
+    setPerDayItineraries,
+    buildFullItinerary: (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
+      const usedIds = new Set<string>();
+      const baseStops = PACE_STOPS[pace] + (vibe === 'activities' ? 1 : 0);
+      const result: Place[][] = [];
+      for (let d = 0; d < days; d++) {
+        let maxStops = baseStops;
+        if (d === 0) {
+          const arrHour = parseInt(arrivalTime.split(':')[0]);
+          if (arrHour >= 18) maxStops = 0;
+          else if (arrHour >= 15) maxStops = 1;
+          else if (arrHour >= 12) maxStops = 2;
+        }
+        if (d === days - 1 && days > 1) {
+          const depHour = parseInt(departureTime.split(':')[0]);
+          if (depHour <= 10) maxStops = 0;
+          else if (depHour <= 12) maxStops = 1;
+          else if (depHour <= 14) maxStops = 2;
+        }
+        const dayStops = maxStops === 0
+          ? []
+          : pickDayItinerary(vibe, budget, d, usedIds, maxStops, rainyDayMode);
+        dayStops.forEach((p) => usedIds.add(p.id));
+        result.push(dayStops);
+      }
+      setPerDayItineraries(result);
+      setItinerary(result.flat());
+    },
     reorderStop: (from, to) => {
       setItinerary((cur) => {
         const next = cur.slice();
@@ -381,8 +433,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         itinerary: [],
         arriveDate: dest.arriveDate,
         departDate: dest.departDate,
-        transitMode: dest.transitMode,
-        visaNote: dest.visaNote,
       };
       setDestinations((prev) => [...prev, newDest]);
     },
@@ -457,6 +507,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     isSaved: (id) => savedPlaces.some((p) => p.id === id),
     journeyStart,
     setJourneyStart,
+
+    pace,
+    setPace,
 
     buddyOpen,
     setBuddyOpen,

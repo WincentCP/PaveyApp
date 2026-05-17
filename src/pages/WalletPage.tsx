@@ -2,35 +2,40 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell, Plus, Scan, Clock, X, Check, Users, Receipt,
   Pencil, Trash2, Share2, ChevronRight, ChevronLeft, Wallet, CalendarDays,
-  TrendingDown, Globe, AlertTriangle, Search,
+  TrendingDown, Globe, AlertTriangle, Search, Wand2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import PageHeader from '../components/PageHeader';
 import { useApp } from '../context/AppContext';
 import {
   CATEGORY_COLORS, type Transaction, type TxnCategory,
-  type Currency, CURRENCY_SYMBOLS, formatCurrencyAmount, suggestCurrency,
+  type Currency, CURRENCY_SYMBOLS, formatCurrencyAmount,
 } from '../data/wallet';
 import { relativeDay } from '../lib/format';
 import { useToast } from '../components/Toast';
 
 export default function WalletPage() {
+  const nav = useNavigate();
   const {
     transactions, addTransaction,
     tripBudget, setTripBudget,
     tripName, setTripName,
     tripDays, tripDaysRemaining, setTripDaysRemaining,
     totalSpent, dailyAllowance,
-    trips, activeTripId, setActiveTripId, createTrip, deleteTrip,
+    trips, activeTripId, setActiveTripId, deleteTrip,
     currency, setCurrency,
     isNavigating, tripCompleted,
+    itinerary, perDayItineraries,
+    destinations, journeyStart,
   } = useApp();
   const { show } = useToast();
 
+  const hasItinerary = perDayItineraries.flat().length > 0 || itinerary.length > 0;
   const hasUserTrips = trips.some(t => t.id !== 'trip-default');
 
-  const [sheet, setSheet] = useState<null | 'editBudget' | 'addExpense' | 'scan' | 'history' | 'splitBill' | 'newTrip' | 'currencyPicker' | 'manageTrips'>(null);
+  const [sheet, setSheet] = useState<null | 'editBudget' | 'addExpense' | 'scan' | 'history' | 'splitBill' | 'currencyPicker' | 'manageTrips'>(null);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState<string | null>(null);
 
   const breakdown = useMemo(() => {
@@ -58,35 +63,22 @@ export default function WalletPage() {
 
   const fmt = (n: number) => formatCurrencyAmount(n, currency);
 
-  if (!hasUserTrips) {
+  if (!hasItinerary && !hasUserTrips) {
     return (
       <div className="absolute inset-0 bg-white flex flex-col">
         <StatusBar />
-        <PageHeader icon={Wallet} title="Wallet" right={
-          <button className="w-9 h-9 rounded-full bg-ink-50 flex items-center justify-center press" onClick={() => setSheet('newTrip')}>
-            <Plus className="w-4 h-4 text-ink-700" />
-          </button>
-        } />
+        <PageHeader icon={Wallet} title="Wallet" />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4">
-          <div className="text-6xl">💰</div>
-          <div className="font-bold text-ink-900 text-xl font-display">No wallet yet</div>
-          <div className="text-sm text-ink-500">Create a trip to start tracking your expenses.</div>
+          <div className="text-6xl">🗺️</div>
+          <div className="font-bold text-ink-900 text-xl font-display">Plan a trip first</div>
+          <div className="text-sm text-ink-500">Create your trip itinerary to start tracking expenses.</div>
           <button
-            onClick={() => setSheet('newTrip')}
+            onClick={() => nav('/generate')}
             className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press"
           >
-            <Plus className="w-4 h-4" /> Create Your First Trip
+            <Wand2 className="w-4 h-4" /> Plan My Trip
           </button>
         </div>
-        <Sheet open={sheet === 'newTrip'} title="New Trip" onClose={() => setSheet(null)}>
-          <NewTripSheet
-            onCreate={(data) => {
-              createTrip(data);
-              show(`"${data.name}" created`, 'success');
-              setSheet(null);
-            }}
-          />
-        </Sheet>
       </div>
     );
   }
@@ -122,7 +114,7 @@ export default function WalletPage() {
             </button>
           ))}
           <button
-            onClick={() => setSheet('newTrip')}
+            onClick={() => nav('/?newPlan=1')}
             className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-dashed border-brand-300 text-brand-600 press"
           >
             <Plus className="w-3 h-3" /> New Trip
@@ -146,9 +138,16 @@ export default function WalletPage() {
         >
           {/* Trip name row */}
           <div className="flex items-center justify-between mb-4">
-            <div>
+            <div className="min-w-0">
               <div className="text-xs text-white/70">Current Trip</div>
-              <div className="font-bold text-lg font-display">{tripName}</div>
+              <div className="font-bold text-lg font-display truncate">{tripName}</div>
+              {(itinerary.length > 0 || destinations.length > 0) && (
+                <div className="text-[11px] text-white/70 mt-0.5 truncate">
+                  {destinations.length > 0 ? `${destinations.length} ${destinations.length === 1 ? 'city' : 'cities'} · ` : ''}
+                  {itinerary.length > 0 ? `${itinerary.length} stop${itinerary.length !== 1 ? 's' : ''}` : 'No plan yet'}
+                  {journeyStart.date && journeyStart.date !== 'today' ? ` · ${new Date(journeyStart.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {/* Currency chip */}
@@ -271,10 +270,15 @@ export default function WalletPage() {
       )}
 
       {/* Quick Actions */}
-      <div className={`grid gap-2 px-5 mt-4 ${(isNavigating || tripCompleted) ? 'grid-cols-3' : 'grid-cols-4'}`}>
-        {!isNavigating && !tripCompleted && <QuickBtn icon={<Plus />} label="Add Expense" onClick={() => setSheet('addExpense')} />}
-        <QuickBtn icon={<Users />} label="Split Bill" onClick={() => !tripCompleted && setSheet('splitBill')} highlight={!tripCompleted} />
-        <QuickBtn icon={<Scan />} label="Scan" onClick={() => !tripCompleted && setSheet('scan')} />
+      <div className="grid gap-2 px-5 mt-4 grid-cols-4">
+        <QuickBtn
+          icon={<Plus />}
+          label="Add Expense"
+          onClick={() => !isNavigating && !tripCompleted && setSheet('addExpense')}
+          disabled={isNavigating || tripCompleted}
+        />
+        <QuickBtn icon={<Users />} label="Split Bill" onClick={() => !tripCompleted && setSheet('splitBill')} highlight={!tripCompleted} disabled={tripCompleted} />
+        <QuickBtn icon={<Scan />} label="Scan" onClick={() => !tripCompleted && setSheet('scan')} disabled={tripCompleted} />
         <QuickBtn icon={<Clock />} label="History" onClick={() => setSheet('history')} />
       </div>
       {(isNavigating || tripCompleted) && (
@@ -372,16 +376,6 @@ export default function WalletPage() {
 
       <Sheet open={sheet === 'history'} title="All transactions" onClose={() => setSheet(null)}>
         <HistorySheet transactions={transactions} currency={currency} />
-      </Sheet>
-
-      <Sheet open={sheet === 'newTrip'} title="New Trip" onClose={() => setSheet(null)}>
-        <NewTripSheet
-          onCreate={(data) => {
-            createTrip(data);
-            show(`"${data.name}" created`, 'success');
-            setSheet(null);
-          }}
-        />
       </Sheet>
 
       <Sheet open={sheet === 'currencyPicker'} title="Select Currency" onClose={() => setSheet(null)}>
@@ -501,10 +495,14 @@ export default function WalletPage() {
 
 /* ----------------------------------------- */
 
-function QuickBtn({ icon, label, onClick, highlight }: { icon: React.ReactNode; label: string; onClick?: () => void; highlight?: boolean }) {
+function QuickBtn({ icon, label, onClick, highlight, disabled }: { icon: React.ReactNode; label: string; onClick?: () => void; highlight?: boolean; disabled?: boolean }) {
   return (
-    <button onClick={onClick} className="press flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-ink-100 hover:border-brand-300 transition-colors">
-      <span className={`w-10 h-10 rounded-full flex items-center justify-center ${highlight ? 'bg-brand-500 text-white shadow-glow' : 'bg-brand-50 text-brand-600'}`}>{icon}</span>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex flex-col items-center gap-1 py-3 rounded-2xl bg-white border border-ink-100 transition-colors ${disabled ? 'opacity-40 cursor-default' : 'press hover:border-brand-300'}`}
+    >
+      <span className={`w-10 h-10 rounded-full flex items-center justify-center ${highlight && !disabled ? 'bg-brand-500 text-white shadow-glow' : 'bg-brand-50 text-brand-600'}`}>{icon}</span>
       <span className="text-[10px] font-semibold text-ink-800 text-center leading-tight px-1">{label}</span>
     </button>
   );
@@ -767,57 +765,6 @@ function HistorySheet({ transactions, currency }: { transactions: Transaction[];
 }
 
 /* -------- New Trip Sheet -------- */
-
-function NewTripSheet({ onCreate }: { onCreate: (data: { name: string; destination: string; currency: Currency; budget: number; daysTotal: number; daysRemaining: number }) => void }) {
-  const [name, setName] = useState('');
-  const [destination, setDestination] = useState('');
-  const [budget, setBudget] = useState(3_000_000);
-  const [days, setDays] = useState(5);
-  const [currency, setCurrency] = useState<Currency>('IDR');
-
-  const handleDestinationChange = (v: string) => {
-    setDestination(v);
-    setCurrency(suggestCurrency(v));
-  };
-
-  return (
-    <div className="space-y-3">
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Trip name (e.g. Bali Trip)" className="w-full bg-ink-50 rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300" />
-      <div className="relative">
-        <input
-          value={destination}
-          onChange={(e) => handleDestinationChange(e.target.value)}
-          placeholder="Destination (e.g. Bali, Japan)"
-          className="w-full bg-ink-50 rounded-2xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300"
-        />
-        {destination && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-600 bg-brand-50 rounded-full px-2 py-0.5">
-            auto · {CURRENCY_SYMBOLS[currency]} {currency}
-          </div>
-        )}
-      </div>
-      <div className="bg-ink-50 rounded-2xl p-4">
-        <div className="text-xs text-ink-500">Budget ({CURRENCY_SYMBOLS[currency]})</div>
-        <input type="number" value={budget} onChange={(e) => setBudget(Math.max(0, Number(e.target.value)))} className="w-full bg-transparent text-2xl font-bold text-ink-900 outline-none mt-1" />
-      </div>
-      <div className="flex items-center justify-between bg-ink-50 rounded-2xl px-4 py-3">
-        <div className="text-sm text-ink-700">Trip duration (days)</div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setDays((d) => Math.max(1, d - 1))} className="w-8 h-8 rounded-full bg-white press flex items-center justify-center font-bold text-ink-700">−</button>
-          <span className="font-bold w-6 text-center">{days}</span>
-          <button onClick={() => setDays((d) => d + 1)} className="w-8 h-8 rounded-full bg-white press flex items-center justify-center font-bold text-ink-700">+</button>
-        </div>
-      </div>
-      <button
-        disabled={!name.trim() || !destination.trim()}
-        onClick={() => onCreate({ name, destination, currency, budget, daysTotal: days, daysRemaining: days })}
-        className="w-full h-12 rounded-2xl bg-brand-500 disabled:bg-ink-300 text-white font-bold shadow-glow press"
-      >
-        Create Trip
-      </button>
-    </div>
-  );
-}
 
 /* -------- Currency Picker Sheet -------- */
 

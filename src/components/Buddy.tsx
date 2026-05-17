@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X, Cloud, Coffee, MapPinned, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { buddyImg } from '../assets/images';
 
 interface Msg { from: 'buddy' | 'me'; text: string }
 
@@ -50,8 +51,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
           >
             <div className="px-5 pt-3 pb-2 flex items-center justify-between">
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto absolute left-1/2 -translate-x-1/2 top-2" />
-              <div className="flex items-center gap-2 mt-3">
-                {/* public/icon-buddy.svg — replace with your buddy mascot expression */}
+              <div className="flex items-center gap-3 mt-3">
                 <BuddyAvatar />
                 <div>
                   <div className="text-ink-900 font-bold leading-tight">Buddy</div>
@@ -126,7 +126,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 whileTap={{ scale: 0.92 }}
                 className="w-11 h-11 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-glow"
               >
-                <Send className="w-4.5 h-4.5" />
+                <Send className="w-4 h-4" />
               </motion.button>
             </form>
           </motion.div>
@@ -136,18 +136,26 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
   );
 }
 
-function BuddyAvatar() {
+function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const [failed, setFailed] = useState(false);
+  const cls = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
   if (failed) {
     return (
-      <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white">
+      <div className={`${cls} rounded-full bg-brand-500 flex items-center justify-center text-white shrink-0`}>
         <Star className="w-5 h-5" />
       </div>
     );
   }
   return (
-    <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center overflow-hidden">
-      <img src="/icon-buddy.svg" alt="Buddy" className="w-full h-full object-cover" onError={() => setFailed(true)} />
+    <div className={`${cls} rounded-full bg-brand-500 overflow-hidden shrink-0`}>
+      {/* buddy.svg: 997 × 1036 px — aspect ratio ~0.962:1 */}
+      <img
+        src={buddyImg}
+        alt="Buddy"
+        className="w-full h-full object-cover"
+        style={{ aspectRatio: '997/1036' }}
+        onError={() => setFailed(true)}
+      />
     </div>
   );
 }
