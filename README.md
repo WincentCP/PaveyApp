@@ -1,1025 +1,1036 @@
-# Pavey — AI-Powered Travel Planning App
+# Pavey — Trip Planning App
 
-## Overview
-
-Pavey is a mobile-first travel planning application built with React 19, TypeScript, Vite, TailwindCSS, and Framer Motion. It enables users to plan, navigate, and budget multi-destination trips through an AI-assisted or fully manual workflow. The app adapts to the user's travel style ("vibe"), filters places by budget, and provides turn-by-turn itinerary navigation with a real-time wallet tracker.
-
-**Core value proposition:** Plan a full day of travel in seconds — or build it stop by stop — then navigate and track spending, all in one app.
+**Pavey** is a mobile-first travel planning app that generates personalized day-by-day itineraries, handles multi-city trips with automatic travel days, and links trip planning to a built-in expense wallet. It is built entirely on the frontend — there is no backend API today. The planning engine is a set of pure TypeScript functions designed to be extracted to a backend service without touching any React code.
 
 ---
 
-## Tech Stack
+## Table of Contents
 
-| Layer | Technology |
+1. [Product Philosophy](#1-product-philosophy)
+2. [Architecture Overview](#2-architecture-overview)
+3. [Tech Stack](#3-tech-stack)
+4. [App Entry & Routing](#4-app-entry--routing)
+5. [Onboarding Flow](#5-onboarding-flow)
+6. [Home Flow & Intent Sheet](#6-home-flow--intent-sheet)
+7. [Destination Input](#7-destination-input)
+8. [Date Selection](#8-date-selection)
+9. [Multi-City Flow](#9-multi-city-flow)
+10. [Validation Flow](#10-validation-flow)
+11. [Itinerary Generation](#11-itinerary-generation)
+12. [Travel-Day Logic](#12-travel-day-logic)
+13. [GeneratePage — Review & Edit](#13-generatepage--review--edit)
+14. [Recommendation Adding Flow](#14-recommendation-adding-flow)
+15. [Trip Confirmation & Wallet Linkage](#15-trip-confirmation--wallet-linkage)
+16. [Editing an Existing Trip](#16-editing-an-existing-trip)
+17. [Density / Tight-Day Detection](#17-density--tight-day-detection)
+18. [Warnings & Friction States](#18-warnings--friction-states)
+19. [Regional Clustering Logic](#19-regional-clustering-logic)
+20. [Itinerary Constraints & Pacing Rules](#20-itinerary-constraints--pacing-rules)
+21. [Wallet Module](#21-wallet-module)
+22. [State Management & Persistence](#22-state-management--persistence)
+23. [Key Components Reference](#23-key-components-reference)
+24. [Key Utility Libraries Reference](#24-key-utility-libraries-reference)
+25. [Frontend-Only Scope & Known Limitations](#25-frontend-only-scope--known-limitations)
+26. [Backend Migration Path](#26-backend-migration-path)
+
+---
+
+## 1. Product Philosophy
+
+### What Pavey is optimized for
+
+Pavey is designed for **first-time and casual travelers** who want a practical, pre-filled day plan they can adjust — not a blank canvas that forces them to research everything themselves. The app makes opinionated decisions by default and lets the user override them.
+
+Key design commitments:
+
+- **Realistic pacing over ambition.** The default is 3 stops per day ("balanced" pace). Cramming 8 museums into a day is technically possible but quietly discouraged through soft warnings and density detection.
+- **Beginner-friendly defaults.** Every field has a sensible default. Users should be able to complete the flow without reading any documentation.
+- **Show, don't block.** Most warnings are soft: they show context and suggest a fix, but they do not prevent the user from proceeding. The only hard blocks are a 30-day trip-length cap and a "more cities than days" scenario, because those produce mathematically broken plans.
+- **One action at a time.** The app avoids multi-step modals. Decisions happen inline or in a single bottom sheet.
+- **Copy drives UX.** All user-facing strings live in `src/lib/copy.ts`. The tone is conversational, not technical. Errors explain what to do, not just what went wrong.
+
+### What is intentionally out of scope (frontend only)
+
+- No real flight/train search or booking
+- No real weather data (28° / Partly Cloudy is a mock)
+- No real place distance or routing engine — distances in `Place.distanceKm` are seeded data
+- No user accounts, authentication, or server persistence — `localStorage` is the only store
+- No i18n — all copy is English, but `src/lib/copy.ts` is the swap point for future i18n
+- No map tiles with live turn-by-turn directions (MapPage shows a visual-only placeholder)
+
+---
+
+## 2. Architecture Overview
+
+```
+src/
+├── App.tsx                     Route shell, provider wrappers
+├── context/
+│   └── AppContext.tsx           Central React state + planning adapter
+├── lib/
+│   ├── itinerary.ts            Pure planning engine (generate, allocate, pace)
+│   ├── planValidation.ts       Pure validation rules (banners, caps)
+│   ├── density.ts              Pure tight-day detection
+│   ├── copy.ts                 All user-facing strings
+│   ├── format.ts               Currency/number formatting helpers
+│   └── dateUtils.ts            Date arithmetic helpers
+├── data/
+│   ├── places.ts               Place catalogue (seed data)
+│   ├── regions.ts              City → region mapping for chaos detection
+│   ├── wallet.ts               Trip/Transaction types + currency helpers
+│   ├── cultural.ts             Cultural intel tips per place
+│   └── countryHints.ts         Country → suggested city mapping
+├── pages/
+│   ├── OnboardingPage.tsx      First-run wizard (auth + preferences)
+│   ├── HomePage.tsx            Main dashboard + intent sheet
+│   ├── GeneratePage.tsx        Generated itinerary review + edit
+│   ├── MapPage.tsx             Visual map view of the itinerary
+│   ├── WalletPage.tsx          Expense tracking
+│   ├── TripsPage.tsx           Multi-trip list
+│   ├── NavigatePage.tsx        Turn-by-turn navigation (visual only)
+│   └── ProfilePage.tsx         User profile
+└── components/
+    ├── MiniCalendar.tsx         Canonical date-range picker
+    ├── IntentBanners.tsx        Soft warning banners in intent sheet
+    ├── TripTooLongModal.tsx     Hard 30-day block modal
+    ├── TimePicker.tsx           Circular time selector
+    ├── Toast.tsx                Toast notification system
+    ├── Buddy.tsx                AI assistant floating panel
+    ├── BottomNav.tsx            Tab bar
+    └── ...
+```
+
+### Data flow summary
+
+```
+User inputs (intent sheet)
+        ↓
+   Validation (planValidation.ts)
+        ↓
+   proceedIntent() → sets AppContext state
+        ↓
+   /generate route → buildFullItinerary()
+        ↓
+   generateItinerary() (itinerary.ts) — pure function
+        ↓
+   GeneratePage renders perDayItineraries + perDayMeta
+        ↓
+   User edits/confirms → itinerary saved to AppContext + localStorage
+```
+
+---
+
+## 3. Tech Stack
+
+| Concern | Library |
 |---|---|
 | Framework | React 19 + TypeScript |
 | Build | Vite |
-| Styling | TailwindCSS (custom design tokens) |
-| Animation | Framer Motion 12 |
 | Routing | React Router v6 |
-| State | React Context API (`AppContext`) |
+| Styling | TailwindCSS (custom `ink-*` / `brand-*` palette) |
+| Animations | Framer Motion |
 | Icons | Lucide React |
+| Persistence | `localStorage` (`pavey_state` key) |
 
 ---
 
-## Design System
+## 4. App Entry & Routing
 
-**Colors**
-- `brand-*` — Primary blue (`#3B5BFF` = brand-500)
-- `ink-*` — Neutrals (ink-900 = near-black, ink-50 = near-white)
-- `amber-*` — Highlights and warnings
-- `emerald-*` — Success states
+`App.tsx` wraps everything in three providers: `AppProvider` (state), `ToastProvider` (toasts), `PhoneFrame` (visual mobile shell for desktop preview).
 
-**No color gradients.** All backgrounds are solid. Image overlays (photo darkening) and scroll-fade helpers are the only uses of opacity transitions.
+The `AppShell` component applies auth-gating: if `onboardingComplete` is `false`, every route redirects to `/onboarding`. Once onboarding is complete, the full route set is available:
 
-**Typography**
-- Display headings: `font-display` (bold, tight tracking)
-- Body: system sans-serif
-- Minimum readable size: 11px (labels), 13px (body)
+| Route | Page | Notes |
+|---|---|---|
+| `/onboarding` | OnboardingPage | No chrome (no nav, no Buddy) |
+| `/` | HomePage | Main dashboard + intent sheet |
+| `/generate` | GeneratePage | Itinerary review/edit — no Buddy |
+| `/map` | MapPage | Visual map |
+| `/navigate` | NavigatePage | Turn-by-turn (no nav bar) |
+| `/wallet` | WalletPage | Expense tracker |
+| `/profile` | ProfilePage | User settings |
+| `/trips` | TripsPage | Multi-trip list |
 
-**Interaction**
-- `press` class: `active:scale-95` tap feedback on all interactive elements
-- `shadow-glow`: brand-colored glow on primary CTAs
-- `no-scrollbar`: hidden scrollbars on all scroll containers
+The Buddy AI floating button is hidden on `/onboarding`, `/generate`, and `/navigate` to reduce distraction during focused flows.
 
 ---
 
-## Application Layout
+## 5. Onboarding Flow
+
+**File:** `src/pages/OnboardingPage.tsx`
+
+Onboarding is a linear 8-step wizard: `welcome → auth_form → vibe → destinations → dates → budget → location → generating`.
+
+Progress is shown on steps 3–7 (`PROGRESS_STEPS`). The welcome and auth screens have no progress bar.
+
+### Step breakdown
+
+| Step | What happens | Key state |
+|---|---|---|
+| `welcome` | Splash screen with app logo | → `auth_form` |
+| `auth_form` | Sign up / log in form (name, email, password) | `name`, `email`, `password` — validation runs inline |
+| `vibe` | Pick one of 5 travel vibes | `selectedVibe` |
+| `destinations` | Add 1–6 city/country destinations, set days per city | `destList[]` |
+| `dates` | Pick trip start and end with `MiniCalendar` | `startDate`, `endDate` |
+| `budget` | Drag slider to set daily budget | `budget` (stored in IDR internally) |
+| `location` | Request device location (optional, skippable) | `locationGranted` |
+| `generating` | Animated 2.2s loading screen while plan is assembled | `genPhase` |
+
+### Auth logic
+
+Auth is frontend-only — no real server. Signing up or logging in sets `isAuthenticated = true` in AppContext. The `everOnboarded` flag persists so returning users land on the login screen, not the welcome splash.
+
+### What onboarding writes to AppContext
+
+When the user completes the final step, `completeOnboarding()` is called with:
+
+```ts
+{
+  name, email, vibe,
+  destinations: destList,   // [{ name: string, days: number }]
+  totalDays,                // computed from startDate/endDate
+  budget,                   // IDR amount
+  startDate,                // ISO date string
+}
+```
+
+This call:
+1. Sets `authUser`, `isAuthenticated`, `vibe`, `budget`
+2. Creates `Destination[]` objects with auto-suggested currency per city
+3. Sets `journeyStart` with the selected dates
+4. Creates the first wallet `Trip` (only if destinations were entered — the wallet is not created for empty-destination onboarding)
+5. Sets `onboardingComplete = true`, which unlocks the main app routes
+
+After onboarding, the user is navigated to `/generate?after=onboarding` to immediately see their generated plan.
+
+---
+
+## 6. Home Flow & Intent Sheet
+
+**File:** `src/pages/HomePage.tsx`
+
+The home screen serves two roles simultaneously:
+
+1. **Active trip dashboard** — shows today's plan, budget status, destination progress, and the daily vibe card when a trip is in progress.
+2. **Intent sheet launcher** — the entry point for creating any new itinerary plan.
+
+### Intent sheet modes
+
+There are two sheet modes, both launched from the hero area:
+
+- **AI mode** (`intentSheet === 'ai'`): The user describes where and when; the app generates a plan automatically.
+- **Manual mode** (`intentSheet === 'manual'`): The user searches for and hand-picks stops with no AI generation.
+
+Both modes share the same validation and routing logic. They differ only in what GeneratePage does on arrival.
+
+### Intent sheet field flow (AI mode)
 
 ```
-App
-└── AppProvider (global state)
-    └── ToastProvider
-        └── PhoneFrame (fluid full-height wrapper)
-            └── AppShell (routing + chrome)
-                ├── Routes
-                │   ├── /onboarding   → OnboardingPage
-                │   ├── /             → HomePage
-                │   ├── /generate     → GeneratePage
-
-                │   ├── /map          → MapPage
-                │   ├── /navigate     → NavigatePage
-                │   ├── /wallet       → WalletPage
-                │   └── /profile      → ProfilePage
-                ├── BottomNav (hidden during /navigate and /onboarding)
-                └── Buddy (AI assistant, hidden during /onboarding)
+WHERE (destination text input)
+  ↓ country entered? → inline hint: "That's a country — we'll start with [city]. Tap to use it."
+WHEN (collapsible MiniCalendar, start + end date)
+  ↓ only start entered? → single-day warning shown before proceeding
+YOUR VIBE (5 vibe chips)
+YOUR BUDGET (slider, currency-aware)
+PACE (relaxed / balanced / fast)
+  ↓
+[ Continue to review ]
 ```
 
-**Auth Guard:** `AppShell` reads `onboardingComplete` from context. If false, all routes redirect to `/onboarding`. Onboarding is always accessible regardless of auth state.
+### Rotating placeholder
 
-**BottomNav tabs:** Home · Map · Wallet · Profile (4-tab grid, no center FAB)
+While the destination input is focused and empty, the placeholder cycles every 2.5 seconds through three copy variants from `COPY.destInput.placeholders`. This teaches new users that both city names and country names are valid input without a tooltip or help text.
 
-**Buddy FAB:** Floating button anchored at `bottom-[72px] right-4` — outside the nav bar, always accessible.
+### Multi-city hint
 
-**Persistent Navigation Bar:** When `isNavigating = true`, a compact pill appears at the **top** of the screen (`inset-x-4 top-10`) showing the current destination. Tapping it returns to `/navigate`.
+When `destinations.length > 1`, a muted line appears below the destination row:
+
+> "We'll add travel days automatically between cities."
+
+This sets expectations before generation so travel days are not a surprise.
 
 ---
 
-## Global State (AppContext)
+## 7. Destination Input
 
-### Authentication
+**File:** `src/pages/HomePage.tsx` (intent sheet + add-destination sub-sheet)
 
-| Field | Type | Description |
+### Single destination (AI intent sheet)
+
+The `intentDest` text field accepts free-text city or country names. There is no autocomplete — the field is intentionally open to avoid constraining the user to a fixed catalogue of supported cities.
+
+**Country hint:** `src/data/countryHints.ts` maps country names to a representative starting city. When the user types a country name (detected by a keyword match), an inline tap-target appears:
+
+> "That's a country — we'll start with Tokyo. Tap to use it."
+
+Tapping replaces the text with the suggested city name.
+
+### Adding destinations to an existing trip
+
+The "Add destination" sub-sheet (`addDestSheet`) is accessible from the home dashboard. Fields:
+- City/country name
+- Arrival date and departure date (optional — auto-calculates days from the date span)
+- Days (number stepper — used when no dates are set)
+
+Validations in `handleAddDest`:
+- Name cannot be empty
+- Duplicate destinations are rejected (`isDuplicateDestination()` from `src/lib/format.ts`)
+- Maximum 6 destinations (`MAX_DESTINATIONS = 6`) — after that, `COPY.maxDestinations` is shown as an inline error
+
+When a destination is added, `addDestination()` in AppContext creates a `Destination` object with an auto-suggested currency for the city using `suggestCurrency()` from `src/data/wallet.ts`.
+
+---
+
+## 8. Date Selection
+
+**Component:** `src/components/MiniCalendar.tsx`
+
+`MiniCalendar` is the single canonical date picker used in both the onboarding wizard and the intent sheet. It replaces native `<input type="date">` everywhere in the app for visual consistency.
+
+### Interaction model
+
+- **First tap** on any date sets `startDate`
+- **Second tap** on any date after the start sets `endDate`
+- **Tapping again** after a range is set restarts the selection (new `startDate`, clears `endDate`)
+- Dates before today are disabled (`isPast` check) and rendered in muted grey
+- Today gets a `ring-1 ring-brand-400` indicator
+- The range between start and end is filled with `bg-brand-100` (light brand tint)
+- Start and end dots use `bg-brand-500 rounded-full` (full brand colour)
+
+### Props
+
+```ts
+interface Props {
+  startDate: Date | null;
+  endDate: Date | null;
+  onSelect: (d: Date) => void;  // caller owns state
+}
+```
+
+The calendar owns navigation (prev/next month) but delegates selection to the caller. In the intent sheet, `onSelect` runs:
+
+```ts
+// first call sets start, second call sets end, third restarts
+if (!intentDate || (intentDate && intentEndDate)) {
+  setIntentDate(toISO(d));
+  setIntentEndDate('');
+} else {
+  setIntentEndDate(toISO(d));
+}
+```
+
+ISO strings (`YYYY-MM-DD`) are used for storage; `Date` objects only at the MiniCalendar boundary.
+
+### Intent sheet calendar disclosure
+
+The calendar is wrapped in a collapsible disclosure in the intent sheet so the sheet does not grow tall by default. The summary line (`Start: Jun 14 → End: Jun 18`) is tappable to expand the calendar.
+
+---
+
+## 9. Multi-City Flow
+
+Multi-city is enabled any time `destinations.length > 1` in AppContext.
+
+### How multi-city affects the intent sheet
+
+When the user has multiple destinations set, `handleIntentConfirm` collects destination names from the `destinations` array rather than the single `intentDest` text field:
+
+```ts
+const journeyCitiesNow = destinations.length > 0
+  ? destinations.map((d) => d.name)
+  : [intentDest].filter(Boolean);
+```
+
+### How multi-city affects generation
+
+`buildFullItinerary` passes all destinations to `generateItinerary()` in `src/lib/itinerary.ts`. The engine calls `allocateDays()` which inserts exactly **one travel day between each adjacent destination pair**. This is automatic and invisible to the user until they see the generated plan.
+
+### Day allocation across cities
+
+`allocateDays()` distributes the total trip days proportionally across destinations:
+
+1. Calculates a weight for each destination: `departDate - arriveDate` span if both are set; otherwise `dest.days` (default 1).
+2. Subtracts `destinations.length - 1` days for travel days to get `planDays`.
+3. Distributes `planDays` proportionally using the weights, with a floor of 1 per destination.
+4. Reconciles the sum to exactly `planDays` using a round-robin correction loop.
+5. Inserts travel days between each adjacent pair in the final `DayPlan[]` array.
+
+### Destination switching on the dashboard
+
+When `activeDestIdx` changes (user taps a destination tab), AppContext:
+1. Loads the stored `itinerary` for that destination into the global `itinerary` slice.
+2. When `itinerary` changes, saves it back to the active destination's stored itinerary.
+
+AppContext also auto-advances `activeDestIdx` based on today's date — if today falls within a destination's `arriveDate`/`departDate` window, that destination becomes active automatically.
+
+### Currency switching
+
+When the active destination changes and its currency differs from the active wallet trip's currency, a non-blocking amber banner appears:
+
+> "You're now in Bangkok · Switch wallet to THB?"
+
+The user can accept or dismiss. This is purely informational — the wallet currency is independent of the plan.
+
+---
+
+## 10. Validation Flow
+
+Validation is layered. Each layer catches a different class of problem.
+
+### Layer 1 — Field-level errors (before confirmation)
+
+Caught in `handleIntentConfirm()`:
+
+| Condition | Error shown |
+|---|---|
+| No destination | "Please enter your destination to continue" |
+| No start date | "Please pick a start date to continue" |
+| End date before start date | "End date must be after start date" |
+
+These are attached as `intentErrors.dest` or `intentErrors.date` and render inline below the respective field. The confirmation button does not navigate until these are cleared.
+
+### Layer 2 — Soft single-day warning
+
+If the user is in AI mode and has not set an end date (single-day trip), a warning dialog appears before proceeding. The user can dismiss it and continue or go back to add an end date. This is a gentle suggestion, not a block.
+
+### Layer 3 — Hard 30-day cap
+
+`exceedsMaxDuration(intentDays)` from `src/lib/planValidation.ts` checks if `days > MAX_TRIP_DAYS` (30). If true:
+
+- `TripTooLongModal` slides up with a friendly explanation and suggestions.
+- The user cannot proceed until they shorten the trip.
+- The 30-day cap also runs as a URL safety net on GeneratePage arrival — a malformed URL with `?days=45` triggers a toast and redirects to `/`.
+
+**Why 30 days?** Plans longer than 30 days produce diminishing quality — the place catalogue is finite, repetition increases, and day-by-day plans become hard to follow. The cap is a product decision, not a technical limit.
+
+### Layer 4 — Over-dense city/day ratio
+
+`isOverDense(citiesCount, days)` returns true when `citiesCount > 1 && citiesCount > days`.
+
+**Example:** 4 cities in 3 days → impossible because there would not be a full day for each city even ignoring travel days.
+
+When this fires, a field-level error is set on the date field:
+
+> "You have 4 cities in 3 days. Add more days or remove a city."
+
+The user fixes the input in the intent sheet before reaching the generation screen.
+
+### Layer 5 — Overlap warning
+
+If a new plan's date range overlaps with the current active trip's range, a soft confirmation dialog:
+
+> "This overlaps with [trip name]. Plan anyway?"
+
+The user can confirm (`overlapAcknowledged = true`) and proceed, or change their dates.
+
+### Layer 6 — Soft intent banners
+
+`computeIntentBanners()` in `src/lib/planValidation.ts` produces up to one major and one secondary advisory banner (rendered by `<IntentBanners>`) when problematic configurations are detected. These are informational — they do not block confirmation. See [Section 18](#18-warnings--friction-states) for the full banner priority ladder.
+
+---
+
+## 11. Itinerary Generation
+
+**File:** `src/lib/itinerary.ts`
+
+The planning engine is a pure TypeScript module with no React dependencies. It takes a `GenerateInput` and returns a `GenerateResult`.
+
+### GenerateInput
+
+```ts
+interface GenerateInput {
+  destinations: PlannerDestination[];
+  activeDestIdx: number;
+  totalDays: number;
+  pace: TripPace;           // 'relaxed' | 'balanced' | 'fast'
+  vibe: Vibe;               // 'nature' | 'cafe' | 'activities' | 'cultural' | 'balanced'
+  budget: number;           // IDR amount per day
+  rainyDayMode: boolean;    // filters for indoor places only
+  arrivalTime: string;      // "HH:MM" — affects stop count on day 1
+  departureTime: string;    // "HH:MM" — affects stop count on last day
+}
+```
+
+### GenerateResult
+
+```ts
+interface GenerateResult {
+  days: Place[][];    // per-day stops; travel days are []
+  meta: DayPlan[];    // per-day metadata (kind, fromCity, toCity)
+}
+```
+
+### Generation pipeline
+
+```
+1. allocateDays(destinations, totalDays)
+        → DayPlan[] — assigns each day to a destination, inserts travel days
+
+2. For each day:
+   a. Skip travel days → push [] and DayPlan to output, continue
+   b. computeMaxStops(dayIndex, totalDays, pace, vibe, arrivalTime, departureTime, prevWasTravel)
+        → max stop count for this day
+   c. pickDayItinerary(vibe, budget, dayIndex, usedIds, maxStops, rainyDayMode, city)
+        → Place[] — selects stops from the catalogue, excludes already-used IDs
+   d. Mark all picked IDs as used (global deduplication across the full trip)
+
+3. Return { days, meta }
+```
+
+### Pace baseline
+
+```ts
+const PACE_STOPS: Record<TripPace, number> = {
+  relaxed: 2,
+  balanced: 3,
+  fast: 4,
+};
+```
+
+Activities vibe adds +1 stop to the baseline (activities-heavy vibes warrant a more packed schedule).
+
+### Stop count tapers
+
+`computeMaxStops()` reduces the stop count based on arrival/departure times and post-travel recovery:
+
+| Situation | Effect |
+|---|---|
+| Arrival day, arrival time ≥ 18:00 | 0 stops (too late) |
+| Arrival day, arrival time 15:00–17:59 | 1 stop max |
+| Arrival day, arrival time 12:00–14:59 | 2 stops max |
+| Departure day, departure ≤ 10:00 | 0 stops |
+| Departure day, departure 10:00–12:00 | 1 stop max |
+| Departure day, departure 12:00–14:00 | 2 stops max |
+| Day after a travel day | −1 stop (recovery day) |
+
+**Why tapers?** A user arriving at 6 PM should not have 3 museum visits queued. A day after a long transit is naturally lower energy. Tapers make the schedule physically realistic without the user configuring it.
+
+### Place selection (`pickDayItinerary`)
+
+`pickDayItinerary()` filters `PLACES` by:
+
+1. **City match** — place's `city` field matches the destination city (case-insensitive substring)
+2. **Vibe match** — place's `vibes` array includes the user's selected vibe
+3. **Budget** — place's `priceRange.max <= budget` per day
+4. **Rainy day** — if `rainyDayMode`, only `indoor: true` places
+5. **Already used** — excludes IDs in `usedIds` (cross-day deduplication)
+
+Results are shuffled using `dayIndex` as a seed offset to produce different suggestions on each day while keeping day-to-day variation predictable.
+
+---
+
+## 12. Travel-Day Logic
+
+Travel days are a first-class day type in the engine. They exist as entries in `DayPlan[]` with `kind: 'travel'`.
+
+### Insertion rule
+
+`allocateDays()` inserts exactly **one travel day between each adjacent destination pair**:
+
+```
+Tokyo (3 days)  →  [travel day]  →  Kyoto (2 days)  →  [travel day]  →  Osaka (2 days)
+```
+
+For a 7-day trip across Tokyo → Kyoto → Osaka: 7 total − 2 travel = 5 plan days, distributed proportionally.
+
+### Travel day content
+
+Travel days are intentionally left empty (`days.push([])`). GeneratePage renders these as an `EmptyDayCard` with:
+
+- A label like "Travel day — Tokyo to Kyoto"
+- A soft copy line: "A relaxed day to move between cities. Explore the train station or rest up."
+
+**Why empty?** Scheduling stops on a travel day creates unrealistic plans — the user is on a train or at an airport. An empty card with a label is more honest than filling it with nearby airport cafes.
+
+### Recovery day
+
+The day immediately after a travel day gets one fewer scheduled stop (`prevWasTravel && max > 1 → max -= 1`). Arriving in a new city typically means settling in, not running a full itinerary from 9 AM.
+
+---
+
+## 13. GeneratePage — Review & Edit
+
+**File:** `src/pages/GeneratePage.tsx`
+
+GeneratePage is the combined loading + review + edit screen. It operates in several modes depending on URL parameters.
+
+### URL parameters
+
+| Param | Effect |
+|---|---|
+| `?mode=manual` | Skips loading, shows manual stop-search flow |
+| `?edit=1` | Skips loading, shows existing itinerary for editing |
+| `?after=onboarding` | Shows "Review Your Plan" header variant, CTA reads "Start My Trip →" |
+| `?days=N` | Number of trip days to generate |
+| `?startTime=HH:MM` | Arrival time (affects Day 1 stop count) |
+| `?endTime=HH:MM` | Departure time (affects last day stop count) |
+| `?pace=relaxed\|balanced\|fast` | Overrides current pace setting |
+
+### Loading phase
+
+`phase === 'loading'` shows an animated loading screen. Step messages cycle every 700ms. After 2.2 seconds, `phase` flips to `reveal`. The loading state exists for UX pacing — the actual generation is synchronous and instantaneous.
+
+Multi-city loading steps specifically mention travel days and region clustering to set user expectations for what they are about to see.
+
+### Multi-day tab strip
+
+When `isMultiDay`, a horizontal scrollable tab strip appears at the top of the reveal screen. Each tab shows "Day N · DD Mon". The active day's content renders below.
+
+### Stop card interactions
+
+Each stop card supports:
+- **Remove** (swipe-left gesture or X button) — calls `removeWithUndo()`, showing a 6-second undo toast
+- **Reorder** (up/down arrow buttons)
+- **Replace** — opens a replacement picker sheet
+- **Edit time** — opens `TimePicker` to set a custom scheduled time for that stop
+
+### Cultural intel cards
+
+Below each stop that has associated cultural data, a `CulturalCard` appears with local tips or context. The first stop's cultural card auto-expands. Others are collapsed. Cards are dismissible per-stop.
+
+### Conflict detection
+
+`hasConflict(place, timeStr)` checks if the scheduled end time (`startTime + durationMin`) exceeds the place's `closeHour`. Conflicting stops are flagged visually.
+
+### Re-roll
+
+"Re-roll suggestions" re-runs `buildFullItinerary()` with the same inputs. Because place selection uses a day-index shuffle, re-rolling produces a different selection from the same vibe/budget filter set.
+
+---
+
+## 14. Recommendation Adding Flow
+
+**File:** `src/pages/GeneratePage.tsx` (Recommendations section)
+
+Below the day's stop list, a "RECOMMENDATIONS" section shows up to 4 alternative places not already in the current itinerary.
+
+### Adding a recommendation
+
+Each recommendation card has a single **"Add"** button. When tapped:
+
+1. The current day's stops plus the candidate place are projected: `[...displayItinerary, altP]`.
+2. `dayIsTight(projected)` is called (see [Section 17](#17-density--tight-day-detection)).
+3. **If not tight:** `addStop(altP)` is called immediately. Toast: `"{name} added"`.
+4. **If tight:** A bottom decision sheet (`tightAdd` state) slides up.
+
+### Tight-day decision sheet
+
+When `dayIsTight` returns `{ tight: true, reason }`, the user sees:
+
+> **This may make your day tighter.**
+> You'd have N stops on this day — already close to a full schedule.
+
+Three tap-row options:
+- **Adjust the timing** — closes the sheet and scrolls to the day's time editing area
+- **Keep it anyway** — calls `addStop(altP)`, shows toast "Added — your day is packed."
+- **Skip for now** — closes the sheet with no action
+
+**Why this UX?** Silent adds to an over-packed day create impossible schedules. A hard block is frustrating for experienced users who know what they're doing. A three-option sheet respects user autonomy while making the decision conscious.
+
+---
+
+## 15. Trip Confirmation & Wallet Linkage
+
+### Confirmation
+
+Tapping the primary CTA calls `onConfirm()`:
+
+1. Clears any pending undo state.
+2. If manual mode: writes `manualStops` to the global `itinerary`.
+3. Fires a success toast.
+4. If `isPostOnboarding`: navigates to `/` after 700ms.
+5. Otherwise: opens a wallet-link prompt. After 5 seconds with no action, auto-dismisses and navigates to `/map`.
+
+### Wallet auto-mint on first plan
+
+In `proceedIntent()` (HomePage), before navigating to `/generate`:
+
+```ts
+const hasUserTrip = trips.some((t) => t.id !== DEFAULT_TRIP.id);
+if (!hasUserTrip && intentSheet === 'ai') {
+  createTrip({ name: tripName, destination: cities.join(' → '), ... });
+  show(COPY.wallet.tripCreatedToast(tripName), 'success');
+}
+```
+
+A wallet `Trip` is automatically created for the first AI-generated plan. Subsequent plans require the user to manually create wallet trips. The auto-mint only fires once (guarded by `hasUserTrip`).
+
+**Trip naming:**
+- Single city: `"Tokyo Trip"`
+- Multi-city: `"Tokyo + 2 more"`
+
+The wallet trip's budget is `dailyBudget × days`. The trip is marked `linkedToPlan: true` to distinguish auto-minted trips from manually created ones.
+
+---
+
+## 16. Editing an Existing Trip
+
+Editing re-uses GeneratePage with `?edit=1` in the URL. This parameter:
+
+- Skips the loading animation (jumps directly to `phase = 'reveal'`)
+- Changes the header to "Edit Journey"
+- Changes the CTA to "Save Changes"
+
+The existing `itinerary` and `perDayItineraries` from AppContext are used as the starting state. All stop-level interactions work identically to the initial review flow.
+
+---
+
+## 17. Density / Tight-Day Detection
+
+**File:** `src/lib/density.ts`
+
+```ts
+export interface DensityStop {
+  distanceKm: number;
+  durationMin: number;
+}
+
+export function dayIsTight(stops: DensityStop[]): { tight: boolean; reason: string }
+```
+
+### Thresholds
+
+| Metric | Threshold | Reason string |
 |---|---|---|
-| `isAuthenticated` | boolean | Whether user has signed in |
-| `onboardingComplete` | boolean | Whether full onboarding flow finished |
-| `isOnboarded` | boolean | Alias for `onboardingComplete` |
-| `authUser` | `{name, email} \| null` | Signed-in user info |
-| `signIn(name, email)` | fn | Quick sign-in (sets auth + skips onboarding) |
-| `completeOnboarding(data)` | fn | Finishes onboarding, creates wallet trip, sets all state |
-| `logout()` | fn | Clears all auth + resets itinerary, saved, nav state |
+| Stop count | > 5 | `"N stops"` |
+| Total distance | > 30 km | `"N km of travel"` |
+| Total duration | > 600 min (10 hours) | `"Nh of activity"` |
 
-### Itinerary
+The function checks all three conditions and returns on the first match. Priority: too many stops → too far → too long.
 
-| Field | Type | Description |
+### Usage
+
+`dayIsTight` is called in two places:
+1. **Recommendation Add button** (GeneratePage) — to decide whether to show the decision sheet
+2. **Density soft banner** (GeneratePage) — to decide whether to show the amber warning for the current day
+
+The `density.ts` module is intentionally a pure function with no React. The same thresholds and logic can be mirrored on a future backend `/plan` endpoint.
+
+---
+
+## 18. Warnings & Friction States
+
+### Intent sheet banners (`computeIntentBanners`)
+
+**File:** `src/lib/planValidation.ts`
+
+Returns at most one major and one secondary banner. Priority ladder (highest first):
+
+**Major banners:**
+
+| Key | Condition | Copy |
 |---|---|---|
-| `vibe` | `'chill'\|'chaos'\|'zen'\|'luxury'` | Travel style filter |
-| `budget` | number | Per-stop budget in local currency |
-| `itinerary` | `Place[]` | Ordered list of planned stops |
-| `buildItinerary()` | fn | Generates itinerary from vibe + budget |
-| `reorderStop(from, to)` | fn | Drag-reorder stops |
-| `removeStop(id)` | fn | Remove a stop by ID |
-| `replaceStop(id, place)` | fn | Swap one stop for another |
-| `addStop(place)` | fn | Append a stop (deduplicates) |
-| `alternatives(excludeIds)` | fn | Get 8 alternative places not in plan |
+| `chaos-regions` | ≥3 distinct regions AND days ≤ regions × 4 | "N regions in N days can feel scattered…" |
+| `chaos-cities` | ≥2 regions AND ≥4 cities AND ratio < 2 days/city | "Lots of cities across regions…" |
+| `duration-over-20` | 21–30 days | "That's a longer trip — near our 30-day limit…" |
+| `ratio-under-1` | cities > 1 AND days < cities | "Each city needs at least a day…" |
 
-### Multi-Destination
+**Secondary banners (independent of major):**
 
-| Field | Type | Description |
+| Key | Condition | Copy |
 |---|---|---|
-| `destinations` | `Destination[]` | Array of trip legs (`id, name, days, currency, itinerary`) |
-| `activeDestIdx` | number | Index of currently active destination |
-| `addDestination(dest)` | fn | Add a new destination leg |
-| `removeDestination(id)` | fn | Remove a destination leg |
-| `insertDestination(afterIdx, dest)` | fn | Insert leg at specific position |
+| `duration-14-20` | 14–20 days | "Longer trips work best grouped by region…" |
+| `ratio-1-to-2` | cities > 1 AND 1 ≤ days/city < 2 | "Less than 2 days per city — it'll feel a bit fast." |
+
+These banners render as amber/yellow strips in the intent sheet with action chips ("Keep only Southeast Asia", "Remove a city"). The user can dismiss or act. They do not prevent plan generation.
+
+### GeneratePage density banner
+
+A separate amber banner at the top of the stop list fires when the current day's stops exceed any of the three density thresholds. It offers:
+- "Switch to Relaxed" (if not already relaxed) — triggers a re-roll at 2 stops/day
+- "Dismiss" — hides the banner for the session (`pavey_density_hint_dismissed` in localStorage)
+
+### TripTooLongModal
+
+A hard-block modal with a headline, body explaining the 30-day limit, a "Why?" expand section, and a "Got it" dismiss button. This is the only user-blocking UI element in the warning system.
+
+### Overlap warning
+
+When a new plan's dates overlap with the current active trip, a soft confirmation prompt appears. The user can confirm and proceed, or close and change dates.
+
+---
+
+## 19. Regional Clustering Logic
+
+**File:** `src/data/regions.ts`
+
+The region system supports the chaos-detection banners and loading screen messages.
+
+### Region lookup
+
+`getRegion(cityName)` does a fuzzy substring match on the lowercased input against a known keyword table. For example, `"Bangkok, Thailand"` matches the key `"bangkok"` → `'Southeast Asia'`.
+
+9 regions are supported: Southeast Asia, East Asia, South Asia, Europe, North America, Oceania, Middle East, Latin America, Africa.
+
+Cities not in the table return `null`. Unknown cities are silently skipped in chaos detection (they do not count as a distinct region — this is conservative and avoids false positives for unsupported cities).
+
+### Region functions
+
+```ts
+getRegion(cityName): Region | null
+countDistinctRegions(destNames: string[]): number
+suggestPrimaryRegion(destNames: string[]): Region | null  // modal region, ties by first-seen order
+filterDestinationsByRegion(destinations, region): Destination[]
+```
+
+`suggestPrimaryRegion` picks the most-represented region in the destination list. Used by chaos banners to offer a "Keep only [Southeast Asia]" action chip.
+
+`filterDestinationsByRegion` returns the subset of destinations in that region. Called when the user taps the "Keep only" chip in an intent banner.
+
+---
+
+## 20. Itinerary Constraints & Pacing Rules
+
+### Hard constraints
+
+| Constraint | Value | Enforced by |
+|---|---|---|
+| Maximum trip duration | 30 days | `TripTooLongModal`, URL safety net in GeneratePage |
+| Maximum destinations | 6 | `MAX_DESTINATIONS` constant in HomePage |
+| Minimum 1 day per destination | 1 | `allocateDays` floor |
+| Cities > days | blocked | `isOverDense()` field error |
+
+### Soft constraints (advisory only)
+
+| Scenario | Suggestion |
+|---|---|
+| ≥ 3 regions in a short window | Focus on one area |
+| ≥ 4 cities across regions, < 2 days each | Narrow to one region |
+| 21–30 day trip | Consider splitting into smaller plans |
+| < 2 days per city (multi-city) | Add more days |
+| 14–20 day trip | Group by region |
+| Day > 5 stops / > 30 km / > 10 h | Density warning, offer pace switch |
+
+### Place deduplication
+
+The `usedIds` set in `generateItinerary()` is **global across the full trip**. A place used on Day 1 will not appear again on Day 4. This prevents repetitive plans on longer trips.
+
+### Places exhaustion
+
+If the place catalogue does not have enough places for the city/vibe combination to fill all days, some days will have fewer stops than the pace setting. GeneratePage shows an informational note when this occurs.
+
+---
+
+## 21. Wallet Module
+
+**File:** `src/data/wallet.ts`, `src/pages/WalletPage.tsx`, `src/pages/TripsPage.tsx`
+
+### Data model
+
+```
+Trip
+  ├── id
+  ├── name                    e.g. "Tokyo Trip"
+  ├── destination             e.g. "Tokyo → Kyoto"
+  ├── currency
+  ├── budget                  total amount
+  ├── daysTotal
+  ├── daysRemaining
+  ├── transactions: Transaction[]
+  ├── linkedToPlan?: boolean  true = auto-minted from a plan
+  └── createdAt
+
+Transaction
+  ├── id
+  ├── title
+  ├── category                'Food & Drinks' | 'Attractions' | 'Transport' | 'Shopping' | 'Top up'
+  ├── amount                  negative = expense, positive = top-up
+  ├── date
+  └── icon
+```
+
+### Currency handling
+
+15 currencies are supported. `formatCurrencyAmount()` formats display values per currency rules (e.g. IDR uses "K" abbreviations, JPY rounds to integer). `CURRENCY_RATES_TO_IDR` holds approximate exchange rates for budget arithmetic.
+
+`suggestCurrency(destination)` infers the appropriate currency from the destination name using a keyword table. Used when creating a wallet trip from a plan (e.g. "Tokyo" → JPY).
+
+### Daily allowance
+
+```ts
+dailyAllowance = (tripBudget - totalSpent) / daysRemaining
+```
+
+Displayed on the wallet home screen. Updates live as expenses are added.
+
+### Empty state
+
+`SEED_TXNS = []` — new users see a true empty wallet state, not demo data. The empty state has an illustration and a prompt to add the first expense.
+
+---
+
+## 22. State Management & Persistence
+
+**File:** `src/context/AppContext.tsx`
+
+AppContext is a single React context using `useState` hooks. All state lives in `AppProvider`. Components consume it via `useApp()`.
+
+### Persistence
+
+A single `localStorage` key (`pavey_state`) holds a JSON snapshot of all persisted state. It is written on every state change via a `useEffect` watching all persisted slices. On mount, `loadPersistedState()` reads the snapshot and pre-populates all `useState` initializers.
+
+**Persisted slices:** `isAuthenticated`, `authUser`, `onboardingComplete`, `everOnboarded`, `vibe`, `budget`, `itinerary`, `savedPlaces`, `destinations`, `trips`, `activeTripId`, `journeyStart`, `placeRatings`, `visitedPlaceIds`, `perDayItineraries`, `pace`.
+
+**Not persisted (session-only):** `rainyDayMode`, `buddyOpen`, `isNavigating`, `visited`, `perDayMeta`.
+
+### Logout
+
+`logout()` resets all state slices to defaults. `everOnboarded` is preserved so returning users skip the welcome splash. A minimal localStorage entry `{ everOnboarded: true }` is written to survive the reset.
+
+### buildFullItinerary
+
+The adapter between React state and the pure planning engine:
+
+```ts
+buildFullItinerary: (days, arrivalTime, departureTime) => {
+  const { days: planDays, meta } = generateItinerary({
+    destinations, activeDestIdx,
+    totalDays: days, pace, vibe, budget, rainyDayMode,
+    arrivalTime, departureTime,
+  });
+  setPerDayItineraries(planDays);
+  setPerDayMeta(meta);
+  setItinerary(planDays.flat());
+}
+```
+
+Replacing `generateItinerary(...)` with `await api.plan(...)` is the complete backend migration for the planning feature.
+
+---
+
+## 23. Key Components Reference
+
+### `MiniCalendar` (`src/components/MiniCalendar.tsx`)
+
+Canonical date picker. Used in OnboardingPage and HomePage. 7-column grid, range fill, today indicator, past-date disabled. Caller owns all state; the component handles only navigation (prev/next month).
+
+### `IntentBanners` (`src/components/IntentBanners.tsx`)
+
+Renders one major and one secondary advisory banner based on keys from `computeIntentBanners()`. Each major banner can include action chips ("Keep only [region]", "Remove a city"). All copy read from `COPY.banners`.
+
+### `TripTooLongModal` (`src/components/TripTooLongModal.tsx`)
+
+Hard-block slide-up modal for trips > 30 days. Non-dismissible except via "Got it". Explains the limit with a collapsible "Why?" section.
+
+### `TimePicker` (`src/components/TimePicker.tsx`)
+
+Circular clock-face picker for selecting a time. Used for manual time assignment to stops in GeneratePage.
+
+### `Toast` (`src/components/Toast.tsx`)
+
+Bottom-anchored toast notification system. `useToast()` hook exposes `show(message, type)`. Types: `'success'` | `'info'` | `'error'`.
+
+### `Buddy` (`src/components/Buddy.tsx`)
+
+Floating AI assistant panel. Accessible from all main pages via the floating button (hidden on `/generate` and `/navigate`).
+
+### `BottomNav` (`src/components/BottomNav.tsx`)
+
+Tab bar with Home, Map, Wallet, Trips, Profile. Hidden on `/navigate` and `/onboarding`.
+
+---
+
+## 24. Key Utility Libraries Reference
+
+### `src/lib/itinerary.ts`
+Pure planning engine. `generateItinerary()`, `allocateDays()`, `computeMaxStops()`. No React. Safe to unit-test with no DOM setup. This is the backend migration target.
+
+### `src/lib/planValidation.ts`
+Validation rules. `computeIntentBanners()`, `exceedsMaxDuration()`, `isOverDense()`, `filterDestinationsByRegion()`. No React. `MAX_TRIP_DAYS = 30`. Backend should mirror these rules on the `/plan` endpoint.
+
+### `src/lib/density.ts`
+Tight-day detection. `dayIsTight(stops: DensityStop[])`. No React. Thresholds: 5 stops, 30 km, 600 min. Backend can mirror for server-side plan validation.
+
+### `src/lib/copy.ts`
+All user-facing strings. No React. Import `COPY` and reference `COPY.section.key`. Template functions accept variables and return strings. This is the i18n swap point — wrapping with an i18n library requires no caller changes.
+
+### `src/lib/format.ts`
+`formatCost()`, `isDuplicateDestination()`, `tripsOverlap()`. General-purpose formatting and comparison helpers.
+
+### `src/lib/dateUtils.ts`
+`tripDurationDays()`, `isPastDate()`. Date arithmetic helpers used across pages.
+
+### `src/data/regions.ts`
+`getRegion()`, `countDistinctRegions()`, `suggestPrimaryRegion()`, `filterDestinationsByRegion()`. City-to-region fuzzy mapping for chaos detection and clustering suggestions.
+
+### `src/data/wallet.ts`
+Wallet types (`Trip`, `Transaction`, `Currency`), currency utilities (`suggestCurrency`, `formatCurrencyAmount`, `CURRENCY_SYMBOLS`, `CURRENCY_RATES_TO_IDR`).
+
+---
+
+## 25. Frontend-Only Scope & Known Limitations
+
+### Scope limitations
+
+- **Place catalogue is static seed data.** `PLACES` in `src/data/places.ts` is a hard-coded array. New cities require code changes. There is no API call to a places database.
+- **No real distance/routing.** `distanceKm` on each `Place` is an approximate seeded value, not computed from actual coordinates. The density check uses these values, so thresholds are calibrated to seeded distances.
+- **No real weather.** The weather card on HomePage is a UI mock (28°C, Partly Cloudy).
+- **No authentication server.** Login/signup writes to React state and localStorage only. Any credentials are accepted.
+- **No payment or booking.** Wallet tracks expenses manually; no integration with booking services.
+- **No push notifications.** All reminders and alerts are in-app only.
+- **Currency rates are approximate.** `CURRENCY_RATES_TO_IDR` uses rough static rates. There is no live exchange rate feed.
+
+### Known UX gaps (deferred)
+
+- **MapPage and per-destination date sub-sheet** still use native `<input type="date">`. Replacing them with `MiniCalendar` was deferred.
+- **Sticky review header during loading** (journey summary visible while plan generates) was not implemented.
+- **Route-level fade transition** (intent-sheet exit → GeneratePage fade-in with no flash) was not implemented.
+- **State preservation on "Edit trip"** (restoring intent-sheet values when navigating back from GeneratePage) was not implemented.
+- **Unified CTA copy** — GeneratePage still uses legacy strings (`"Start My Trip →"`, `"Confirm My Journey"`) instead of the unified `COPY.ctas.reviewStart`. These should be consolidated.
+- **Loading headline** — GeneratePage loading phase does not yet use `COPY.ctas.loadingHeadline` ("Building your plan…").
+
+---
+
+## 26. Backend Migration Path
+
+The frontend planning logic was written with backend extraction in mind. The migration is a series of one-file changes, not a rewrite.
+
+### Planning engine (`itinerary.ts`)
+
+```ts
+// Current (frontend — synchronous)
+const result = generateItinerary(input);
+
+// Future (backend — async)
+const result = await api.post('/plan', input);
+```
+
+`GenerateInput` and `GenerateResult` are the exact request/response shapes for a `POST /plan` endpoint. No changes to callers in AppContext.
+
+### Validation (`planValidation.ts`)
+
+These rules should be mirrored on the backend as request validation for `POST /plan`:
+- `exceedsMaxDuration(days)` → reject with 422 if `days > 30`
+- `isOverDense(citiesCount, days)` → reject with 422 if `citiesCount > days`
+- `computeIntentBanners()` → optionally return advisory `warnings[]` in the response body
+
+### Place data
+
+`PLACES` in `src/data/places.ts` becomes a database query:
+
+```
+GET /places?city=Tokyo&vibe=cultural&budget=500000
+```
+
+`pickDayItinerary()` becomes the query + filtering logic on the backend.
 
 ### Wallet
 
-| Field | Type | Description |
-|---|---|---|
-| `trips` | `Trip[]` | All wallet trips |
-| `activeTripId` | string | Currently selected trip |
-| `activeTrip` | `Trip` | Resolved active trip object |
-| `transactions` | `Transaction[]` | Active trip's transactions |
-| `addTransaction(t)` | fn | Add expense or income |
-| `tripBudget` | number | Active trip total budget |
-| `totalSpent` | number | Sum of negative transactions |
-| `dailyAllowance` | number | Remaining budget ÷ days remaining |
-| `currency` | `Currency` | Active trip currency (IDR, USD, EUR, JPY, SGD, AUD, GBP, THB, MYR, KRW, HKD, CNY, INR, NZD, CAD) |
-| `createTrip(data)` | fn | Create new wallet trip |
-| `deleteTrip(id)` | fn | Delete trip (minimum 1 must remain) |
-
-### Navigation
-
-| Field | Type | Description |
-|---|---|---|
-| `isNavigating` | boolean | Whether turn-by-turn nav is active |
-| `navIndex` | number | Current stop index in navigation |
-| `visited` | `Set<string>` | Set of visited place IDs |
-| `markVisited(id)` | fn | Add place to visited set |
-
-### Saved Places
-
-| Field | Type | Description |
-|---|---|---|
-| `savedPlaces` | `Place[]` | User's bookmarked places |
-| `savePlace(p)` | fn | Bookmark a place (deduplicates) |
-| `removeSavedPlace(id)` | fn | Remove bookmark |
-| `isSaved(id)` | fn | Check if place is bookmarked |
-
----
-
-## Page-by-Page Documentation
-
----
-
-### 1. OnboardingPage (`/onboarding`)
-
-**Purpose:** New user setup. Collects auth credentials and trip preferences, then calls `completeOnboarding()` to set up the full app state.
-
-**Skip condition:** If `onboardingComplete` is already true when the page mounts, the user is immediately redirected to `/` (handles back-navigation and already-authenticated users).
-
-**Step Flow:**
-```
-welcome → auth_form → vibe → destinations → dates → budget → interests → location → /
-```
-
-**Progress bar** shown on steps: vibe (1/6) → destinations (2/6) → dates (3/6) → budget (4/6) → interests (5/6) → location (6/6)
-
-**Layout structure:**
-```
-flex column (full height)
-├── Progress bar + back button (shrink-0, always visible)
-├── Scrollable content area (flex-1, overflow-y-auto)
-│   └── Step title + step-specific UI
-└── CTA button footer (shrink-0, always visible, never clipped)
-```
-
-The CTA is **outside** the scroll container — it is always visible regardless of content height, screen size, or keyboard state.
-
----
-
-#### Step: `welcome`
-
-**Design:** White (`bg-white`) full-screen background. Centered SVG logo placeholder (`/mascot.svg`, 160×160) — no app description or tagline text. Two CTAs slide up from the bottom.
-
-**Actions:**
-- "Get Started — it's free" → sets `authMode = 'signup'`, goes to `auth_form`
-- "I already have an account" → sets `authMode = 'login'`, goes to `auth_form`
-
----
-
-#### Step: `auth_form`
-
-**Design:** White background. Back arrow returns to `welcome`. Scrollable form fields. CTA pinned at bottom.
-
-**Sign Up fields:** Full Name, Email, Password (show/hide toggle), Confirm Password
-**Login fields:** Email, Password
-
-**Validation:**
-- Email: required, valid format
-- Password: required, minimum 6 characters
-- Name (signup only): required
-- Confirm Password (signup only): must match password
-
-**On submit:** 1.2s simulated auth loading spinner, then advances to `vibe`.
-
-**Toggle:** "Already have an account? Sign in" / "Don't have an account? Sign up" switches mode without losing entered data.
-
----
-
-#### Step: `vibe`
-
-**Design:** 2×2 grid of vibe cards.
-
-**Options:**
-- 🌴 Chill — "Relaxed beaches & slow mornings"
-- 🔥 Chaos — "Full days & hidden street food"
-- 🧘 Zen — "Temples, nature & mindful walks"
-- 💎 Luxury — "Boutique stays & fine dining"
-
-Active card shows brand-500 border + background + checkmark badge. Default: Zen.
-
-**Continue** → `destinations`
-
----
-
-#### Step: `destinations`
-
-**Design:** Text input + Add button. Added destinations appear as a reorderable list.
-
-**Quick suggestions** shown when list is empty: Paris, Rome, Bali, Tokyo, Barcelona (tap to add instantly).
-
-**Destination list features:**
-- Numbered badges (1, 2, 3…)
-- Editable day count per destination (−/+ stepper, min 1)
-- Up/Down reorder arrows (disabled at boundaries)
-- X remove button
-- Multi-city divider banner when 2+ destinations added
-
-**If Continue pressed with empty list:** auto-adds "My Destination" as placeholder.
-
-**Continue** → `dates`
-
----
-
-#### Step: `dates`
-
-**Design:** Date range picker with a compact inline calendar.
-
-**Two-phase selection:**
-- Phase 1 (DEPART): tap a start date → automatically moves to phase 2
-- Phase 2 (RETURN): tap an end date (must be ≥ start date)
-
-**Date display chips** at top show selected dates. When both selected, a "DAYS" chip shows total trip duration.
-
-**Reset dates** link clears both dates and returns to phase 1.
-
-**Past dates** are disabled (grayed out, `cursor-default`).
-
-**Continue label:** "Continue" if both dates selected, "Skip for now" if not.
-
-**Continue** → `budget` (duration step removed — days are calculated from date range automatically)
-
----
-
-#### Step: `budget`
-
-**Design:** Large budget display + range slider + preset buttons.
-
-**Range:** Rp 50K → Rp 1jt+ (IDR, 50,000 to 1,000,000 in 10,000 steps)
-**Default:** Rp 500,000
-**Presets:** Rp 150K / Rp 300K / Rp 600K
-**Wallet preview:** When `totalDays > 1`, shows estimated total trip budget (`budget × 3 stops/day × days`).
-**Info note:** "Budget covers entry fees, food, and activities. Transport is extra."
-
-**Date display** shows year when the selected date is in a different calendar year.
-
-**Continue** → `interests`
-
----
-
-#### Step: `interests`
-
-**Design:** Chip grid of 12 interest options. Optional step.
-
-**Options:** Coffee ☕, Beaches 🏖️, History 🏛️, Art 🎨, Street Food 🍜, Shopping 🛍️, Hiking 🥾, Photography 📷, Nightlife 🌃, Wellness 🧖, Architecture 🏙️, Local Markets 🏪
-
-Multi-select. Active chips show brand-500 fill + checkmark.
-
-**Continue** → `location`
-**Skip** → `location` (skips without selecting anything)
-
----
-
-#### Step: `location`
-
-**Design:** Explanation card + allow/skip actions.
-
-**Benefits listed:**
-- 📍 Nearby discovery — find hidden gems within walking distance
-- 🧭 Turn-by-turn navigation — live directions between stops
-- 🔔 Smart alerts — know when you're close to your next stop
-
-**"Allow Location Access"** button: simulates permission flow (800ms), shows success state with green checkmark when granted.
-
-**"Skip for now"** shows location-denied warning but allows continuing.
-
-**CTA when granted:** "Start exploring →" (emerald green)
-**CTA when not granted:** "Continue without location"
-
-**On Continue:** calls `completeOnboarding(data)` which:
-1. Sets `authUser`, `isAuthenticated`, `onboardingComplete`
-2. Sets `vibe` and `budget`
-3. Creates `destinations[]` from entered destinations + date-derived day counts
-4. Creates a wallet `Trip` with full budget (budget × totalDays)
-5. Sets `journeyStart` with start date and total days
-6. Clears `itinerary` (user generates from Home)
-7. Navigates to `/`
-
----
-
-### 2. HomePage (`/`)
-
-**Purpose:** Central dashboard. Shows current itinerary, search, vibe/budget controls, and CTAs to generate a plan.
-
-**Layout:** Full-height scroll. Hero image at top, overlapping glass card, then content sections.
-
-**Top section:**
-- Hero image with dark overlay
-- Greeting: "Good morning, [FirstName] 👋"
-- Current location chip (from `activeDest` or fallback USER.current)
-- Search icon button (top right, next to avatar) — expands inline search bar when tapped, collapses on tap again
-- Avatar button (top right)
-
-**Daily Vibe Card** (overlaps hero bottom):
-- Weather: 28° Partly Cloudy, Humidity 74%
-- "Today's Vibe" label with dynamic text
-- Estimated cost for nearby spots
-- "Sample preview" italic note (clarifies the weather card is placeholder data)
-
----
-
-#### Section: Multi-Destination Route Strip
-
-Shown only when `destinations.length > 1`.
-
-Horizontal scrollable pill row with destination names and day counts. Active destination highlighted in brand-500. Arrow separators between stops.
-
-"Add stop +" button opens Add Destination sheet.
-
-Tapping a destination pill calls `setActiveDestIdx(i)` to switch context.
-
----
-
-#### Section: Search + Filter
-
-**Collapsed by default.** Tapping the Search icon in the hero header expands an inline search bar with AnimatePresence transition.
-
-**Search behavior:** Real-time filtering of `PLACES[]` by name, category, and tags. Results appear as dropdown list (max 5). Tapping a result opens the Place Detail sheet.
-
-**Filter sheet:** Opens on filter button tap. Filters: Category (multi-select chips) and Minimum Rating (0, 4.0, 4.3, 4.5, 4.7). Active filter count shown on button badge.
-
----
-
-#### Section: TODAY'S PLAN
-
-**Header:** "TODAY'S PLAN" label + inline vibe chip (e.g., "🌴 Chill Plan ✏️"). Tapping the chip opens the Vibe & Budget sheet.
-
-**Vibe & Budget Sheet** (bottom sheet):
-- 4-vibe grid picker
-- Budget range slider
-- "Regenerate Plan" CTA → `/generate`
-
-**Case A — Plan exists (`itinerary.length > 0`):**
-- If navigating: "Navigation active" banner → taps to `/navigate`
-- Day header: DAY N — date — city name
-- Vertical timeline of stops with time estimates and distance gaps
-- Each stop: tap opens Place Detail sheet, bookmark button toggles saved
-- Clear, **Edit Plan**, and **View Map** buttons below timeline
-- Edit Plan → `/generate?edit=1` (opens GeneratePage in edit mode, no rebuild)
-- View Map → `/map`
-
-**Case B — No plan:**
-- Empty state card 🗺️ with contextual message
-- "Generate my plan" primary CTA (brand-500, full-width, shadow-glow) → `/generate`
-- "or build it stop by stop" text link → `/generate?mode=manual`
-
-**Case C — Next destination preview:**
-Shown when `nextDest` exists. Card with destination name, days, currency. "Plan →" button switches active destination.
-
-**Case D — Add destination CTA:**
-Shown when single-destination trip and user is onboarded. Dashed border "Add another destination" button.
-
----
-
-#### Section: Generate CTAs
-
-Two cards side by side:
-- **AI Generate** (brand-500) → `/generate`
-- **Plan Manually** (outlined) → `/generate?mode=manual`
-
----
-
-#### Section: Saved Places
-
-Shown only when `savedPlaces.length > 0`. Horizontal scroll of place cards with remove (×) button. Tapping opens Place Detail sheet.
-
----
-
-#### Place Detail Sheet (modal)
-
-Slides from bottom. Shows: hero image, name, category, rating, hours, price range, distance, description, tags. Actions: Save/Unsave, View on Map.
-
----
-
-#### Add Destination Sheet (modal)
-
-City/country input + day count stepper. "Add to Trip" button calls `addDestination()`.
-
----
-
-### 3. GeneratePage (`/generate`)
-
-**Purpose:** Build or edit an itinerary — either AI-generated or manually.
-
-**Entry points:**
-- `/generate` — AI mode (loading → reveal)
-- `/generate?mode=manual` — Manual mode (instant reveal, plan + search UI)
-- `/generate?edit=1` — Edit mode (skips rebuild, shows existing itinerary)
-
-**URL params:**
-- `mode=manual` → `isManualMode = true`
-- `edit=1` → `isEditMode = true`
-
-**Phase logic:**
-```
-isManualMode || isEditMode  → phase = 'reveal' (skip loading)
-AI mode                     → phase = 'loading' → 'reveal' (after 2.3s)
-```
-
-**On mount:**
-```
-if (!isManualMode && !isEditMode) setItinerary(buildItinerary())
-```
-Edit mode preserves existing itinerary without rebuilding.
-
----
-
-#### AI Mode — Loading Phase
-
-Full-screen loading skeleton (1.2s delay) → 2.3s total → transitions to reveal phase. Shows shimmer placeholders for stop cards.
-
----
-
-#### AI Mode — Reveal Phase
-
-**Stop list** (top): Numbered cards with image, name, category, rating, time, price. Each card has:
-- Drag handle (reorder)
-- × remove button (4s undo toast)
-- Cultural intelligence row (collapsible) — shows local tips, etiquette, language phrases
-
-**Undo system:** Removed stops show "Undo" toast for 6 seconds. Tapping restores the stop in its original position.
-
-**Alternatives section** (bottom): "Try instead" recommendations — 2-column grid of places not in current plan. Tap to add.
-
-**"Add More Stops" button** → opens AlternativesSheet.
-
-**AlternativesSheet (modal):**
-- Search input (filters all PLACES by name/category, excludes already-added stops)
-- X clear button on search
-- Results list with add buttons
-- "Add custom place" at bottom
-
-**Confirm Plan** → navigates directly to `/map` (TransitionPage removed)
-
----
-
-#### Manual Mode — Layout
+The wallet's entity model maps directly to database tables:
 
 ```
-1. YOUR PLAN (top) — existing stops with cultural intel
-2. ADD MORE STOPS divider
-3. Search input (primary interaction)
-4. Filtered results (excluding already-added stops)
-5. Add custom place option
-6. RECOMMENDED section (places not in plan)
+GET    /trips
+POST   /trips
+GET    /trips/:id/transactions
+POST   /trips/:id/transactions
 ```
 
-Cultural intel shown inline on each plan stop — same as AI reveal mode.
+AppContext's wallet state becomes `useQuery` / `useMutation` calls. The proxy accessors (`tripBudget`, `totalSpent`, etc.) remain unchanged in the interface.
+
+### Auth
+
+Replace the `completeOnboarding` / `signIn` no-ops with real JWT auth. The `isAuthenticated` flag in AppContext continues to control routing — only the source of truth changes.
 
 ---
 
-#### Shared Features (both modes)
-
-**Start time picker:** Preset time chips (08:00–15:00) for quick selection, plus a "Custom" option that reveals a native `<input type="time">` field.
-
-**Cultural Intelligence per stop:** Collapsible row showing locale-specific tips (etiquette, language, food, transport). Color-coded by category. **First stop auto-expands** on initial load.
-
----
-
-### 4. MapPage (`/map`)
-
-**Purpose:** Visualize itinerary on map. Switch between map view and list view. Start navigation. Remove stops inline.
-
-**Header:** `PageHeader` with Map icon, title "Map", subtitle showing destination + stop count. Right slot: List/Map toggle button.
-
-**No Edit button in header** — editing happens inline on the cards.
-
----
-
-#### Multi-Destination Switcher
-
-Shown when `destinations.length > 1`. Horizontal pill row. Active destination is brand-500 filled. Tapping switches `activeDestIdx`.
-
----
-
-#### Map View
-
-Simulated map canvas (`map-bg` class) with:
-- Grid overlay (faint blue lines)
-- White road paths (SVG curves)
-- Dashed brand-blue route line connecting all stops (animated path-length on mount)
-- Animated user location dot (pulsing ring at fixed position)
-- Stop pins: white label bubble + numbered brand-500 circle + diamond pointer — tap to open PlaceCard
-
-**Float controls (right side):**
-- Crosshair button: re-centers map (toast feedback)
-- Navigation button (brand-500): starts navigation → calls `setIsNavigating(true)`, `setNavIndex(0)`, navigates to `/navigate` after 240ms
-
-**Empty state:** If no stops, shows centered empty state card with "Plan [Destination]" CTA → `/generate`.
-
-**ItineraryBottomSheet:**
-- Collapsed: drag handle + stop count hint + 3-col stats (Time / Distance / Cost) + Start Navigation button
-- Expanded: scrollable stop list (max 32vh) showing each stop with time, rating, price range, and **inline × remove button**
-- Removing a stop calls `removeStop(id)` from context immediately
-
----
-
-#### List View
-
-Scrollable list of stop cards. Between stops: travel distance + estimated drive time dividers.
-
-Each card:
-- Full-width hero image (h-28) with darkening overlay
-- Stop number badge (top-left)
-- Name, category (bottom of image)
-- Rating badge (bottom-right)
-- Below image: hours, price, scheduled time range, description (2 lines)
-- **Inline × remove button** (top-right corner of image, `bg-black/40 backdrop-blur-sm`)
-
-Start Navigation button at bottom.
-
----
-
-#### PlaceCard (modal)
-
-Slides from bottom when a map pin is tapped. Shows:
-- Hero image + close button + stop number badge + name + category + rating + scheduled time
-- Previous place "from here" distance indicator
-- Info blocks: Hours, Price, Distance
-- Description
-- Tags
-- Cultural intelligence section (collapsible)
-- Actions: Save/Unsave + Navigate (starts navigation)
-- "Ask Buddy about this" button
-
----
-
-#### Empty Destination State
-
-Two variants:
-- **Overlay** (map view): Slides from bottom with 🗺️ emoji, message, and "Plan [Destination]" button
-- **Inline** (list view): Centered in scroll area with same content
-
----
-
-### 6. NavigatePage (`/navigate`)
-
-**Purpose:** Turn-by-turn navigation through itinerary stops. Simulates GPS progress.
-
-**Entry:** From MapPage Start Navigation button → `isNavigating = true`, `navIndex = 0`, navigate to `/navigate`.
-
-**BottomNav is hidden** on this route.
-
-**Layout:**
-```
-StatusBar
-Top bar: Back to map | Navigation destination chip | Pause button
-Map canvas (flex-1): Simulated route + user dot progress
-Bottom card: Arrived state OR In-progress state
-```
-
----
-
-#### Top Bar
-
-- **Back arrow** → `/map` (does not cancel navigation)
-- **Destination chip** (brand-500): shows "Navigating to [stop name]", ETA, distance remaining
-- **Pause/Resume** button: pauses progress simulation
-
----
-
-#### Map Canvas
-
-- White road SVG paths
-- Animated brand route line (full path + traveled portion overlaid)
-- User dot moves along bezier path based on `progress` (0→1)
-- Stop destination marker (brand-500 pill label + diamond pointer) at destination position
-- All stops mini list (top-right): shows ✓ (visited), → (current), or number badge
-
-**Buddy prompt:** Appears mid-journey (at ~55% progress) with a contextual tip. Dismiss button.
-
----
-
-#### Progress Simulation
-
-`setInterval` (120ms) increments `progress` by 0.012 per tick (~84 ticks to complete = ~10 seconds). Pauses when `paused = true`. When `progress >= 1`, sets `arrived = true`.
-
----
-
-#### Bottom Card — In-Progress
-
-- Stop image thumbnail + number badge + name + category + hours
-- Progress bar (animated width)
-- ETA and distance remaining
-- Action buttons: Visited | Skip | Buddy
-- Cancel Navigation button (red border)
-- "Up next" preview of next stop
-
----
-
-#### Bottom Card — Arrived
-
-Full-width emerald card:
-- "You've arrived! 🎉" + stop name
-- "Mark visited" → calls `markVisited(current.id)`, shows success toast
-- "Next stop ›" or "Finish trip 🏁" (if last stop)
-
-**"Next stop":** increments `navIndex`, resets `progress` to 0, resets `arrived`, shows toast "Heading to [next stop name]".
-
-**"Finish trip":** calls `setIsNavigating(false)`, `completeTrip()`, navigates to `/profile` after 600ms.
-
----
-
-#### Cancel Navigation Modal
-
-Confirmation sheet:
-- "Stop navigating?" header
-- "Continue navigating" — full-width brand-500 primary button (top)
-- "Stop and go to map" — red text link below (no button shape)
-
-Stop and go to map → `setIsNavigating(false)`, navigates to `/map`.
-
----
-
-#### Edge Case: No Current Stop
-
-If `itinerary` is empty or `navIndex` is out of range, shows full-screen fallback:
-- ⚠️ warning icon
-- "No active route. Go back to the map to start navigation."
-- "Back to Map" button
-
----
-
-### 7. WalletPage (`/wallet`)
-
-**Purpose:** Budget tracking for the active trip. Add expenses, split bills, scan receipts.
-
-**Header:** `PageHeader` with Wallet icon. Right slot: Bell notification button (default) or "COMPLETED" badge (when `tripCompleted`).
-
----
-
-#### Trip Selector Pills
-
-Horizontal scrollable pill row of all trips. Active trip: brand-500 filled. Inactive: ink-50 outlined. No inline delete buttons.
-
-"New Trip +" button opens NewTripSheet.
-
-**"Manage" button** appears when `trips.length > 1` and opens a Manage Trips bottom sheet — allows switching active trip and deleting trips (with confirmation modal).
-
----
-
-#### Budget Card
-
-Solid brand-600 blue card. Shows:
-- Trip name + Edit button (opens EditBudgetSheet) + Currency chip (opens CurrencyPickerSheet)
-- Total Budget / Spent / Remaining (3-column grid)
-- Remaining: emerald if under, red if over budget
-- Progress bar: emerald → amber (>80%) → red (over budget)
-- Daily Allowance: `(budget - spent) / daysRemaining`
-- Days Left counter
-- **Smart insight** (shown after day 1): "On track — projected total X" or "At this pace you'll overspend by X — save Y/day"
-
----
-
-#### Quick Actions
-
-Grid of action buttons (adapts columns based on `isNavigating` and `tripCompleted`):
-- **Add Expense** — opens AddExpenseSheet (hidden during navigation or when trip completed)
-- **Split Bill** — opens SplitBillSheet
-- **Scan** — opens ScanSheet (receipt OCR simulation)
-- **History** — opens HistorySheet
-
-If navigating or trip completed, shows a contextual info banner.
-
----
-
-#### Expense Breakdown
-
-Donut chart (SVG, animated) showing spending by category. Legend below with category name, amount, percentage.
-
----
-
-#### Recent Transactions
-
-Last 5 transactions with icon, title, date (relative), amount, optional tag badge.
-
-**Empty state:** When `transactions.length === 0`, shows 💸 "No expenses yet" centered card with helper text.
-
-**"See all ›"** → opens HistorySheet (only shown when transactions exist).
-
----
-
-#### Sheets
-
-**EditBudgetSheet:** Trip name input, budget number input, preset buttons (currency-aware), days remaining stepper.
-
-**AddExpenseSheet:** Title input (auto-focused), amount input, category selector (Food, Attraction, Transport, Shopping). Submit disabled until title and amount > 0.
-
-**ScanSheet:** Simulated camera view with scan line animation (2.2s), then shows detected items list with confidence scores (color-coded: green ≥95%, amber ≥85%, red below). "Add total to Expenses" button.
-
-**HistorySheet:** Full transaction list (all transactions, scrollable).
-
-**NewTripSheet:** Trip name, destination (auto-suggests currency), budget input, day count stepper.
-
-**CurrencyPickerSheet:** Searchable list of 15 currencies (IDR, USD, EUR, JPY, SGD, AUD, GBP, THB, MYR, KRW, HKD, CNY, INR, NZD, CAD) with flag, name, symbol. Live search filters by name or code. Checkmark on current selection. Warning banner when existing transactions are present (currency change won't convert historical amounts).
-
-**SplitBillSheet:** Multi-step flow:
-1. **Entry** — Choose: Scan Receipt / Upload Photo / Add Manually
-2. **Scanning** — Animated scan screen (2.2s) → auto-populates items
-3. **Edit** — Bill title, item list (editable name/price, delete), add new items, tax/service sliders, grand total
-4. **People** — Split type (Equal / Custom / By Item), participant list, add people
-5. **Assign** (By Item mode only) — Tap people to assign items; unassigned = split evenly
-6. **Review** — Per-person breakdown, "who paid" selector, wallet impact note, Share + Confirm
-
----
-
-#### Trip Completed State
-
-When `tripCompleted = true`:
-- "COMPLETED" badge in header
-- Summary banner with total spent, saved/over budget, transaction count
-- Wallet is read-only (Add Expense hidden, locked banner shown)
-
----
-
-### 8. ProfilePage (`/profile`)
-
-**Purpose:** User profile, travel stats, badges, settings, and logout.
-
-**Header:** `PageHeader` with User icon. Right slot: Settings gear button.
-
----
-
-#### User Card
-
-Avatar image, display name, location, email, phone. "Edit" button (placeholder).
-
----
-
-#### Persona Progress (returning users only)
-
-Brand-50 solid background card. Shows persona title (e.g., "The Wanderer"), progress bar (solid brand-500), percentage, and next level label. Chevron indicates it's tappable.
-
----
-
-#### New User Welcome Banner
-
-Shown when `visited.size === 0 && transactions.length === 0`. Solid brand-50 banner with ✈️ and "Ready to explore? Your stats, badges, and journey history will appear here as you travel."
-
----
-
-#### Stats Grid (2×2)
-
-Stat cards with colored backgrounds. Fields populated dynamically:
-
-| Stat | New User | Returning User |
-|---|---|---|
-| Trips Completed | 0 | `USER.stats.trips` |
-| Places Explored | 0 | `visited.size` |
-| Hidden Gems | 0 | `USER.stats.hiddenGems` |
-| Saved Places | `savedPlaces.length` | `savedPlaces.length` |
-
-Tapping a stat card (returning users only) opens a detail sheet with contextual insight text.
-
----
-
-#### Recent Trips (returning users only)
-
-List of past trips with date, duration, place count, and total spend.
-
----
-
-#### Badges
-
-**New user:** 4 locked badge slots (greyed out, 🔒 overlay) with names and unlock conditions.
-
-**Returning user:** Animated badge hexagons with solid color fills (no gradients), name and subtitle.
-
----
-
-#### Settings List
-
-- Saved Places (with badge count if any)
-- Travel History
-- Payment Methods
-- Help & Support
-
----
-
-#### Logout
-
-Red-tinted row button → shows confirmation bottom sheet.
-
-**Logout confirmation:**
-- 🚪 "Log out?" with message "You'll be taken back to the welcome screen."
-- "Stay logged in" — full-width brand-500 primary button (top, shadow-glow)
-- "Log out" — red text link below (no button shape)
-- "Log out" calls `logout()` + `nav('/onboarding', { replace: true })`
-
-`logout()` clears: `isAuthenticated`, `authUser`, `onboardingComplete`, `itinerary`, `visited`, `savedPlaces`, `isNavigating`, `navIndex`.
-
----
-
-## Navigation Structure
-
-```
-/onboarding ←─── auth guard (if !onboardingComplete)
-     │
-     └──── completeOnboarding() ──→ /
-
-/  (HomePage)
-     ├──→ /generate              (AI Generate CTA)
-     ├──→ /generate?mode=manual  (Plan Manually CTA)
-     ├──→ /generate?edit=1       (Edit Plan button)
-     └──→ /map                   (View Map button)
-
-/generate
-     └──→ /map                   (Confirm Plan — TransitionPage removed)
-
-/map
-     ├──→ /generate?edit=1       (edit now inline on cards)
-     └──→ /navigate              (Start Navigation)
-
-/navigate
-     ├──→ /map                   (Back arrow or Cancel)
-     └──→ /profile               (Finish Trip)
-
-/wallet  — self-contained, sheets only
-/profile — self-contained, sheets only; logout → /onboarding
-```
-
-**BottomNav** links: `/` · `/map` · `/wallet` · `/profile` (4-tab grid, hidden on `/navigate` and `/onboarding`)
-
-**Buddy FAB:** Floating `bottom-[72px] right-4` button. Hidden on `/onboarding`.
-
-**Persistent Navigation Bar:** Compact top pill shown when `isNavigating = true` on any non-navigate page. Tapping goes to `/navigate`.
-
----
-
-## State Handling
-
-### Empty States
-
-| Scenario | UI |
-|---|---|
-| No itinerary on Home | 🗺️ card + "Generate my plan" primary CTA + "or build it stop by stop" text link |
-| No itinerary on Map (map view) | Animated bottom card with "Plan [Destination]" CTA |
-| No itinerary on Map (list view) | Centered empty state with same CTA |
-| No transactions in Wallet | 💸 "No expenses yet" card with helper text |
-| New user on Profile | Welcome banner + locked badges + zero stats |
-| No current stop in Navigate | ⚠️ fallback screen with "Back to Map" |
-
-### Loading States
-
-| Scenario | UI |
-|---|---|
-| AI itinerary generation | 1.2s delay → shimmer skeleton cards → reveal with animation |
-| Auth form submission | Rotating Sparkles spinner on button for 1.2s |
-| Receipt scanning | Animated scan line for 2.2s |
-
-### Edge Cases
-
-| Scenario | Behavior |
-|---|---|
-| User navigates to `/onboarding` when already authed | Redirected to `/` on mount |
-| GeneratePage opened with `?edit=1` | No itinerary rebuild, loads in `reveal` phase |
-| Stop removed during navigation | `visited` set and `navIndex` unaffected; stop removed from `itinerary` |
-| Trip deletion when only 1 trip exists | `deleteTrip` no-ops |
-| Wallet Add Expense when `isNavigating = true` | Button hidden; locked banner shown |
-| Wallet all actions when `tripCompleted = true` | Add Expense hidden, Split/Scan disabled, read-only banner |
-| Back navigation during onboarding | `back()` follows `FLOW` array order; never goes to removed `duration` step |
-
----
-
-## Key Entry Points Summary
-
-| Action | Entry Point | Route |
-|---|---|---|
-| Start AI plan | Home "AI Generate" card | `/generate` |
-| Start manual plan | Home "Plan Manually" card | `/generate?mode=manual` |
-| Edit existing plan | Home "Edit Plan" button | `/generate?edit=1` |
-| Remove a stop | Map bottom sheet × button | inline |
-| Remove a stop | Map list view × button | inline |
-| Start navigation | Map "Start Navigation" button | `/navigate` |
-| Return to navigation | Persistent nav bar (any page) | `/navigate` |
-| Add a destination | Home route strip "+" | Add Destination sheet |
-| Add a stop | GeneratePage "Add More Stops" | AlternativesSheet |
-| Log out | Profile → Log Out | `/onboarding` |
-| Track expense | Wallet "Add Expense" | AddExpenseSheet |
-| Split a bill | Wallet "Split Bill" | SplitBillSheet |
-| Create new wallet trip | Wallet "New Trip +" | NewTripSheet |
-
----
-
-## User Scenarios
-
-### Scenario 1: First-Time User
-
-1. Opens app → `onboardingComplete = false` → redirected to `/onboarding`
-2. Welcome screen (solid blue bg, white logo): taps "Get Started"
-3. Auth form: enters name, email, password, confirm → "Create Account" → 1.2s load → moves to Vibe
-4. Selects Vibe (e.g., Chill) → Continue
-5. Adds "Bali, Indonesia" to destinations → Continue
-6. Selects date range (e.g., Jun 15 → Jun 20, 6 days) → Continue
-7. Sets budget Rp 300K → Continue
-8. Selects interests (Coffee, Beaches) → Continue
-9. Taps "Allow Location Access" → granted → CTA becomes "Start exploring →"
-10. Taps continue → `completeOnboarding()` → lands on `/`
-11. HomePage: empty plan, sees action grid with AI Generate and Plan Manually
-12. Taps "AI Generate" → `/generate` → 2.3s loading → itinerary revealed
-13. Reviews stops, maybe removes one, taps "Confirm My Journey"
-14. Navigates directly to `/map` with itinerary on map
-15. Taps "Start Navigation" → `/navigate`
-16. Follows route, marks stops visited, finishes → redirected to `/profile`
-
----
-
-### Scenario 2: Returning Authenticated User
-
-1. Opens app → `onboardingComplete = true` → redirected to `/` immediately (OnboardingPage skips)
-2. HomePage shows existing itinerary with timeline
-3. User wants to change a stop → taps "Edit Plan" → `/generate?edit=1`
-4. GeneratePage loads in reveal phase (no rebuild) showing existing stops
-5. User removes a stop (6s undo toast shown), swaps another via AlternativesSheet
-6. Taps "Confirm My Journey" → directly to `/map`
-
----
-
-### Scenario 3: Editing Plan Mid-Trip (from Map)
-
-1. User is on `/map` viewing their plan
-2. Notices a stop they want to remove
-3. Taps collapsed bottom sheet to expand → sees stop list with × buttons
-4. Taps × on unwanted stop → stop removed immediately from `itinerary` via `removeStop()`
-5. Alternatively switches to List view → taps × on card image overlay
-6. No navigation away from map required
-
----
-
-### Scenario 4: Multi-Destination Trip
-
-1. During onboarding destinations step: adds "Tokyo, Japan" → "Kyoto, Japan" → "Osaka, Japan"
-2. Three numbered destinations appear in reorderable list
-3. Completes onboarding → `destinations[]` has 3 entries with auto-distributed days
-4. Home shows route strip: Tokyo → Kyoto → Osaka with day counts
-5. Active destination (Tokyo) is highlighted
-6. User generates plan for Tokyo (AI) → confirmed
-7. Taps "Kyoto" pill in route strip → `activeDestIdx = 1`
-8. Home shows "No plans for Kyoto" empty state → taps "AI Generate"
-9. On Map: destination switcher shows all 3, active one highlighted
-
----
-
-### Scenario 5: Wallet — Full Trip Budget Flow
-
-1. After onboarding, wallet has one trip auto-created with budget = `dailyBudget × totalDays`
-2. User opens Wallet → sees Budget Card with full budget, 0 spent
-3. No transactions → "No expenses yet" empty state
-4. Taps "Add Expense" → enters "Nasi Goreng Rp 45,000", category Food → Add
-5. Transaction appears, donut chart updates, remaining balance decreases
-6. After 2 days, Smart Insight appears: projects total and compares to budget
-7. User wants to split dinner → "Split Bill" → scans receipt → assigns items to friends → confirms: adds "your share" to wallet
-8. Trip ends → `completeTrip()` called → COMPLETED badge in header, wallet read-only, summary banner shown
-
----
-
-### Scenario 6: Changing Vibe Mid-Trip
-
-1. On HomePage, taps the "🌴 Chill Plan ✏️" chip next to "TODAY'S PLAN"
-2. Vibe & Budget sheet slides up
-3. Taps "🔥 Chaos" vibe
-4. Adjusts budget slider to Rp 600K
-5. Taps "Regenerate Plan" → navigates to `/generate` with updated vibe + budget
-
----
-
-## Flows That Were Removed / Changed
-
-| Old Behavior | New Behavior |
-|---|---|
-| "Trip Duration" onboarding step existed | Removed entirely; duration derived from date range |
-| Onboarding used `position: fixed` CTA button | CTA is `shrink-0` flex footer, always visible |
-| Phone frame clipped fixed-position elements on desktop | PhoneFrame is now a fluid full-height wrapper |
-| OnboardingPage accessible even when logged in | Redirects to `/` on mount if `onboardingComplete = true` |
-| MapPage header had "Edit" button → `/generate?edit=1` | Edit button removed; inline × on cards |
-| Timeline vertical line bled into Edit Plan button | Buttons moved outside timeline `relative` container |
-| Purple gradient backgrounds throughout app | All color gradients replaced with solid brand/ink colors |
-| Welcome screen: blue→purple gradient | Solid `bg-brand-500` blue |
-| TransitionPage existed as loading screen | Removed; Confirm Plan navigates directly to `/map` |
-| Gradient in persona progress, badges, banners | Solid colors throughout |
-
----
-
-*This README reflects the app as implemented after all UX fixes described in the development session.*
+*Last updated: Round 10 — Unified date picker, merged review screen, density-aware Add, beginner-first UX refinements.*

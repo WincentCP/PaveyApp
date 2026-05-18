@@ -1,10 +1,41 @@
+/**
+ * AppContext — central client-side state for the planner.
+ *
+ * State slices (each is a `useState` below):
+ *   - Auth: isAuthenticated, authUser, onboardingComplete
+ *   - Plan inputs: vibe, budget, pace, journeyStart, destinations, activeDestIdx
+ *   - Plan output: itinerary (flat), perDayItineraries (grouped), perDayMeta (day-kind labels)
+ *   - Wallet: trips[], activeTripId — transactions live INSIDE each Trip.
+ *     "Active trip proxies" (tripBudget/tripName/currency/etc.) read from
+ *     `trips.find(t => t.id === activeTripId)` so callers don't need to know
+ *     about the multi-trip structure.
+ *   - User behavior: savedPlaces, visited, placeRatings, visitedPlaceIds
+ *   - UI flags: isNavigating, buddyOpen, rainyDayMode
+ *
+ * Persistence: see `loadPersistedState` + the effect at the top of AppProvider —
+ * a single localStorage key (`pavey_state`) holds the JSON blob.
+ *
+ * Backend migration notes:
+ *   - Planning logic lives in src/lib/itinerary.ts. `buildFullItinerary` here
+ *     is just a thin state-binding wrapper; replacing it with a `POST /plan`
+ *     call is a one-file change.
+ *   - Validation rules live in src/lib/planValidation.ts.
+ *   - Wallet/trip shape is in src/data/wallet.ts.
+ */
+
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { PLACES, pickItinerary, pickDayItinerary, type Place, type Vibe } from '../data/places';
+import { PLACES, pickItinerary, type Place, type Vibe } from '../data/places';
 import { DEFAULT_TRIP, BUDGET_TOTAL, type Transaction, type Trip, type Currency, suggestCurrency } from '../data/wallet';
+import {
+  PACE_STOPS, allocateDays, generateItinerary,
+  type TripPace, type DayKind, type DayPlan,
+} from '../lib/itinerary';
+
+// Re-export planning types so existing imports from '../context/AppContext' keep working.
+export { PACE_STOPS, allocateDays };
+export type { TripPace, DayKind, DayPlan };
 
 export type TransitMode = 'flight' | 'train' | 'bus' | 'drive' | 'ferry';
-export type TripPace = 'relaxed' | 'balanced' | 'fast';
-export const PACE_STOPS: Record<TripPace, number> = { relaxed: 2, balanced: 3, fast: 4 };
 
 export interface Destination {
   id: string;
@@ -50,6 +81,7 @@ interface AppState {
   buildItinerary: () => Place[];
   perDayItineraries: Place[][];
   setPerDayItineraries: (p: Place[][]) => void;
+  perDayMeta: DayPlan[];
   buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string) => void;
   reorderStop: (from: number, to: number) => void;
   removeStop: (id: string) => void;
@@ -187,6 +219,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [savedPlaces, setSavedPlaces] = useState<Place[]>(persisted?.savedPlaces ?? []);
   const [journeyStart, setJourneyStart] = useState(persisted?.journeyStart ?? { date: 'today', time: '09:00', days: 1 });
   const [perDayItineraries, setPerDayItineraries] = useState<Place[][]>(persisted?.perDayItineraries ?? []);
+  const [perDayMeta, setPerDayMeta] = useState<DayPlan[]>([]);
 
   // Multi-destination
   const [destinations, setDestinations] = useState<Destination[]>(persisted?.destinations ?? []);
@@ -309,25 +342,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     setJourneyStart({ date: data.startDate, time: '09:00', days: data.totalDays });
 
-    // Create wallet trip
-    const tripName = data.destinations.length === 1
-      ? `${data.destinations[0].name} Trip`
-      : `${data.destinations[0]?.name} + ${data.destinations.length - 1} more`;
-    const tripDest = data.destinations.map((d) => d.name).join(' → ');
-    const id = `trip-${Math.random().toString(36).slice(2, 9)}`;
-    const newTrip: Trip = {
-      id,
-      name: tripName,
-      destination: tripDest,
-      currency: newDests[0]?.currency ?? 'IDR',
-      budget: data.budget * Math.max(1, data.totalDays),
-      daysTotal: data.totalDays,
-      daysRemaining: data.totalDays,
-      transactions: [],
-      createdAt: new Date().toISOString(),
-    };
-    setTrips([newTrip]);
-    setActiveTripId(id);
+    // Create wallet trip only when the user actually picked destinations
+    // during onboarding. If they skipped (e.g. quick-login flow), leave the
+    // wallet on the default empty state — the first plan from HomePage will
+    // mint a real trip with `linkedToPlan: true`.
+    if (data.destinations.length > 0) {
+      const tripName = data.destinations.length === 1
+        ? `${data.destinations[0].name} Trip`
+        : `${data.destinations[0].name} + ${data.destinations.length - 1} more`;
+      const tripDest = data.destinations.map((d) => d.name).join(' → ');
+      const id = `trip-${Math.random().toString(36).slice(2, 9)}`;
+      const newTrip: Trip = {
+        id,
+        name: tripName,
+        destination: tripDest,
+        currency: newDests[0]?.currency ?? 'IDR',
+        budget: data.budget * Math.max(1, data.totalDays),
+        daysTotal: data.totalDays,
+        daysRemaining: data.totalDays,
+        transactions: [],
+        createdAt: new Date().toISOString(),
+      };
+      setTrips([newTrip]);
+      setActiveTripId(id);
+    }
 
     setOnboardingComplete(true);
     setEverOnboarded(true);
@@ -377,32 +415,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     buildItinerary: () => pickItinerary(vibe, budget, rainyDayMode),
     perDayItineraries,
     setPerDayItineraries,
+    perDayMeta,
+    // Thin wrapper around the pure planning engine. When migrating to a backend,
+    // replace the `generateItinerary` call with `await api.plan(...)`.
     buildFullItinerary: (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
-      const usedIds = new Set<string>();
-      const baseStops = PACE_STOPS[pace] + (vibe === 'activities' ? 1 : 0);
-      const result: Place[][] = [];
-      for (let d = 0; d < days; d++) {
-        let maxStops = baseStops;
-        if (d === 0) {
-          const arrHour = parseInt(arrivalTime.split(':')[0]);
-          if (arrHour >= 18) maxStops = 0;
-          else if (arrHour >= 15) maxStops = 1;
-          else if (arrHour >= 12) maxStops = 2;
-        }
-        if (d === days - 1 && days > 1) {
-          const depHour = parseInt(departureTime.split(':')[0]);
-          if (depHour <= 10) maxStops = 0;
-          else if (depHour <= 12) maxStops = 1;
-          else if (depHour <= 14) maxStops = 2;
-        }
-        const dayStops = maxStops === 0
-          ? []
-          : pickDayItinerary(vibe, budget, d, usedIds, maxStops, rainyDayMode);
-        dayStops.forEach((p) => usedIds.add(p.id));
-        result.push(dayStops);
-      }
-      setPerDayItineraries(result);
-      setItinerary(result.flat());
+      const { days: planDays, meta } = generateItinerary({
+        destinations,
+        activeDestIdx,
+        totalDays: days,
+        pace,
+        vibe,
+        budget,
+        rainyDayMode,
+        arrivalTime,
+        departureTime,
+      });
+      setPerDayItineraries(planDays);
+      setPerDayMeta(meta);
+      setItinerary(planDays.flat());
     },
     reorderStop: (from, to) => {
       setItinerary((cur) => {

@@ -54,7 +54,7 @@ function AppShell() {
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           onClick={() => setBuddyOpen(true)}
-          className="absolute right-4 bottom-24 z-20 w-14 h-14 rounded-full bg-brand-500 shadow-glow overflow-hidden press ring-2 ring-white"
+          className="absolute right-3 bottom-24 z-20 w-12 h-12 rounded-full bg-brand-500 shadow-glow overflow-hidden press"
           aria-label="Open Buddy AI"
         >
           {/* buddy.svg: 997 × 1036 px — replace with buddy.png */}

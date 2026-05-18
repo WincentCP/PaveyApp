@@ -11,6 +11,7 @@ import type { Vibe } from '../data/places';
 import { pickItinerary } from '../data/places';
 import { suggestCurrency, CURRENCY_SYMBOLS, CURRENCY_RATES_TO_IDR } from '../data/wallet';
 import { splashImg, welcomeImg, buddyImg } from '../assets/images';
+import MiniCalendar from '../components/MiniCalendar';
 
 type AuthMode = 'signup' | 'login';
 type Step =
@@ -131,7 +132,7 @@ export default function OnboardingPage() {
           name: name || email.split('@')[0],
           email,
           vibe: 'balanced',
-          destinations: [{ name: 'My Destination', days: 3 }],
+          destinations: [],
           totalDays: 3,
           budget: 500_000,
           startDate: 'today',
@@ -163,7 +164,7 @@ export default function OnboardingPage() {
         vibe: selectedVibe,
         destinations: destList.length > 0
           ? destList.map((d) => ({ name: d.name, days: d.days }))
-          : [{ name: 'My Destination', days: totalDays }],
+          : [],
         totalDays,
         budget,
         startDate: startStr,
@@ -263,7 +264,7 @@ export default function OnboardingPage() {
                   <img
                     src={splashImg}
                     alt="Pavey"
-                    className="w-[52vw] max-w-[230px] max-h-[45vh] object-contain"
+                    className="w-[62vw] max-w-[280px] max-h-[52vh] object-contain"
                     style={{ aspectRatio: '605/944' }}
                   />
                 </motion.div>
@@ -878,77 +879,3 @@ function FormField({
   );
 }
 
-function MiniCalendar({
-  startDate, endDate, onSelect,
-}: {
-  startDate: Date | null; endDate: Date | null; onSelect: (d: Date) => void;
-}) {
-  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
-  const [viewYear, setViewYear] = useState(() => today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => today.getMonth());
-
-  const firstDow = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const monthLabel = new Date(viewYear, viewMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  const cells: (Date | null)[] = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(viewYear, viewMonth, d));
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-
-  const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-    else setViewMonth((m) => m - 1);
-  };
-  const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-    else setViewMonth((m) => m + 1);
-  };
-
-  return (
-    <div className="bg-ink-50 rounded-2xl p-3">
-      <div className="flex items-center justify-between mb-2">
-        <button onClick={prevMonth} className="w-8 h-8 rounded-full bg-white flex items-center justify-center press shadow-soft">
-          <ArrowLeft className="w-4 h-4 text-ink-700" />
-        </button>
-        <span className="text-sm font-bold text-ink-900">{monthLabel}</span>
-        <button onClick={nextMonth} className="w-8 h-8 rounded-full bg-white flex items-center justify-center press shadow-soft">
-          <ArrowRight className="w-4 h-4 text-ink-700" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 mb-1">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className="text-center text-[10px] font-bold text-ink-400 py-1">{d}</div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-y-0.5">
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} />;
-          const isStart = startDate ? isSameDay(d, startDate) : false;
-          const isEnd = endDate ? isSameDay(d, endDate) : false;
-          const inRange = startDate && endDate ? d > startDate && d < endDate : false;
-          const isPast = d < today;
-          const isToday = isSameDay(d, today);
-          return (
-            <button
-              key={i}
-              onClick={() => !isPast && onSelect(d)}
-              disabled={isPast}
-              className={[
-                'relative aspect-square flex items-center justify-center text-[11px] font-semibold transition-colors',
-                isStart || isEnd ? 'bg-brand-500 text-white rounded-full z-10' : '',
-                inRange ? 'bg-brand-100 text-brand-700 rounded-none' : '',
-                !isStart && !isEnd && !inRange && !isPast ? `rounded-full hover:bg-ink-200 ${isToday ? 'ring-1 ring-brand-400' : ''}` : '',
-                isPast ? 'text-ink-300 cursor-default' : 'text-ink-800',
-              ].filter(Boolean).join(' ')}
-            >
-              {d.getDate()}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}

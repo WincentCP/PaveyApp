@@ -1,3 +1,27 @@
+/**
+ * Wallet data model.
+ *
+ * Entity relationship:
+ *
+ *     Trip 1 ─── many ─── Transaction
+ *
+ * A Trip owns its transactions (they live inside the `Trip.transactions` array,
+ * not in a global pool). The active trip is identified by `activeTripId` in
+ * AppContext. AppContext exposes "active trip proxies" (`tripBudget`,
+ * `totalSpent`, `transactions`, etc.) so callers don't have to walk the trips
+ * array themselves.
+ *
+ * A trip's lifecycle is independent of any itinerary plan — the wallet is a
+ * standalone tool. When a user generates an itinerary the wallet prompt offers
+ * to link the trip, but the wallet works without one (see WalletPage).
+ *
+ * Backend mapping (future):
+ *   GET    /trips                  → Trip[]
+ *   POST   /trips                  → Trip
+ *   GET    /trips/:id/transactions → Transaction[]
+ *   POST   /trips/:id/transactions → Transaction
+ */
+
 export type TxnTag = 'Great deal' | 'Over budget' | 'Saved' | 'Top up' | 'you owe' | 'owed to you' | 'settled';
 export type TxnCategory = 'Food & Drinks' | 'Attractions' | 'Transport' | 'Shopping' | 'Top up';
 
@@ -68,16 +92,18 @@ export interface Trip {
   daysRemaining: number;
   transactions: Transaction[];
   createdAt: string;
+  /** True when this trip was auto-minted from a confirmed itinerary plan.
+   *  Used by the wallet to render the "Linked from your trip plan" subtitle. */
+  linkedToPlan?: boolean;
 }
 
-export const SEED_TXNS: Transaction[] = [
-  { id: 't1', title: 'Seniman Coffee Studio', category: 'Food & Drinks', amount: -40000, date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), icon: '☕', tag: 'Great deal' },
-  { id: 't2', title: 'Tirta Empul Temple', category: 'Attractions', amount: -50000, date: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(), icon: '🛕' },
-  { id: 't3', title: 'Hujan Locale — split with Made', category: 'Food & Drinks', amount: -73000, date: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(), icon: '🍽️', tag: 'you owe' },
-  { id: 't4', title: 'Gojek Ride', category: 'Transport', amount: -28000, date: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(), icon: '🛵' },
-  { id: 't5', title: 'Paid for group dinner', category: 'Food & Drinks', amount: -220000, date: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(), icon: '🍽️', tag: 'owed to you' },
-  { id: 't6', title: 'Ubud Market Souvenirs', category: 'Shopping', amount: -140000, date: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(), icon: '🛍️' },
-];
+/**
+ * Default seed is intentionally empty. A brand-new user should land on the
+ * wallet's onboarding empty state, not a wall of fake demo transactions —
+ * see WalletPage's `showEmptyOnboarding` gate. The previous demo data
+ * misled new users into thinking they had an existing trip.
+ */
+export const SEED_TXNS: Transaction[] = [];
 
 export const DEFAULT_TRIP: Trip = {
   id: 'trip-default',

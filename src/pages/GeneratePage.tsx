@@ -1,23 +1,36 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
-  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown, AlertTriangle,
+  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown, AlertTriangle, Wallet,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
-import { useApp } from '../context/AppContext';
+import { useApp, PACE_STOPS } from '../context/AppContext';
 import type { Place } from '../data/places';
 import { PLACES } from '../data/places';
+import { getRegion, countDistinctRegions } from '../data/regions';
+import { MAX_TRIP_DAYS, exceedsMaxDuration } from '../lib/planValidation';
+import { COPY } from '../lib/copy';
+import { dayIsTight } from '../lib/density';
 import { formatCost } from '../lib/format';
 import { useToast } from '../components/Toast';
 import { getCulturalIntel, type CulturalIntel } from '../data/cultural';
 import TimePicker from '../components/TimePicker';
 
-const STEPS = [
-  'Finding nearby places…',
+const STEPS_DEFAULT = [
+  'Scouting hidden gems…',
   'Matching spots to your vibe…',
-  'Optimizing route…',
+  'Checking opening hours…',
+  'Balancing your pace…',
+  'Crafting your perfect journey…',
+];
+
+const STEPS_MULTI_CITY = [
+  'Scouting hidden gems…',
+  'Matching spots to your vibe…',
+  'Spacing travel days…',
+  'Clustering destinations by region…',
   'Crafting your perfect journey…',
 ];
 
@@ -37,7 +50,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -51,6 +64,9 @@ export default function GeneratePage() {
   const [showAdd, setShowAdd] = useState(false);
   // UI5 — what-if comparison: { currentPlace, alt }
   const [whatIf, setWhatIf] = useState<{ current: Place; alt: Place } | null>(null);
+  // Density-aware "Add" prompt — opens a small decision sheet when the picked
+  // recommendation would make the active day tight (5+ stops, 30+ km, 10+ h).
+  const [tightAdd, setTightAdd] = useState<{ place: Place; reason: string } | null>(null);
   const [confirmingPulse, setConfirmingPulse] = useState(false);
   const [stopTimes, setStopTimes] = useState<Record<string, string>>({});
   const [editingTimeFor, setEditingTimeFor] = useState<string | null>(null);
@@ -72,6 +88,8 @@ export default function GeneratePage() {
   const [densityDismissed, setDensityDismissed] = useState(() => {
     try { return localStorage.getItem('pavey_density_hint_dismissed') === '1'; } catch { return false; }
   });
+  const [walletPromptOpen, setWalletPromptOpen] = useState(false);
+  const walletPromptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissDensity = () => {
     setDensityDismissed(true);
     try { localStorage.setItem('pavey_density_hint_dismissed', '1'); } catch { /* ignore */ }
@@ -141,6 +159,12 @@ export default function GeneratePage() {
   const [showCustomForm, setShowCustomForm] = useState(false);
 
   useEffect(() => {
+    // URL safety net — HomePage is the primary defense against >30-day trips.
+    if (exceedsMaxDuration(daysParam)) {
+      show(COPY.tripTooLong.urlToast(MAX_TRIP_DAYS), 'info');
+      nav('/', { replace: true });
+      return;
+    }
     // Apply pace from URL param if it differs from current state
     if (paceParam === 'relaxed' || paceParam === 'balanced' || paceParam === 'fast') {
       if (pace !== paceParam) setPace(paceParam);
@@ -155,9 +179,17 @@ export default function GeneratePage() {
     }
   }, []); // eslint-disable-line
 
+  const loadingSteps = useMemo(() => {
+    const destNames = destinations.map((d) => d.name);
+    if (destinations.length > 1 || countDistinctRegions(destNames) >= 2) {
+      return STEPS_MULTI_CITY;
+    }
+    return STEPS_DEFAULT;
+  }, [destinations]);
+
   useEffect(() => {
     if (phase !== 'loading') return;
-    const t1 = setInterval(() => setStepIdx((s) => (s + 1) % STEPS.length), 700);
+    const t1 = setInterval(() => setStepIdx((s) => (s + 1) % loadingSteps.length), 700);
     const t2 = setTimeout(() => {
       setPhase('reveal');
       if (!isManualMode && !isEditMode && itinerary.length === 0) {
@@ -212,13 +244,21 @@ export default function GeneratePage() {
   };
 
   const onConfirm = () => {
-    // Issue 9: Cancel pending undo on confirm
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setUndoItem(null);
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
-    show(isPostOnboarding ? 'Your trip is ready! 🎉' : 'Journey confirmed ✨', 'success');
-    setTimeout(() => nav(isPostOnboarding ? '/' : '/map', { replace: true }), 700);
+    show(isPostOnboarding ? 'Your trip is ready' : 'Journey confirmed', 'success');
+    if (isPostOnboarding) {
+      setTimeout(() => nav('/', { replace: true }), 700);
+    } else {
+      // Prompt user to link a wallet, auto-proceed after 5s
+      setWalletPromptOpen(true);
+      walletPromptTimer.current = setTimeout(() => {
+        setWalletPromptOpen(false);
+        nav('/map', { replace: true });
+      }, 5000);
+    }
   };
 
   const manualSearchResults = useMemo(() => {
@@ -258,7 +298,7 @@ export default function GeneratePage() {
           <motion.div key="ai" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col overflow-hidden">
             <AnimatePresence mode="wait">
               {phase === 'loading' ? (
-                <LoadingState key="loading" stepIdx={stepIdx} />
+                <LoadingState key="loading" stepIdx={stepIdx} steps={loadingSteps} />
               ) : (
                 <motion.div
                   key="reveal"
@@ -320,6 +360,27 @@ export default function GeneratePage() {
                           <RefreshCw className="w-4 h-4" /> Try Again
                         </button>
                       </div>
+                    ) : displayItinerary.length === 0 && isMultiDay ? (
+                      /* Empty day placeholder — arrival/departure/travel/free */
+                      (() => {
+                        const slot = perDayMeta[activeDay];
+                        const isTravel = slot?.kind === 'travel';
+                        const crossRegion = isTravel && !!slot?.fromCity && !!slot?.toCity
+                          && getRegion(slot.fromCity) !== getRegion(slot.toCity)
+                          && !!getRegion(slot.fromCity) && !!getRegion(slot.toCity);
+                        return (
+                          <EmptyDayCard
+                            dayIndex={activeDay}
+                            totalDays={perDayItineraries.length}
+                            arrivalTime={startTimeParam ?? journeyStart.time ?? '09:00'}
+                            departureTime={endTimeParam ?? journeyStart.endTime ?? '14:00'}
+                            kind={isTravel ? 'travel' : undefined}
+                            fromCity={slot?.fromCity}
+                            toCity={slot?.toCity}
+                            crossRegion={crossRegion}
+                          />
+                        );
+                      })()
                     ) : (<>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-bold tracking-widest text-ink-500">ITINERARY · {displayItinerary.length} STOPS</span>
@@ -435,12 +496,20 @@ export default function GeneratePage() {
                       <RefreshCw className="w-3.5 h-3.5" /> Re-roll suggestions
                     </button>
 
+                    {/* Places exhaustion hint */}
+                    {isMultiDay && perDayItineraries.flat().length < journeyStart.days * PACE_STOPS[pace] * 0.7 && (
+                      <div className="mt-3 flex items-start gap-2 bg-ink-50 rounded-xl px-3 py-2.5">
+                        <span className="text-base leading-none mt-0.5 shrink-0">ℹ️</span>
+                        <span className="text-xs text-ink-500">We've shown all available spots for this destination — some days may have fewer stops than your pace setting.</span>
+                      </div>
+                    )}
+
                     {/* Recommendations */}
                     {!isMultiDay && alternatives(itinerary.map((p) => p.id)).length > 0 && (
                       <div className="mt-6">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[11px] font-bold tracking-widest text-ink-500">RECOMMENDATIONS</span>
-                          <span className="text-[10px] text-ink-400">Tap + to add to plan</span>
+                          <span className="text-[10px] text-ink-400">Tap Add to drop into your day</span>
                         </div>
                         <div className="space-y-2">
                           {alternatives(itinerary.map((p) => p.id)).slice(0, 4).map((altP) => (
@@ -458,21 +527,21 @@ export default function GeneratePage() {
                                 </div>
                                 <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatCost(altP.cost, activeTrip.currency)}</div>
                               </div>
-                              {displayItinerary.length > 0 ? (
-                                <button
-                                  onClick={() => setWhatIf({ current: displayItinerary[displayItinerary.length - 1], alt: altP })}
-                                  className="text-[10px] font-semibold text-brand-600 bg-brand-50 border border-brand-200 px-2.5 py-1.5 rounded-lg press shrink-0"
-                                >
-                                  Try instead
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => { addStop(altP); show(`${altP.name} added`, 'success'); }}
-                                  className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              )}
+                              <button
+                                onClick={() => {
+                                  const projected = [...displayItinerary, altP];
+                                  const check = dayIsTight(projected);
+                                  if (check.tight) {
+                                    setTightAdd({ place: altP, reason: check.reason });
+                                  } else {
+                                    addStop(altP);
+                                    show(COPY.recommendations.addedToast(altP.name), 'success');
+                                  }
+                                }}
+                                className="text-xs font-bold text-white bg-brand-500 px-3 py-1.5 rounded-lg press shadow-soft shrink-0 flex items-center gap-1"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> {COPY.recommendations.add}
+                              </button>
                             </motion.div>
                           ))}
                         </div>
@@ -818,11 +887,172 @@ export default function GeneratePage() {
           </>
         )}
       </AnimatePresence>
+
+      {/* Tight-day decision sheet — shown when an Add would over-pack the day */}
+      <AnimatePresence>
+        {tightAdd && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setTightAdd(null)}
+              className="absolute inset-0 z-50 bg-ink-900/50"
+            />
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card px-5 pt-4 pb-6"
+            >
+              <div className="w-10 h-1 rounded-full bg-ink-200 mx-auto mb-3" />
+              <div className="font-bold text-ink-900 font-display text-base">{COPY.recommendations.tightHeadline}</div>
+              <div className="text-xs text-ink-500 mt-1 leading-snug">
+                {COPY.recommendations.tightBody(displayItinerary.length + 1)}
+              </div>
+              <div className="mt-4 space-y-2">
+                <button
+                  onClick={() => {
+                    setTightAdd(null);
+                    setTimeout(() => {
+                      if (displayItinerary[0]) setEditingTimeFor(displayItinerary[0].id);
+                    }, 100);
+                  }}
+                  className="w-full text-left bg-brand-50/60 border border-brand-100 rounded-2xl px-3 py-3 press"
+                >
+                  <div className="text-sm font-bold text-ink-900">{COPY.recommendations.adjust}</div>
+                  <div className="text-[11px] text-ink-500 mt-0.5">Edit start times to make room.</div>
+                </button>
+                <button
+                  onClick={() => {
+                    const p = tightAdd.place;
+                    setTightAdd(null);
+                    addStop(p);
+                    show(COPY.recommendations.packedToast, 'info');
+                  }}
+                  className="w-full text-left bg-amber-50 border border-amber-100 rounded-2xl px-3 py-3 press"
+                >
+                  <div className="text-sm font-bold text-ink-900">{COPY.recommendations.keep}</div>
+                  <div className="text-[11px] text-ink-500 mt-0.5">Add it — your day will feel full.</div>
+                </button>
+                <button
+                  onClick={() => setTightAdd(null)}
+                  className="w-full text-left bg-ink-50 border border-ink-100 rounded-2xl px-3 py-3 press"
+                >
+                  <div className="text-sm font-bold text-ink-900">{COPY.recommendations.skip}</div>
+                  <div className="text-[11px] text-ink-500 mt-0.5">Keep your day as-is.</div>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Wallet link prompt — slides up after plan confirmation */}
+      <AnimatePresence>
+        {walletPromptOpen && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+            className="absolute inset-x-0 bottom-0 z-50 bg-white border-t border-ink-100 shadow-card px-5 py-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
+                <Wallet className="w-5 h-5 text-brand-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-ink-900 text-sm">Track your spending?</div>
+                <div className="text-xs text-ink-500 mt-0.5">Connect this plan to your wallet for budget tracking.</div>
+              </div>
+              <button
+                onClick={() => {
+                  if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
+                  setWalletPromptOpen(false);
+                  nav('/wallet', { replace: true });
+                }}
+                className="shrink-0 h-9 px-3 rounded-xl bg-brand-500 text-white text-xs font-bold press shadow-glow"
+              >
+                Open Wallet
+              </button>
+              <button
+                onClick={() => {
+                  if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
+                  setWalletPromptOpen(false);
+                  nav('/map', { replace: true });
+                }}
+                className="shrink-0 h-9 px-3 rounded-xl bg-ink-50 text-ink-700 text-xs font-semibold press"
+              >
+                Later
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 /* ── Sub-components ─────────────────────────────── */
+
+const TRAVEL_DAY_IDEAS = [
+  '☕ Airport café & people-watch',
+  '🍜 Local dinner near your hotel',
+  '🚶 Easy evening walk around the neighborhood',
+  '🛎️ Check in, unpack, rest up',
+  '🛍️ Browse a local convenience store or market',
+];
+
+function EmptyDayCard({ dayIndex, totalDays, arrivalTime, departureTime, kind, fromCity, toCity, crossRegion }: {
+  dayIndex: number; totalDays: number; arrivalTime: string; departureTime: string;
+  kind?: 'arrival' | 'departure' | 'travel' | 'free';
+  fromCity?: string; toCity?: string; crossRegion?: boolean;
+}) {
+  const isFirst = dayIndex === 0;
+  const isLast = dayIndex === totalDays - 1;
+  const resolvedKind: 'arrival' | 'departure' | 'travel' | 'free' =
+    kind ?? (isFirst ? 'arrival' : isLast ? 'departure' : 'free');
+
+  if (resolvedKind === 'travel') {
+    const emoji = crossRegion ? '✈️' : '🚄';
+    const idea = TRAVEL_DAY_IDEAS[dayIndex % TRAVEL_DAY_IDEAS.length];
+    return (
+      <div className="flex flex-col items-center gap-4 py-10 text-center px-6">
+        <div className="text-5xl">{emoji}</div>
+        <div>
+          <div className="font-bold text-ink-900 text-lg font-display">
+            Travel day{(fromCity && toCity) ? ` — ${fromCity} to ${toCity}` : ''}
+          </div>
+          <div className="text-sm text-ink-500 mt-1.5 max-w-[280px] leading-relaxed">
+            A relaxed day to move between cities. Check in, rest, try something local.
+          </div>
+        </div>
+        <div className="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full px-3 py-1.5">
+          <span className="text-xs font-semibold text-brand-700">{idea}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const emoji = resolvedKind === 'arrival' ? '✈️' : resolvedKind === 'departure' ? '🛫' : '🌤️';
+  const title = resolvedKind === 'arrival' ? 'Arrival Day' : resolvedKind === 'departure' ? 'Departure Day' : 'Free Day';
+  const time = resolvedKind === 'arrival' ? arrivalTime : resolvedKind === 'departure' ? departureTime : null;
+  const note = resolvedKind === 'arrival'
+    ? `Arriving at ${time} — check in and settle in before tomorrow's adventures.`
+    : resolvedKind === 'departure'
+    ? `Departing at ${time} — pack up and head to the airport.`
+    : 'No activities planned for this day — enjoy some rest or explore freely.';
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-10 text-center">
+      <div className="text-5xl">{emoji}</div>
+      <div>
+        <div className="font-bold text-ink-900 text-lg font-display">{title}</div>
+        <div className="text-sm text-ink-500 mt-1.5 max-w-[240px] leading-relaxed">{note}</div>
+      </div>
+    </div>
+  );
+}
 
 function SummStat({ label, value }: { label: string; value: string }) {
   return (
@@ -833,7 +1063,7 @@ function SummStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LoadingState({ stepIdx }: { stepIdx: number }) {
+function LoadingState({ stepIdx, steps }: { stepIdx: number; steps: string[] }) {
   return (
     <motion.div key="loading" initial={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} className="flex-1 px-5 pt-4 flex flex-col">
       <div className="flex items-center gap-2 text-brand-600 font-semibold">
@@ -842,7 +1072,7 @@ function LoadingState({ stepIdx }: { stepIdx: number }) {
         </motion.div>
         <AnimatePresence mode="wait">
           <motion.span key={stepIdx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="text-[15px]">
-            {STEPS[stepIdx]}
+            {steps[stepIdx]}
           </motion.span>
         </AnimatePresence>
       </div>
@@ -995,7 +1225,13 @@ function StopCard({
           </div>
           <button onClick={onTimeEdit} className="mt-1.5 flex items-center gap-1 bg-brand-50 rounded-full px-2 py-1 press">
             <Clock className="w-3 h-3 text-brand-500" />
-            <span className="text-xs font-semibold text-brand-600">{scheduledTime}</span>
+            <span className="text-xs font-semibold text-brand-600">
+              {scheduledTime}–{(() => {
+                const [h, m] = scheduledTime.split(':').map(Number);
+                const end = h * 60 + m + place.durationMin;
+                return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+              })()}
+            </span>
             <Pencil className="w-2.5 h-2.5 text-brand-400" />
           </button>
           <div className="flex items-center gap-1.5 text-[11px] mt-1.5 flex-wrap">
@@ -1055,7 +1291,7 @@ function CustomPlaceForm({ onAdd }: { onAdd: (p: Place) => void }) {
         </div>
       </div>
       <button disabled={!name.trim()} onClick={() => {
-        onAdd({ id: `custom-${Date.now()}`, name: name.trim(), category: category as import('../data/places').Category, tags: ['Custom'], vibes: ['balanced'], image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80', cost: Number(cost) || 0, priceRange: { min: Number(cost) || 0, max: Number(cost) || 0 }, durationMin: Number(dur) || 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 0, description: 'Custom stop.', openingHours: 'All day', indoor: true, openHour: 0, closeHour: 24 });
+        onAdd({ id: `custom-${Date.now()}`, city: '', name: name.trim(), category: category as import('../data/places').Category, tags: ['Custom'], vibes: ['balanced'], image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80', cost: Number(cost) || 0, priceRange: { min: Number(cost) || 0, max: Number(cost) || 0 }, durationMin: Number(dur) || 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 0, description: 'Custom stop.', openingHours: 'All day', indoor: true, openHour: 0, closeHour: 24 });
       }} className="w-full h-10 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white font-semibold press flex items-center justify-center gap-2">
         <Plus className="w-4 h-4" /> Add Custom Stop
       </button>
