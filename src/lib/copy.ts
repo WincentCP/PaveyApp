@@ -44,6 +44,8 @@ export const COPY = {
   wallet: {
     tripCreatedToast: (name: string) => `Wallet trip created for ${name}`,
     linkedSubtitle: 'Linked from your trip plan',
+    linkedDeleteBody: 'This wallet was created from your trip plan. Deleting removes all expenses. Or keep it as a standalone wallet.',
+    unlinkToast: 'Wallet kept — plan link removed.',
   },
   destInput: {
     cityHint: (city: string) => `That's a country — we'll start with ${city}. Tap to use it.`,
@@ -76,5 +78,13 @@ export const COPY = {
   },
   hints: {
     travelDays: "We'll add travel days automatically between cities.",
+    singleDay: "Just one day? We'll plan a short visit.",
+    densityWhy: '5+ stops in a day usually means rushing between places.',
+    rerollConfirm: 'This will replace today\'s stops with new suggestions. Keep your edits?',
+    buddyIntro: 'Ask me to suggest a restaurant near your next stop, or anything about your trip.',
+    onboardingPreview: (days: number, city: string) =>
+      `Sounds like a ${days}-day ${city} trip — sound right?`,
+    walletEmptyLinked: (tripName: string) => `Track your spending for ${tripName}`,
+    manualSecondary: 'Pick stops manually instead',
   },
 } as const;

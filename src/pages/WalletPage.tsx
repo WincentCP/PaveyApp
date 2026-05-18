@@ -26,7 +26,7 @@ export default function WalletPage() {
     tripName, setTripName,
     tripDays, tripDaysRemaining, setTripDaysRemaining,
     totalSpent, dailyAllowance,
-    trips, activeTripId, setActiveTripId, deleteTrip, activeTrip,
+    trips, activeTripId, setActiveTripId, deleteTrip, unlinkWalletFromPlan, activeTrip,
     currency, setCurrency,
     isNavigating, tripCompleted,
     itinerary, perDayItineraries,
@@ -343,7 +343,9 @@ export default function WalletPage() {
           <div className="mt-3 py-10 flex flex-col items-center gap-3 text-center bg-ink-50 rounded-2xl px-6">
             <span className="text-4xl">💸</span>
             <div>
-              <div className="font-bold text-ink-800 text-sm">No expenses yet</div>
+              <div className="font-bold text-ink-800 text-sm">
+                {isLinkedTrip && tripName ? COPY.hints.walletEmptyLinked(tripName) : 'No expenses yet'}
+              </div>
               <div className="text-xs text-ink-400 mt-1 leading-snug max-w-[220px]">
                 Tap "Add Expense" above to log your first spend — no trip plan required.
               </div>
@@ -439,37 +441,69 @@ export default function WalletPage() {
 
       {/* Delete trip confirmation */}
       <AnimatePresence>
-        {confirmDeleteTrip && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmDeleteTrip(null)} className="absolute inset-0 z-60 bg-ink-900/50" />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-              className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-[61] bg-white rounded-2xl p-5 shadow-card"
-            >
-              <div className="text-center mb-1">
-                <div className="text-3xl mb-2">🗑️</div>
-                <div className="font-bold text-ink-900 font-display">Delete trip?</div>
-                <div className="text-sm text-ink-500 mt-1 leading-snug">
-                  "{trips.find((t) => t.id === confirmDeleteTrip)?.name}" and all its expenses will be permanently deleted.
+        {confirmDeleteTrip && (() => {
+          const target = trips.find((t) => t.id === confirmDeleteTrip);
+          const isLinked = !!target?.linkedToPlan;
+          return (
+            <>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setConfirmDeleteTrip(null)} className="absolute inset-0 z-60 bg-ink-900/50" />
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                className="absolute inset-x-8 top-1/2 -translate-y-1/2 z-[61] bg-white rounded-2xl p-5 shadow-card"
+              >
+                <div className="text-center mb-1">
+                  <div className="text-3xl mb-2">🗑️</div>
+                  <div className="font-bold text-ink-900 font-display">Delete trip?</div>
+                  <div className="text-sm text-ink-500 mt-1 leading-snug">
+                    {isLinked
+                      ? COPY.wallet.linkedDeleteBody
+                      : `"${target?.name}" and all its expenses will be permanently deleted.`}
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                <button onClick={() => setConfirmDeleteTrip(null)} className="flex-1 h-11 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Cancel</button>
-                <button
-                  onClick={() => {
-                    deleteTrip(confirmDeleteTrip);
-                    show('Trip deleted', 'info');
-                    setConfirmDeleteTrip(null);
-                  }}
-                  className="flex-1 h-11 rounded-xl bg-red-500 text-white font-semibold press"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
+                {isLinked ? (
+                  <div className="flex flex-col gap-2 mt-4">
+                    <button
+                      onClick={() => {
+                        deleteTrip(confirmDeleteTrip);
+                        show('Trip deleted', 'info');
+                        setConfirmDeleteTrip(null);
+                      }}
+                      className="w-full h-11 rounded-xl bg-red-500 text-white font-semibold press"
+                    >
+                      Delete trip &amp; wallet
+                    </button>
+                    <button
+                      onClick={() => {
+                        unlinkWalletFromPlan(confirmDeleteTrip);
+                        show(COPY.wallet.unlinkToast, 'success');
+                        setConfirmDeleteTrip(null);
+                      }}
+                      className="w-full h-11 rounded-xl border-2 border-brand-400 text-brand-600 font-semibold press"
+                    >
+                      Keep wallet only
+                    </button>
+                    <button onClick={() => setConfirmDeleteTrip(null)} className="w-full h-11 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 mt-4">
+                    <button onClick={() => setConfirmDeleteTrip(null)} className="flex-1 h-11 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Cancel</button>
+                    <button
+                      onClick={() => {
+                        deleteTrip(confirmDeleteTrip);
+                        show('Trip deleted', 'info');
+                        setConfirmDeleteTrip(null);
+                      }}
+                      className="flex-1 h-11 rounded-xl bg-red-500 text-white font-semibold press"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </>
+          );
+        })()}
       </AnimatePresence>
 
       {/* Manage Trips sheet (Issue 23) */}

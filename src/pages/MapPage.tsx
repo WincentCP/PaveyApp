@@ -5,6 +5,7 @@ import {
   ChevronUp, Map, Pencil, Wand2, AlertTriangle,
 } from 'lucide-react';
 import { PaveyLogoMark } from '../components/PaveyLogo';
+import MiniCalendar from '../components/MiniCalendar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -54,10 +55,7 @@ export default function MapPage() {
   const [intentVibe, setIntentVibe] = useState<Vibe | null>(null);
   const [intentBudget, setIntentBudget] = useState<number | null>(null);
   const [intentErrors, setIntentErrors] = useState<{ dest?: string; date?: string }>({});
-
-  useEffect(() => {
-    if (intentDate && !intentEndDate) setIntentEndDate(intentDate);
-  }, [intentDate, intentEndDate]);
+  const [intentDateOpen, setIntentDateOpen] = useState(false);
 
   useEffect(() => {
     if (intentEndTimeSet) return;
@@ -347,26 +345,51 @@ export default function MapPage() {
                 {/* WHEN */}
                 <div>
                   <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">WHEN</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <div className="text-[10px] font-semibold text-ink-400 mb-1.5">Start date</div>
-                      <input type="date" value={intentDate}
-                        onChange={(e) => { setIntentDate(e.target.value); if (e.target.value) setIntentErrors((p) => ({ ...p, date: undefined })); }}
-                        className={`w-full rounded-xl px-3 py-2.5 text-sm border outline-none focus:border-brand-400 ${intentErrors.date ? 'border-red-400 bg-red-50 text-red-700' : 'bg-ink-50 text-ink-700 border-ink-200'}`}
+                  <button
+                    onClick={() => setIntentDateOpen((v) => !v)}
+                    className={`w-full rounded-xl px-3 py-3 text-sm border flex items-center justify-between press ${intentErrors.date ? 'border-red-400 bg-red-50 text-red-700' : 'bg-ink-50 text-ink-700 border-ink-200'}`}
+                  >
+                    <span className="font-semibold">
+                      {intentDate ? (() => {
+                        const s = new Date(intentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                        const e = intentEndDate ? new Date(intentEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null;
+                        return e ? `${s} → ${e}` : s;
+                      })() : 'Pick dates'}
+                    </span>
+                    <span className="text-[11px] text-ink-400">{intentDateOpen ? 'Done' : 'Edit'}</span>
+                  </button>
+                  {intentErrors.date && (
+                    <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+                      <AlertTriangle className="w-3 h-3 shrink-0" /> {intentErrors.date}
+                    </div>
+                  )}
+                  {intentDateOpen && (
+                    <div className="mt-2">
+                      <MiniCalendar
+                        startDate={intentDate ? new Date(intentDate) : null}
+                        endDate={intentEndDate ? new Date(intentEndDate) : null}
+                        onSelect={(d) => {
+                          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                          if (!intentDate || (intentDate && intentEndDate)) {
+                            setIntentDate(iso);
+                            setIntentEndDate('');
+                            setIntentErrors((p) => ({ ...p, date: undefined }));
+                          } else {
+                            if (d >= new Date(intentDate)) {
+                              setIntentEndDate(iso);
+                              setIntentDateOpen(false);
+                            } else {
+                              setIntentDate(iso);
+                              setIntentEndDate('');
+                            }
+                          }
+                        }}
                       />
-                      {intentErrors.date && (
-                        <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
-                          <AlertTriangle className="w-3 h-3 shrink-0" /> {intentErrors.date}
-                        </div>
-                      )}
+                      <div className="mt-1 text-[10px] text-ink-400 text-center">
+                        {!intentDate ? 'Tap a day to set your start date.' : !intentEndDate ? 'Tap to set your end date (same day = 1-day trip).' : 'Tap a different day to start over.'}
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-semibold text-ink-400 mb-1.5">End date <span className="text-ink-300">(optional)</span></div>
-                      <input type="date" value={intentEndDate} min={intentDate || undefined}
-                        onChange={(e) => setIntentEndDate(e.target.value)}
-                        className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-700 border border-ink-200 outline-none focus:border-brand-400" />
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Vibe summary */}

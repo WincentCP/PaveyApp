@@ -16,13 +16,14 @@ import MiniCalendar from '../components/MiniCalendar';
 type AuthMode = 'signup' | 'login';
 type Step =
   | 'welcome'
-  | 'auth_form'
-  | 'vibe'
   | 'destinations'
+  | 'vibe'
   | 'dates'
+  | 'preview'
   | 'budget'
   | 'location'
-  | 'generating';
+  | 'generating'
+  | 'auth_form';
 
 const VIBES: { id: Vibe; label: string; emoji: string; desc: string }[] = [
   { id: 'nature', label: 'Nature', emoji: '🌿', desc: 'Outdoors, parks & scenic spots' },
@@ -32,8 +33,11 @@ const VIBES: { id: Vibe; label: string; emoji: string; desc: string }[] = [
   { id: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'A bit of everything — no strong preference' },
 ];
 
-const FLOW: Step[] = ['welcome', 'auth_form', 'vibe', 'destinations', 'dates', 'budget', 'location', 'generating'];
-const PROGRESS_STEPS: Step[] = ['vibe', 'destinations', 'dates', 'budget', 'location'];
+// Round 11 #1 & #2 — destinations comes first (anchors the vibe question),
+// dates flow into a preview confirmation, auth is deferred until the user
+// has seen a generated plan.
+const FLOW: Step[] = ['welcome', 'destinations', 'vibe', 'dates', 'preview', 'budget', 'location', 'generating', 'auth_form'];
+const PROGRESS_STEPS: Step[] = ['destinations', 'vibe', 'dates', 'budget', 'location'];
 
 const GEN_STEPS = [
   'Finding top-rated spots…',
@@ -139,7 +143,8 @@ export default function OnboardingPage() {
         });
         nav('/', { replace: true });
       } else {
-        go('vibe');
+        // Signup after the plan preview — finalize onboarding and route in.
+        finalizeOnboarding();
       }
     }, 1200);
   };
@@ -147,33 +152,38 @@ export default function OnboardingPage() {
   const handleGoToGenerate = () => {
     go('generating');
     setGenPhase(0);
-    const generated = pickItinerary(selectedVibe, budget);
 
-    // Animate through steps in sync with GeneratePage's 700ms cycle, 2200ms total
+    // Animate through loading steps. Round 11 #1 — once done, drop into the
+    // auth screen (signup or login) rather than completing immediately. The
+    // user has now seen the plan they're signing up to save.
     const phaseTimer = setInterval(() => setGenPhase((p) => (p + 1) % GEN_STEPS.length), 700);
     setTimeout(() => {
       clearInterval(phaseTimer);
-      const startStr = startDate
-        ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
-        : 'today';
-      // Complete onboarding setup
-      justCompletedRef.current = true;
-      completeOnboarding({
-        name: authMode === 'signup' ? name : (name || 'Traveler'),
-        email,
-        vibe: selectedVibe,
-        destinations: destList.length > 0
-          ? destList.map((d) => ({ name: d.name, days: d.days }))
-          : [],
-        totalDays,
-        budget,
-        startDate: startStr,
-      });
-      // Pre-load generated itinerary so GeneratePage shows it immediately in edit mode
-      setItinerary(generated);
-      // Go to GeneratePage in edit mode — user reviews & confirms there
-      nav('/generate?edit=1&after=onboarding', { replace: true });
+      go('auth_form');
     }, 2200);
+  };
+
+  // Called by auth_form when the user submits (after the plan preview).
+  // Finalizes onboarding and routes into the generated plan.
+  const finalizeOnboarding = () => {
+    const generated = pickItinerary(selectedVibe, budget);
+    const startStr = startDate
+      ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
+      : 'today';
+    justCompletedRef.current = true;
+    completeOnboarding({
+      name: authMode === 'signup' ? name : (name || 'Traveler'),
+      email,
+      vibe: selectedVibe,
+      destinations: destList.length > 0
+        ? destList.map((d) => ({ name: d.name, days: d.days }))
+        : [],
+      totalDays,
+      budget,
+      startDate: startStr,
+    });
+    setItinerary(generated);
+    nav('/generate?edit=1&after=onboarding', { replace: true });
   };
 
   const go = (s: Step) => setStep(s);
@@ -221,16 +231,17 @@ export default function OnboardingPage() {
   type CTAConfig = { label: string; onClick: () => void; disabled?: boolean; className?: string; skipLabel?: string; onSkip?: () => void };
 
   const ctaConfig: Partial<Record<Step, CTAConfig>> = {
-    vibe: { label: 'Continue', onClick: () => go('destinations') },
     destinations: {
       label: 'Continue',
-      onClick: () => go('dates'),
+      onClick: () => go('vibe'),
       disabled: destList.length === 0,
     },
+    vibe: { label: 'Continue', onClick: () => go('dates') },
     dates: {
       label: startDate && endDate ? 'Continue' : 'Skip for now',
-      onClick: () => { if (!startDate) setStartDate(new Date()); go('budget'); },
+      onClick: () => { if (!startDate) setStartDate(new Date()); go('preview'); },
     },
+    preview: { label: 'Yes, continue', onClick: () => go('budget') },
     budget: { label: 'Continue', onClick: () => go('location') },
     location: {
       label: locationGranted ? 'Generate My Trip →' : 'Continue without location',
@@ -275,11 +286,13 @@ export default function OnboardingPage() {
                 transition={{ delay: 0.55, type: 'spring', stiffness: 280, damping: 30 }}
                 className="relative z-10 px-6 pt-6 pb-10"
               >
+                {/* Round 11 #1 — primary path goes straight into trip planning;
+                    auth is requested only after the user sees a generated plan. */}
                 <button
-                  onClick={() => { setAuthMode('signup'); go('auth_form'); }}
+                  onClick={() => { setAuthMode('signup'); go('destinations'); }}
                   className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2 mb-3"
                 >
-                  <ArrowRight className="w-5 h-5" /> Get Started — it's free
+                  <ArrowRight className="w-5 h-5" /> Try it first — no signup
                 </button>
                 <button
                   onClick={() => { setAuthMode('login'); go('auth_form'); }}
@@ -306,11 +319,11 @@ export default function OnboardingPage() {
             {/* Back + title */}
             <div className="px-5 pt-12 pb-4 shrink-0">
               <div className="flex items-center justify-between mb-4">
-                <button onClick={() => go('welcome')} className="w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
+                <button onClick={() => go(authMode === 'login' ? 'welcome' : 'location')} className="w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                {/* Issue 7: step indicator — only for sign up flow */}
-                {authMode === 'signup' && <span className="text-xs text-ink-400 font-semibold">Step 1 of 6</span>}
+                {/* Round 11 — signup happens after the user previews their plan. */}
+                {authMode === 'signup' && <span className="text-xs text-ink-400 font-semibold">Save your trip</span>}
               </div>
               <div className="flex items-center gap-3 mb-3">
                 {/* welcome.svg → replace with welcome.png (990 × 1037 px) */}
@@ -324,10 +337,10 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <h2 className="text-2xl font-extrabold text-ink-900 font-display leading-tight">
-                    {authMode === 'signup' ? 'Create your account' : 'Welcome back'}
+                    {authMode === 'signup' ? 'Save your trip — sign up' : 'Welcome back'}
                   </h2>
                   <p className="text-sm text-ink-500">
-                    {authMode === 'signup' ? 'Join thousands of smart travelers' : 'Sign in to continue your journey'}
+                    {authMode === 'signup' ? "We'll remember your plan so you can edit it later." : 'Sign in to continue your journey'}
                   </p>
                 </div>
               </div>
@@ -631,6 +644,34 @@ export default function OnboardingPage() {
                       </button>
                     )}
                   </div>
+                </>
+              )}
+
+              {/* PREVIEW — Round 11 #17. One-line confirmation before budget. */}
+              {step === 'preview' && (
+                <>
+                  <StepTitle title="Sound right?" subtitle="Quick check before we plan the rest." />
+                  <div className="mt-6 bg-brand-50 border border-brand-100 rounded-2xl p-5">
+                    <div className="text-[10px] font-bold tracking-widest text-brand-600 mb-2">YOUR TRIP</div>
+                    <div className="text-xl font-extrabold text-ink-900 font-display leading-snug">
+                      {(() => {
+                        const city = destList[0]?.name.split(',')[0] ?? 'your destination';
+                        const extra = destList.length > 1 ? ` + ${destList.length - 1} more` : '';
+                        return `${totalDays}-day ${city}${extra} trip`;
+                      })()}
+                    </div>
+                    <div className="text-xs text-ink-500 mt-2 leading-snug">
+                      {startDate ? startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Today'}
+                      {endDate ? ` → ${endDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}` : ''}
+                      {' · '}{VIBES.find((v) => v.id === selectedVibe)?.emoji} {VIBES.find((v) => v.id === selectedVibe)?.label}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => go('dates')}
+                    className="mt-3 text-xs text-brand-600 font-semibold press flex items-center gap-1"
+                  >
+                    Change dates
+                  </button>
                 </>
               )}
 

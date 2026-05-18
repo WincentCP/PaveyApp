@@ -109,6 +109,7 @@ interface AppState {
   activeTrip: Trip;
   createTrip: (data: Omit<Trip, 'id' | 'transactions' | 'createdAt'>) => string;
   deleteTrip: (id: string) => void;
+  unlinkWalletFromPlan: (id: string) => void;
 
   // Active trip proxies (for backward compat)
   transactions: Transaction[];
@@ -163,6 +164,28 @@ interface AppState {
   // Permanently visited places
   visitedPlaceIds: Set<string>;
   markVisitedPermanent: (id: string) => void;
+
+  // Intent-sheet draft — preserved across navigation so "Edit trip" restores
+  // the previous inputs instead of forcing the user to re-enter them.
+  intentDraft: IntentDraft | null;
+  setIntentDraft: (d: IntentDraft | null) => void;
+
+  // True only when activeDestIdx was advanced automatically by the date-aware
+  // effect (not by a manual tab tap). Gates the currency-switch banner so it
+  // doesn't fire on browsing.
+  destAutoAdvanced: boolean;
+  clearDestAutoAdvanced: () => void;
+}
+
+export interface IntentDraft {
+  dest: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  vibe: Vibe | null;
+  budget: number | null;
+  pace: TripPace;
 }
 
 const Ctx = createContext<AppState | null>(null);
@@ -224,6 +247,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Multi-destination
   const [destinations, setDestinations] = useState<Destination[]>(persisted?.destinations ?? []);
   const [activeDestIdx, setActiveDestIdx] = useState(0);
+  const [destAutoAdvanced, setDestAutoAdvanced] = useState(false);
+
+  // Intent-sheet draft for state restoration on Edit-trip navigation.
+  // Session-only — not persisted to localStorage.
+  const [intentDraft, setIntentDraft] = useState<IntentDraft | null>(null);
 
   // Trip completion
   const [tripCompleted, setTripCompleted] = useState(false);
@@ -283,7 +311,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       return false;
     });
-    if (idx !== -1 && idx !== activeDestIdx) setActiveDestIdx(idx);
+    if (idx !== -1 && idx !== activeDestIdx) {
+      setActiveDestIdx(idx);
+      setDestAutoAdvanced(true);
+    }
   }, [destinations]); // eslint-disable-line
 
   const activeTrip = useMemo(
@@ -453,7 +484,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     destinations,
     setDestinations,
     activeDestIdx,
-    setActiveDestIdx,
+    // Manual setter — clears the auto-advance flag so the currency banner
+    // doesn't fire when the user just taps to browse a destination tab.
+    setActiveDestIdx: (i: number) => { setDestAutoAdvanced(false); setActiveDestIdx(i); },
     addDestination: (dest) => {
       const newDest: Destination = {
         id: `dest-${Date.now()}`,
@@ -502,6 +535,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setActiveTripId(trips.find((t) => t.id !== id)?.id ?? trips[0].id);
       }
     },
+    unlinkWalletFromPlan: (id) =>
+      setTrips((prev) => prev.map((t) => t.id === id ? { ...t, linkedToPlan: false } : t)),
 
     // Active trip proxies
     transactions: activeTrip.transactions,
@@ -555,6 +590,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Permanently visited places
     visitedPlaceIds,
     markVisitedPermanent: (id) => setVisitedPlaceIds((cur) => new Set(cur).add(id)),
+
+    // Intent draft + auto-advance flag
+    intentDraft,
+    setIntentDraft,
+    destAutoAdvanced,
+    clearDestAutoAdvanced: () => setDestAutoAdvanced(false),
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

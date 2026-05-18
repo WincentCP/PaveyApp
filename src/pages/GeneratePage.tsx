@@ -34,13 +34,7 @@ const STEPS_MULTI_CITY = [
   'Crafting your perfect journey…',
 ];
 
-const VIBE_LABELS: Record<string, string> = {
-  nature: '🌿 Nature',
-  cafe: '☕ Café Hopping',
-  activities: '🎯 Activities',
-  cultural: '🏛️ Cultural',
-  balanced: '⚖️ Balanced',
-};
+// VIBE_LABELS removed in Round 11 — header now uses unified COPY.sections.reviewHeader.
 
 export default function GeneratePage() {
   const nav = useNavigate();
@@ -88,6 +82,18 @@ export default function GeneratePage() {
   const [densityDismissed, setDensityDismissed] = useState(() => {
     try { return localStorage.getItem('pavey_density_hint_dismissed') === '1'; } catch { return false; }
   });
+  // "Why?" expand under the density banner — Round 11 #13.
+  const [densityWhyOpen, setDensityWhyOpen] = useState(false);
+  // Cultural cards are capped to 2 per day until this is true.
+  const [culturalAllTips, setCulturalAllTips] = useState(false);
+  // Read-only vs edit affordances. Defaults to read-only on a fresh generation
+  // so the user sees the plan first. Switches on when ?edit=1 or via the
+  // header toggle. Manual mode is always editable.
+  const [editAffordances, setEditAffordances] = useState(isEditMode || isManualMode);
+  // Track which stops/days the user has edited so re-roll can warn before
+  // wiping work in progress.
+  const [userEdited, setUserEdited] = useState(false);
+  const [rerollConfirmOpen, setRerollConfirmOpen] = useState(false);
   const [walletPromptOpen, setWalletPromptOpen] = useState(false);
   const walletPromptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dismissDensity = () => {
@@ -96,6 +102,7 @@ export default function GeneratePage() {
   };
 
   const removeWithUndo = (place: Place, idx: number, isManual: boolean) => {
+    setUserEdited(true);
     if (isManual) {
       setManualStops((prev) => prev.filter((s) => s.id !== place.id));
     } else if (isMultiDay) {
@@ -113,6 +120,7 @@ export default function GeneratePage() {
   };
 
   const reorderDayStop = (from: number, to: number) => {
+    setUserEdited(true);
     if (isMultiDay) {
       const newDays = perDayItineraries.map((day, d) => {
         if (d !== activeDay) return day;
@@ -277,6 +285,16 @@ export default function GeneratePage() {
     show('AI suggestions imported', 'success');
   };
 
+  const runReroll = () => {
+    if (isMultiDay) {
+      buildFullItinerary(perDayItineraries.length, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00');
+    } else {
+      setItinerary(buildItinerary());
+    }
+    setUserEdited(false);
+    show('Re-rolled itinerary', 'info');
+  };
+
   return (
     <div className="absolute inset-0 bg-white overflow-hidden flex flex-col">
       <StatusBar />
@@ -285,11 +303,24 @@ export default function GeneratePage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="font-bold text-ink-900 font-display">
-          {isManualMode ? 'Build Your Journey' : isPostOnboarding ? 'Review Your Plan' : isEditMode ? 'Edit Journey' : 'Your Journey'}
+          {isManualMode ? 'Build Your Journey' : COPY.sections.reviewHeader}
         </div>
-        <div className="text-xs text-brand-600 font-semibold capitalize bg-brand-50 px-2 py-1 rounded-full">
-          {isManualMode ? 'Manual' : isPostOnboarding ? 'AI Generated' : VIBE_LABELS[vibe] ?? vibe}
-        </div>
+        {/* Edit toggle — read-only by default so users see the plan before
+            the controls. Hidden in manual mode (always editable). */}
+        {!isManualMode ? (
+          <button
+            onClick={() => setEditAffordances((v) => !v)}
+            className={`text-xs font-semibold press px-2.5 py-1 rounded-full flex items-center gap-1 ${
+              editAffordances ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
+            }`}
+            aria-pressed={editAffordances}
+          >
+            <Pencil className="w-3 h-3" />
+            {editAffordances ? 'Done' : 'Edit'}
+          </button>
+        ) : (
+          <div className="text-xs text-brand-600 font-semibold capitalize bg-brand-50 px-2 py-1 rounded-full">Manual</div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
@@ -310,19 +341,30 @@ export default function GeneratePage() {
                   {isMultiDay && (
                     <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
                       {perDayItineraries.map((_, i) => {
-                        const dateStr = journeyStart.date && journeyStart.date !== 'today'
-                          ? ` · ${new Date(new Date(journeyStart.date).getTime() + i * 86400000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
-                          : '';
+                        let dateStr = '';
+                        let isToday = false;
+                        if (journeyStart.date && journeyStart.date !== 'today') {
+                          const dayDate = new Date(new Date(journeyStart.date).getTime() + i * 86400000);
+                          dateStr = ` · ${dayDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+                          const today = new Date();
+                          isToday = dayDate.getFullYear() === today.getFullYear()
+                            && dayDate.getMonth() === today.getMonth()
+                            && dayDate.getDate() === today.getDate();
+                        }
                         const label = `Day ${i + 1}${dateStr}`;
                         return (
                           <button
                             key={i}
                             onClick={() => setActiveDay(i)}
-                            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors ${
+                            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors flex items-center gap-1 ${
                               activeDay === i ? 'bg-brand-500 text-white shadow-glow' : 'bg-ink-50 text-ink-700 border border-ink-100'
                             }`}
                           >
+                            {isToday && (
+                              <span className={`w-1.5 h-1.5 rounded-full ${activeDay === i ? 'bg-white' : 'bg-emerald-500'}`} aria-label="Today" />
+                            )}
                             {label}
+                            {isToday && <span className={`text-[9px] font-bold uppercase tracking-wider ${activeDay === i ? 'text-white/80' : 'text-emerald-600'}`}>Today</span>}
                           </button>
                         );
                       })}
@@ -331,8 +373,16 @@ export default function GeneratePage() {
 
                   {/* Summary card */}
                   <div className="mx-5 mt-2 p-4 rounded-2xl bg-brand-600 text-white shrink-0">
-                    <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
-                      <Wand2 className="w-4 h-4" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
+                        <Wand2 className="w-4 h-4" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
+                      </div>
+                      <button
+                        onClick={() => nav('/?openIntent=1')}
+                        className="text-[11px] font-semibold opacity-80 hover:opacity-100 press flex items-center gap-1"
+                      >
+                        <Pencil className="w-3 h-3" /> Edit trip
+                      </button>
                     </div>
                     <div className="grid grid-cols-3 gap-3 mt-3">
                       <SummStat label="Stops" value={String(displayItinerary.length)} />
@@ -384,11 +434,13 @@ export default function GeneratePage() {
                     ) : (<>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[11px] font-bold tracking-widest text-ink-500">ITINERARY · {displayItinerary.length} STOPS</span>
-                      <button className="text-xs text-brand-600 font-semibold press" onClick={() => setShowAdd(true)}>+ Add stop</button>
+                      {editAffordances && (
+                        <button className="text-xs text-brand-600 font-semibold press" onClick={() => setShowAdd(true)}>+ Add stop</button>
+                      )}
                     </div>
 
-                    {/* Gesture hint — dismissible */}
-                    {!swipeHintDismissed && (
+                    {/* Gesture hint — only when edit affordances are visible. */}
+                    {editAffordances && !swipeHintDismissed && (
                       <div className="mb-2 flex items-center gap-1.5 text-[11px] text-ink-400">
                         <span>←</span>
                         <span className="flex-1">Swipe left to remove · Use arrows to reorder</span>
@@ -410,9 +462,18 @@ export default function GeneratePage() {
                       const reason = tooMany ? `${stops.length} stops` : farApart ? `${totalDist.toFixed(0)} km of travel` : `${Math.round(totalTime / 60)}h of activity`;
                       return (
                         <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-                          <div className="text-xs font-semibold text-amber-800 mb-1.5">
+                          <div className="text-xs font-semibold text-amber-800 mb-1">
                             {isMultiDay ? `Day ${activeDay + 1} looks tight (${reason}).` : `This day looks tight (${reason}).`} Try fewer stops or a more relaxed pace.
                           </div>
+                          <button
+                            onClick={() => setDensityWhyOpen((v) => !v)}
+                            className="text-[11px] text-amber-700 font-semibold press underline-offset-2 hover:underline mb-1.5"
+                          >
+                            {densityWhyOpen ? 'Hide' : 'Why?'}
+                          </button>
+                          {densityWhyOpen && (
+                            <div className="text-[11px] text-amber-700 leading-snug mb-1.5">{COPY.hints.densityWhy}</div>
+                          )}
                           <div className="flex gap-2">
                             {pace !== 'relaxed' && (
                               <button
@@ -444,57 +505,84 @@ export default function GeneratePage() {
 
                     <div className="space-y-0">
                       <AnimatePresence>
-                        {displayItinerary.map((p, i) => {
-                          const intel = getCulturalIntel(p.id, p.category);
-                          const timeStr = getTime(p.id, i);
-                          const conflict = hasConflict(p, timeStr);
-                          return (
-                            <div key={p.id}>
-                              <StopCard
-                                index={i} total={displayItinerary.length} place={p}
-                                scheduledTime={timeStr}
-                                hasConflict={conflict}
-                                onTimeEdit={() => setEditingTimeFor(p.id)}
-                                onRemove={() => removeWithUndo(p, i, false)}
-                                onReplace={() => setReplaceFor(p.id)}
-                                onMoveUp={() => reorderDayStop(i, Math.max(0, i - 1))}
-                                onMoveDown={() => reorderDayStop(i, Math.min(displayItinerary.length - 1, i + 1))}
-                              />
-                              {intel && !dismissedCultural.has(p.id) && (
-                                <div className="mb-2">
-                                  <CulturalCard
-                                    intel={intel}
-                                    autoExpand={i === 0}
-                                    onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
-                                  />
-                                </div>
-                              )}
-                              {i < displayItinerary.length - 1 && (
-                                <StopConnector
-                                  distanceKm={displayItinerary[i + 1].distanceKm}
-                                  fromTime={getTime(p.id, i)}
-                                  durationMin={p.durationMin}
+                        {(() => {
+                          // Round 11 #6 — cap visible cultural cards per day to 2;
+                          // the rest are gated behind an expand link below the list.
+                          let culturalShown = 0;
+                          const CULTURAL_CAP = 2;
+                          return displayItinerary.map((p, i) => {
+                            const intel = getCulturalIntel(p.id, p.category);
+                            const timeStr = getTime(p.id, i);
+                            const conflict = hasConflict(p, timeStr);
+                            const showCultural = intel && !dismissedCultural.has(p.id)
+                              && (culturalAllTips || culturalShown < CULTURAL_CAP);
+                            if (showCultural) culturalShown++;
+                            return (
+                              <div key={p.id}>
+                                <StopCard
+                                  index={i} total={displayItinerary.length} place={p}
+                                  scheduledTime={timeStr}
+                                  hasConflict={conflict}
+                                  editable={editAffordances}
+                                  onTimeEdit={() => { setUserEdited(true); setEditingTimeFor(p.id); }}
+                                  onRemove={() => removeWithUndo(p, i, false)}
+                                  onReplace={() => setReplaceFor(p.id)}
+                                  onMoveUp={() => reorderDayStop(i, Math.max(0, i - 1))}
+                                  onMoveDown={() => reorderDayStop(i, Math.min(displayItinerary.length - 1, i + 1))}
                                 />
-                              )}
-                            </div>
-                          );
-                        })}
+                                {showCultural && (
+                                  <div className="mb-2">
+                                    <CulturalCard
+                                      intel={intel!}
+                                      autoExpand={i === 0}
+                                      onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
+                                    />
+                                  </div>
+                                )}
+                                {i < displayItinerary.length - 1 && (
+                                  <StopConnector
+                                    distanceKm={displayItinerary[i + 1].distanceKm}
+                                    fromTime={getTime(p.id, i)}
+                                    durationMin={p.durationMin}
+                                  />
+                                )}
+                              </div>
+                            );
+                          });
+                        })()}
                       </AnimatePresence>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        if (isMultiDay) {
-                          buildFullItinerary(perDayItineraries.length, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00');
-                        } else {
-                          setItinerary(buildItinerary());
-                        }
-                        show('Re-rolled itinerary', 'info');
-                      }}
-                      className="mt-4 mx-auto flex items-center gap-2 text-xs font-semibold text-ink-600 px-4 py-2 rounded-full bg-ink-50 press"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" /> Re-roll suggestions
-                    </button>
+                    {/* Show-all-tips expand — only when capped tips exist for this day. */}
+                    {!culturalAllTips && displayItinerary.some((p) => {
+                      const intel = getCulturalIntel(p.id, p.category);
+                      return intel && !dismissedCultural.has(p.id);
+                    }) && displayItinerary.filter((p) => {
+                      const intel = getCulturalIntel(p.id, p.category);
+                      return intel && !dismissedCultural.has(p.id);
+                    }).length > 2 && (
+                      <button
+                        onClick={() => setCulturalAllTips(true)}
+                        className="mt-1 text-[11px] text-brand-600 font-semibold press"
+                      >
+                        Show all tips
+                      </button>
+                    )}
+
+                    {editAffordances && (
+                      <button
+                        onClick={() => {
+                          if (userEdited) {
+                            setRerollConfirmOpen(true);
+                          } else {
+                            runReroll();
+                          }
+                        }}
+                        className="mt-4 mx-auto flex items-center gap-2 text-xs font-semibold text-ink-600 px-4 py-2 rounded-full bg-ink-50 press"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Re-roll suggestions
+                      </button>
+                    )}
 
                     {/* Places exhaustion hint */}
                     {isMultiDay && perDayItineraries.flat().length < journeyStart.days * PACE_STOPS[pace] * 0.7 && (
@@ -504,8 +592,8 @@ export default function GeneratePage() {
                       </div>
                     )}
 
-                    {/* Recommendations */}
-                    {!isMultiDay && alternatives(itinerary.map((p) => p.id)).length > 0 && (
+                    {/* Recommendations — hidden in read-only mode. */}
+                    {editAffordances && !isMultiDay && alternatives(itinerary.map((p) => p.id)).length > 0 && (
                       <div className="mt-6">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[11px] font-bold tracking-widest text-ink-500">RECOMMENDATIONS</span>
@@ -561,7 +649,7 @@ export default function GeneratePage() {
                       className="w-full h-14 rounded-2xl bg-brand-500 disabled:bg-ink-300 text-white font-bold text-base flex items-center justify-center gap-2 pointer-events-auto"
                     >
                       <Check className="w-5 h-5" />
-                      {isPostOnboarding ? 'Start My Trip →' : isEditMode ? 'Save Changes' : 'Confirm My Journey'}
+                      {isEditMode ? 'Save Changes' : COPY.ctas.reviewStart}
                     </motion.button>
                     {isPostOnboarding && (
                       <p className="text-center text-[11px] text-ink-400 mt-1.5 pointer-events-auto">
@@ -947,6 +1035,44 @@ export default function GeneratePage() {
         )}
       </AnimatePresence>
 
+      {/* Re-roll confirmation — only shown when the user has edited the day. */}
+      <AnimatePresence>
+        {rerollConfirmOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setRerollConfirmOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/50"
+            />
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card px-5 pt-4 pb-6"
+            >
+              <div className="w-10 h-1 rounded-full bg-ink-200 mx-auto mb-3" />
+              <div className="font-bold text-ink-900 font-display text-base">Replace your edits?</div>
+              <div className="text-xs text-ink-500 mt-1 leading-snug">{COPY.hints.rerollConfirm}</div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setRerollConfirmOpen(false)}
+                  className="h-11 rounded-xl bg-ink-50 border border-ink-100 text-ink-700 text-sm font-bold press"
+                >
+                  Keep my edits
+                </button>
+                <button
+                  onClick={() => { setRerollConfirmOpen(false); runReroll(); }}
+                  className="h-11 rounded-xl bg-brand-500 text-white text-sm font-bold press shadow-glow"
+                >
+                  Re-roll anyway
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Wallet link prompt — slides up after plan confirmation */}
       <AnimatePresence>
         {walletPromptOpen && (
@@ -1066,6 +1192,7 @@ function SummStat({ label, value }: { label: string; value: string }) {
 function LoadingState({ stepIdx, steps }: { stepIdx: number; steps: string[] }) {
   return (
     <motion.div key="loading" initial={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} className="flex-1 px-5 pt-4 flex flex-col">
+      <div className="text-ink-900 font-bold text-lg font-display mb-1">{COPY.ctas.loadingHeadline}</div>
       <div className="flex items-center gap-2 text-brand-600 font-semibold">
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}>
           <RefreshCw className="w-5 h-5" />
@@ -1076,7 +1203,7 @@ function LoadingState({ stepIdx, steps }: { stepIdx: number; steps: string[] }) 
           </motion.span>
         </AnimatePresence>
       </div>
-      <p className="text-xs text-ink-400 mt-1 mb-3">Generating your plan with AI — just a moment…</p>
+      <p className="text-xs text-ink-400 mt-1 mb-3">Just a moment…</p>
       <div className="mt-4 space-y-3">
         {[0, 1, 2].map((i) => (
           <div key={i} className="rounded-2xl border border-ink-100 p-3 flex gap-3 items-center">
@@ -1166,12 +1293,15 @@ function CulturalCard({ intel, autoExpand, onDismiss }: { intel: CulturalIntel; 
 
 /* ── Stop Card ── */
 function StopCard({
-  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual,
+  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual, editable = true,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
   onRemove: () => void; onReplace: () => void; onMoveUp: () => void; onMoveDown: () => void;
   isManual?: boolean;
+  /** When false, all edit affordances are hidden (read-only mode). Time edit
+   * remains tappable so users can tweak schedule without entering full edit. */
+  editable?: boolean;
 }) {
   const { activeTrip } = useApp();
   const [dragX, setDragX] = useState(0);
@@ -1184,31 +1314,40 @@ function StopCard({
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       className="relative mb-2"
     >
-      {/* Swipe-to-delete reveal */}
-      <div className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-5">
-        <div className="text-white text-center">
-          <X className="w-5 h-5 mx-auto" />
-          <div className="text-[10px] font-semibold mt-0.5">Remove</div>
+      {/* Swipe-to-delete reveal — only in editable mode. */}
+      {editable && (
+        <div className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-5">
+          <div className="text-white text-center">
+            <X className="w-5 h-5 mx-auto" />
+            <div className="text-[10px] font-semibold mt-0.5">Remove</div>
+          </div>
         </div>
-      </div>
+      )}
 
       <motion.div
-        drag="x" dragConstraints={{ left: -90, right: 0 }} dragElastic={{ left: 0.15, right: 0 }}
+        drag={editable ? 'x' : false}
+        dragConstraints={{ left: -90, right: 0 }} dragElastic={{ left: 0.15, right: 0 }}
         onDrag={(_, info) => setDragX(info.offset.x)}
         onDragEnd={(_, info) => { if (info.offset.x < -55) onRemove(); setDragX(0); }}
-        className="relative bg-white rounded-2xl border border-ink-100 p-3 flex items-start gap-2.5 cursor-grab active:cursor-grabbing"
+        className={`relative bg-white rounded-2xl border border-ink-100 p-3 flex items-start gap-2.5 ${editable ? 'cursor-grab active:cursor-grabbing' : ''}`}
         style={{ x: dragX }}
       >
-        {/* Reorder arrows */}
-        <div className="flex flex-col items-center gap-0.5 pt-0.5 shrink-0">
-          <button onClick={onMoveUp} disabled={index === 0} className="p-0.5 text-ink-300 disabled:opacity-20 press hover:text-ink-600">
-            <ChevronUp className="w-4 h-4" />
-          </button>
-          <div className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center">{index + 1}</div>
-          <button onClick={onMoveDown} disabled={index === total - 1} className="p-0.5 text-ink-300 disabled:opacity-20 press hover:text-ink-600">
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Reorder arrows — editable mode only. */}
+        {editable && (
+          <div className="flex flex-col items-center gap-0.5 pt-0.5 shrink-0">
+            <button onClick={onMoveUp} disabled={index === 0} className="p-0.5 text-ink-300 disabled:opacity-20 press hover:text-ink-600">
+              <ChevronUp className="w-4 h-4" />
+            </button>
+            <div className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center">{index + 1}</div>
+            <button onClick={onMoveDown} disabled={index === total - 1} className="p-0.5 text-ink-300 disabled:opacity-20 press hover:text-ink-600">
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        {/* Number badge alone in read-only mode so the user still sees order. */}
+        {!editable && (
+          <div className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{index + 1}</div>
+        )}
 
         <div className="relative shrink-0">
           <img src={place.image} alt={place.name} className="w-16 h-16 rounded-xl object-cover" />
@@ -1250,10 +1389,23 @@ function StopCard({
           </div>
         </div>
 
-        {!isManual && (
-          <button onClick={onReplace} className="shrink-0 px-2 h-7 rounded-lg bg-ink-50 text-ink-600 text-[11px] font-semibold press">
-            Swap
-          </button>
+        {editable && (
+          <div className="shrink-0 flex flex-col items-end gap-1">
+            {/* Always-visible remove button — taps work without discovering
+                the swipe gesture. Swipe remains as a shortcut. */}
+            <button
+              onClick={onRemove}
+              aria-label="Remove stop"
+              className="w-7 h-7 rounded-full bg-ink-50 hover:bg-red-50 text-ink-500 hover:text-red-500 flex items-center justify-center press"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            {!isManual && (
+              <button onClick={onReplace} className="px-2 h-7 rounded-lg bg-ink-50 text-ink-600 text-[11px] font-semibold press">
+                Swap
+              </button>
+            )}
+          </div>
         )}
       </motion.div>
     </motion.div>
