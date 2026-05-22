@@ -6,4 +6,4 @@ python-jose[cryptography]
 httpx
 apscheduler
 google-generativeai
-pydanticss
+pydantic

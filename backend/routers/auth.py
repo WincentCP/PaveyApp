@@ -16,7 +16,10 @@ class AuthRequest(BaseModel):
 @router.post("/register")
 async def register(data: AuthRequest):
     try:
-        res = supabase.auth.sign_up({"email": data.email, "password": data.password})
+        res = supabase.auth.sign_up({
+            "email": data.email,
+            "password": data.password
+        })
         return {"message": "Register berhasil", "user_id": res.user.id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -24,7 +27,10 @@ async def register(data: AuthRequest):
 @router.post("/login")
 async def login(data: AuthRequest):
     try:
-        res = supabase.auth.sign_in_with_password({"email": data.email, "password": data.password})
+        res = supabase.auth.sign_in_with_password({
+            "email": data.email,
+            "password": data.password
+        })
         return {
             "access_token": res.session.access_token,
             "user_id": res.user.id,
@@ -34,7 +40,7 @@ async def login(data: AuthRequest):
         raise HTTPException(status_code=401, detail="Email atau password salah")
 
 @router.post("/logout")
-async def logout(token: str):
+async def logout():
     try:
         supabase.auth.sign_out()
         return {"message": "Logout berhasil"}
