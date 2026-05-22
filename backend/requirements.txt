@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+supabase
+python-dotenv
+python-jose[cryptography]
+httpx
+apscheduler
+google-generativeai
+pydanticss
