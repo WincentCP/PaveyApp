@@ -1,0 +1,33 @@
+# Python bytecode & cache (Berlaku global untuk semua sub-folder)
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+**/.ipynb_checkpoints/
+
+# Virtual Environment lokal
+venv/
+.venv/
+env/
+**/venv/
+**/.venv/
+
+# MLOps Artifacts & Tracking Data (FIX: Mengunci folder tracking MLflow di dalam ai-core)
+**/mlruns/
+**/artifacts/
+**/outputs/
+
+# Dataset & Model lokal (FIX: Mengunci data csv, npy, pkl di dalam sub-folder manapun)
+**/data/**/*.csv
+**/data/**/*.npy
+**/*.pkl
+
+# Environment variables & Secrets (SANGAT KRUSIAL!)
+.env
+**/.env
+
+# Docker logs & system junk
+*.log
+**/*.log
+.DS_Store
+**/.DS_Store

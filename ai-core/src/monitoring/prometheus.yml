@@ -1,0 +1,14 @@
+global:
+  scrape_interval: 5s  # Seberapa sering Prometheus menarik data dari aplikasi kita (default 15s)
+  evaluation_interval: 5s
+
+scrape_configs:
+  # 1. Monitoring untuk internal Prometheus itu sendiri
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 2. Monitoring Aplikasi Sistem Rekomendasi Pariwisata Kita
+  - job_name: "travel-recommender-api"
+    static_configs:
+      - targets: ["localhost:8000"] # Mengarah ke port API backend kita nanti (FastAPI/Flask)
