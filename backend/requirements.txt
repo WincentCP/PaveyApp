@@ -4,6 +4,7 @@ supabase
 python-dotenv
 python-jose[cryptography]
 httpx
-apscheduler
 google-generativeai
-pydantic
+Pillow
+apscheduler
+groq
