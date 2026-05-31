@@ -1,12 +1,19 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import HTTPBearer
-from routers import auth, trips, weather, wallet, chatbot
-
-app = FastAPI(title="Pavey API")
+from routers import auth, trips, weather, wallet, chatbot, receipt
+from scheduler.morning_briefing import start_scheduler
 
 security = HTTPBearer()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+
+app = FastAPI(title="Pavey API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +28,7 @@ app.include_router(trips.router, prefix="/trips", tags=["Trips"])
 app.include_router(weather.router, prefix="/weather", tags=["Weather"])
 app.include_router(wallet.router, prefix="/wallet", tags=["Wallet"])
 app.include_router(chatbot.router, prefix="/chatbot", tags=["Chatbot"])
+app.include_router(receipt.router, prefix="/receipt", tags=["Receipt"])
 
 @app.get("/")
 def root():

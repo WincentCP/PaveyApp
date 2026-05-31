@@ -1,13 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from supabase import create_client
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from services.supabase_client import supabase
 
 router = APIRouter()
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 
 class AuthRequest(BaseModel):
     email: str

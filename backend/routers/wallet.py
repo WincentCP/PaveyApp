@@ -1,14 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from supabase import create_client
-import os
-from dotenv import load_dotenv
+from services.supabase_client import supabase
+from middleware.auth_middleware import get_current_user
 
-load_dotenv()
 router = APIRouter()
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
-security = HTTPBearer()
 
 class ExpenseCreate(BaseModel):
     trip_id: str
@@ -19,16 +14,11 @@ class ExpenseCreate(BaseModel):
 @router.post("/expenses")
 async def add_expense(
     data: ExpenseCreate,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user = Depends(get_current_user)
 ):
     try:
-        token = credentials.credentials
-        user = supabase.auth.get_user(token)
-        if not user:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-
         res = supabase.table("expenses").insert({
-            "user_id": user.user.id,
+            "user_id": current_user.id,
             "trip_id": data.trip_id,
             "amount": data.amount,
             "category": data.category,
@@ -44,18 +34,13 @@ async def add_expense(
 @router.get("/expenses/{trip_id}")
 async def get_expenses(
     trip_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
+    current_user = Depends(get_current_user)
 ):
     try:
-        token = credentials.credentials
-        user = supabase.auth.get_user(token)
-        if not user:
-            raise HTTPException(status_code=401, detail="Unauthorized")
-
         res = supabase.table("expenses")\
             .select("*")\
             .eq("trip_id", trip_id)\
-            .eq("user_id", user.user.id)\
+            .eq("user_id", current_user.id)\
             .order("created_at", desc=True)\
             .execute()
 
