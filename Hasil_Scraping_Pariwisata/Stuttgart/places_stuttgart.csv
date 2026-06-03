@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJpR6UjKfEmUcRcqW5MbHYdO4,Stuttgart TV Tower,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7558609,9.190105599999999,tourist attraction observation deck restaurant food point of interest establishment
+ChIJkd8d2v7EmUcRlEv7v_H0ZsE,Mercedes-Benz Museum,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7881453,9.233982,museum tourist attraction point of interest establishment
+ChIJbwUJpjXbmUcROnJATElzb4E,Schlossplatz,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7786307,9.179640299999999,historical place tourist attraction park point of interest establishment
+ChIJ4dnOMofamUcRh3lftY5kgDw,Porsche Museum,4.7,PRICE_LEVEL_VERY_EXPENSIVE,Outdoor,48.8342104,9.152554499999999,tourist attraction museum point of interest establishment
+ChIJ1Q2AB8vEmUcRVUkv1rHzrV8,Staatsgalerie Stuttgart,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7801002,9.1865854,art museum tourist attraction art gallery museum point of interest establishment
+ChIJu5y9eDXbmUcRA4AZFSiB-M8,Old Castle,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.777062099999995,9.179547099999999,castle tourist attraction museum historical place point of interest establishment
+ChIJJUGfmTrFmUcRRHwjsqrLVJc,Maurischer Garten Stuttgart,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.8065276,9.2054057,botanical garden tourist attraction point of interest establishment
+ChIJNwoMHK3bmUcRSi4PCSzDZHE,Höhenpark Killesberg,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.804117399999996,9.173753999999999,park tourist attraction point of interest establishment
+ChIJHecoQDXbmUcRaZ5zXsJie0o,Neues Schloss Stuttgart,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7779689,9.1818709,castle tourist attraction historical place point of interest establishment
+ChIJa4SQJDDbmUcRnh4iPvqIyDA,Chinese Garden Stuttgart,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7872385,9.1759729,botanical garden tourist attraction garden point of interest establishment
+ChIJy3mewTXbmUcRovnNWdLRP0Q,Art Museum Stuttgart,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7783294,9.1775786,art museum tourist attraction museum point of interest establishment
+ChIJV4MIADLbmUcRh56DKkG2ei4,Stuttgardia Skulptur,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.775225500000005,9.177701299999999,tourist attraction point of interest establishment
+ChIJXZysXUrbmUcRXnnCz4UIESE,Marktplatz,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7751947,9.1783851,tourist attraction point of interest establishment
+ChIJ_aPR-czEmUcRRNepBO7fYIY,Carl-Zeiss Planetarium Stuttgart,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.783319999999996,9.18688,planetarium tourist attraction point of interest establishment
+ChIJV1zeC1XFmUcRlw0xxwAgL_I,Museumsplatz-Brunnen,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7791365,9.1857183,tourist attraction point of interest establishment
+ChIJG3cUScvEmUcRzSH0uzhfROg,Schicksalsbrunnen,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7802836,9.184197500000002,tourist attraction point of interest establishment
+ChIJXwzhGTPbmUcRhA37tG9zans,InfoTurmStuttgart Hbf,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.784465399999995,9.183842799999999,tourist attraction museum point of interest establishment
+ChIJVVVVFc3EmUcRG1SQi1ixdy0,Mittlerer Schlossgarten,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.785744199999996,9.1873179,park tourist attraction state park point of interest establishment
+ChIJZy5whMnEmUcR-xvzOUENRKE,Galateabrunnen,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7779198,9.190013000000002,historical landmark tourist attraction historical place point of interest establishment
+ChIJNdwpLb3bmUcR9fxTjLMaiSw,"Stadtmauer, Torturmbrunnen",3.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.7721278,9.1775798,tourist attraction point of interest establishment
+ChIJd2ts_zTbmUcRqrBZ97_BxpA,Carls Brewery,4.5,PRICE_LEVEL_MODERATE,Indoor,48.779463299999996,9.1799805,german restaurant european restaurant restaurant food point of interest establishment
+ChIJy9EtbT3FmUcRZWX5Yrjjnd4,Restaurant “Zum Ackerbürger“ - Stuttgart,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,48.805932899999995,9.2161526,german restaurant western restaurant european restaurant meal takeaway restaurant food point of interest establishment
+ChIJiRZWMW_bmUcRbRSuH3Zsszk,Don Via Restaurant Stuttgart,4.7,PRICE_LEVEL_MODERATE,Indoor,48.7771087,9.173387199999999,mediterranean restaurant wine bar middle eastern restaurant italian restaurant event venue bar meal takeaway food store restaurant food store service point of interest establishment
+ChIJO3-ue6rbmUcRkUIMVz9hkNI,Wilma Wunder Stuttgart,4.2,PRICE_LEVEL_MODERATE,Indoor,48.774449999999995,9.1722868,german restaurant european restaurant restaurant food point of interest establishment
+ChIJMWD2kDXbmUcRNzE9hVrP2Jw,Alte Kanzlei Stuttgart,4.5,PRICE_LEVEL_MODERATE,Indoor,48.7774891,9.1786788,restaurant german restaurant european restaurant food point of interest establishment
+ChIJG2pqNjHbmUcRBvJl6JPDA2Q,Valle,4.6,PRICE_LEVEL_MODERATE,Indoor,48.7823164,9.1759419,italian restaurant bar restaurant food point of interest establishment
+ChIJOSBYFUnbmUcRpOD3Hvyq3gQ,Mauritius Restaurant Stuttgart-Mitte,4.4,PRICE_LEVEL_MODERATE,Indoor,48.780051,9.1758928,restaurant food point of interest establishment
+ChIJv1FqDInbmUcRc7Ok_Qeirx4,60 seconds to napoli Stuttgart,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,48.775388199999995,9.1809614,pizza restaurant italian restaurant meal takeaway restaurant food point of interest establishment
+ChIJo8JDCEzbmUcRD6ZkR-kYuuQ,MALO,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,48.774365599999996,9.178365,restaurant food point of interest establishment
+ChIJdx56O8rEmUcRuIZOxmkpmuY,Ambiente Africa,4.7,PRICE_LEVEL_MODERATE,Indoor,48.777747999999995,9.188150799999999,african restaurant restaurant food point of interest establishment
+ChIJy3mewTXbmUcR8Xfs_85lnGY,CUBE Restaurant,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,48.7783889,9.1775361,restaurant food point of interest establishment
+ChIJQwXv5zXbmUcRep4nTneyy6k,Ochs'n Willi,4.4,PRICE_LEVEL_MODERATE,Indoor,48.7780759,9.176917999999999,restaurant german restaurant european restaurant food point of interest establishment
+ChIJG577-knbmUcRg2NYCs8VtBs,Amici Stuttgart,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,48.7832278,9.1797723,restaurant food point of interest establishment
+ChIJt5D3Q0zbmUcRddQaU3_57zo,Restaurant Délice,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,48.770297899999996,9.1762544,fine dining restaurant restaurant food point of interest establishment
+ChIJL1Onp0vbmUcRWnXtWayjziQ,Weinstube Kachelofen,4.5,PRICE_LEVEL_MODERATE,Indoor,48.7735284,9.177554599999999,german restaurant european restaurant restaurant food point of interest establishment
+ChIJdShBqUnbmUcR4zeK7WpqKNQ,Paulaner am alten Postplatz,4.4,PRICE_LEVEL_MODERATE,Indoor,48.7748725,9.1729146,german restaurant european restaurant restaurant food point of interest establishment
+ChIJGXswJLXEmUcRiHLccaV7o-E,Brenner,4.7,PRICE_LEVEL_MODERATE,Indoor,48.774141099999994,9.1825573,restaurant food point of interest establishment
+ChIJeex7p0nbmUcR8d9Q63Vho-o,Abacco‘s Steakhouse Stuttgart,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,48.7746321,9.172911100000002,steak house restaurant food point of interest establishment
+ChIJPexcJKPbmUcR4WVkEMWRFlw,Mauritius Restaurant Stuttgart Gerber,4.7,PRICE_LEVEL_MODERATE,Indoor,48.771344199999994,9.1733827,restaurant food point of interest establishment
+ChIJ2dsOxf_bmUcR1U3Z7gHGIRM,NOA Restaurant / Frühstück,4.5,PRICE_LEVEL_MODERATE,Indoor,48.7727498,9.174018199999999,restaurant breakfast restaurant vegan restaurant vegetarian restaurant middle eastern restaurant cafe food point of interest establishment

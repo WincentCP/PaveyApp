@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJDXUM9QPKlzMRDOajr3iHEoQ,Manila Ocean Park,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5793088,120.9724475,tourist attraction amusement park amusement center aquarium park point of interest establishment
+ChIJvZ4MeBbKlzMRQ7CLeMYOQ80,Fort Santiago,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5942337,120.97041200000001,tourist attraction point of interest establishment
+ChIJPxN-XiXKlzMRMpp1toc0Krc,Rizal Park,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5826446,120.97868869999999,park tourist attraction point of interest establishment
+ChIJa5tW0CPKlzMRKuDqk7sMx88,National Museum of Fine Arts,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5870316,120.98102519999999,art museum tourist attraction museum point of interest establishment
+ChIJgS96OD3KlzMR91wyTDiHHCg,Casa Manila,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5896588,120.97516929999998,museum tourist attraction point of interest establishment
+ChIJY1NEIz3KlzMRamMm7IEXLWw,San Agustin Church,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.589151399999999,120.975184,tourist attraction church place of worship association or organization point of interest establishment
+ChIJeWcu0hfKlzMRnYOqfe-gowY,Minor Basilica and Metropolitan Cathedral of the Immaculate Conception - The Manila Cathedral,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5917422,120.97339210000001,tourist attraction church place of worship association or organization point of interest establishment
+ChIJ4_WFMX7JlzMRJOkBCvft38A,Manila Zoo,3.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5648118,120.98836960000001,zoo tourist attraction botanical garden park point of interest establishment
+ChIJ48-0VzvKlzMRg16kTvO3p8U,Baluarte de San Diego,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5853806,120.97556669999999,historical landmark tourist attraction historical place point of interest establishment
+ChIJ_-X8_TzKlzMRiy7xLI03Tq0,Puerta de Santa Lucia,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.588518099999998,120.97367860000001,historical place tourist attraction point of interest establishment
+ChIJPdEiTRnKlzMRtXrkuoBnT_k,Arroceros Forest Park,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5942352,120.9817192,city park tourist attraction national park park point of interest establishment
+ChIJAZFEnybKlzMRzVWj2vJ_B7M,National Museum of Natural History,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5833236,120.98219359999999,tourist attraction museum point of interest establishment
+ChIJMUp7NBbKlzMRqR_GBP8HBMk,Plaza Roma,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5921283,120.97307359999998,park tourist attraction point of interest establishment
+ChIJjRWoWvTLlzMRc4QkoRUG-GE,Manila City Hall Underpass,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.589817499999999,120.98080150000001,tourist attraction point of interest establishment
+ChIJL6j94RfKlzMRwAyLpAf1fnA,"Bahay Tsinoy, Museum of Chinese in Philippine Life",4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5909036,120.97502580000001,history museum tourist attraction museum point of interest establishment
+ChIJq6qq6vDJlzMRtLSSIubwQlw,Malacañáng Palace,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.593826199999999,120.99452009999999,government office tourist attraction historical landmark museum historical place point of interest establishment
+ChIJ6fBFzfrLlzMRjyl0OfUPHyY,Rizal Park Musical Dancing Fountain,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.582842999999997,120.9789089,tourist attraction point of interest establishment
+ChIJTW9nTG_JlzMReyKTDBcZvNA,National Museum of Anthropology,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5854083,120.98099739999999,tourist attraction museum point of interest establishment
+ChIJnZVPrTzKlzMRZouXxpfcZaw,San Diego Gardens,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.585814,120.9757118,park tourist attraction point of interest establishment
+ChIJdZRIcurLlzMRAwQo8NyVtEA,Manila Bay Beach,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,14.5749729,120.97956119999999,tourist attraction point of interest establishment
+ChIJ_zX6TjDKlzMRdUR7dvO2Z4s,Harbor View Restaurant,4.4,PRICE_LEVEL_MODERATE,Indoor,14.5778701,120.97435039999999,restaurant food point of interest establishment
+ChIJKYh8lIPJlzMRlMd3rIffiVE,The Aristocrat Restaurant,4.2,PRICE_LEVEL_MODERATE,Indoor,14.568363100000001,120.9838256,filipino restaurant breakfast restaurant restaurant food point of interest establishment
+ChIJdWLAhiLKlzMR3HvkICLyvxo,Sky Deck,4.4,PRICE_LEVEL_MODERATE,Indoor,14.590022499999998,120.978795,bar lounge bar night club western restaurant restaurant food point of interest establishment
+ChIJVVVVFT3KlzMRH30aPRyhfw0,Barbara's Heritage Restaurant,4.3,PRICE_LEVEL_UNSPECIFIED,Indoor,14.589413700000001,120.9752145,filipino restaurant restaurant food point of interest establishment
+ChIJC5J4LADJlzMRZwV4GKMN6XY,Manam at the Triangle,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,14.5562215,121.0241665,filipino restaurant restaurant food point of interest establishment
+ChIJT0BJXC_KlzMRN85L-j2qlxs,Cowboy Grill Mabini,4.3,PRICE_LEVEL_MODERATE,Indoor,14.578253700000001,120.9806862,restaurant food point of interest establishment
+ChIJBeVd4zrKlzMR_8nTrJHgvec,Cafe Ilang-Ilang,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,14.5829586,120.9740874,buffet restaurant restaurant food point of interest establishment
+ChIJLTls5S_JlzMRb7f42HFUagY,Toyo Eatery,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,14.5310898,121.0227339,filipino restaurant restaurant food point of interest establishment
+ChIJNxMstQHJlzMR8LrkCWGW2A8,Old Manila at The Peninsula Manila,4.4,PRICE_LEVEL_UNSPECIFIED,Indoor,14.555346900000002,121.02543209999997,fine dining restaurant restaurant food point of interest establishment
+ChIJ1-6whiLKlzMR72qbrQj_3m0,9 SPOONS - The Bayleaf Intramuros,4.4,PRICE_LEVEL_UNSPECIFIED,Indoor,14.5898788,120.97876679999999,restaurant bistro food point of interest establishment
+ChIJcVF5ijPLlzMRjtZ_Vh5D6Ug,Manam | Robinsons Place,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,14.5755941,120.9842911,filipino restaurant restaurant food point of interest establishment
+ChIJLXodUgDLlzMREh02218kwk4,Manam Comfort Filipino | Lucky Chinatown Mall | Manila,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,14.6032944,120.9738885,filipino restaurant restaurant food point of interest establishment
+ChIJnZrmba3JlzMRrDakqmRFk48,"EMILIA, House of Filipino Food",4.6,PRICE_LEVEL_MODERATE,Indoor,14.592026099999998,120.99012289999999,filipino restaurant restaurant food point of interest establishment
+ChIJY_YZXADJlzMRi_kwS_FKm6E,seva,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,14.5976864,121.03838359999999,restaurant food point of interest establishment
+ChIJM6uTZgDLlzMRChB55liepZc,The Champagne Room in the Manila Hotel,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,14.582577599999999,120.9737169,french restaurant restaurant food point of interest establishment
+ChIJ4fcA6yrKlzMRQ4yEEwcUutE,Bistro Remedios,4.4,PRICE_LEVEL_MODERATE,Indoor,14.5697967,120.9861309,filipino restaurant restaurant food point of interest establishment
+ChIJwc302zvLlzMRVxHScakt1fs,Emerald,4.3,PRICE_LEVEL_MODERATE,Indoor,14.577699400000002,120.97905569999999,chinese restaurant restaurant food point of interest establishment
+ChIJweF2FE_JlzMRisZstXv1G-w,Las Flores,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,14.551975500000001,121.0215987,restaurant food point of interest establishment
+ChIJZ6ZCehrKlzMRZKY7lHJocaQ,Ying Ying Tea House,4.2,PRICE_LEVEL_MODERATE,Indoor,14.59797,120.97671299999999,chinese restaurant dim sum restaurant cantonese restaurant restaurant food point of interest establishment
+ChIJcehp3LG3lzMRWPRm0CI5j4Q,Hapag,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,14.5645797,121.0369501,filipino restaurant restaurant food point of interest establishment

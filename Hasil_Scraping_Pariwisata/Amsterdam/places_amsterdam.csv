@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJz3y0xeIJxkcRNcogBVV41Gw,Vondelpark,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3579946,4.8686484,park tourist attraction point of interest establishment
+ChIJ5Ra7we4JxkcRhYVAaq5zQ9U,Rijksmuseum,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3599976,4.8852188,art museum history museum tourist attraction museum point of interest establishment
+ChIJFQ6IwMYJxkcRis8dtZlOkTk,Royal Palace Amsterdam,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.373183499999996,4.8913758,castle tourist attraction museum historical place point of interest establishment
+ChIJC7Uw48AJxkcR28umcgx0C6k,Dungeon Amsterdam,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3701599,4.8921108,tourist attraction point of interest establishment
+ChIJX1rTlu8JxkcRGsV8-a4oKMI,Van Gogh Museum,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3580757,4.8812052999999995,art museum tourist attraction museum point of interest establishment
+ChIJSRE-IcUJxkcRCltjPmVdmtQ,Anne Frank House,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3752182,4.8839765,museum tourist attraction non profit organization association or organization point of interest establishment
+ChIJYQCs26EJxkcRPUqKm3hTaA4,ARTIS,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.366000299999996,4.9165320999999995,zoo aquarium tourist attraction museum park point of interest establishment
+ChIJm7tV_qQJxkcRvM4CYqK9SMc,NEMO Science Museum,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3741709,4.912325,tourist attraction museum point of interest establishment
+ChIJByw_MccJxkcRYBke2i-_GK0,Ripley's Believe It or Not!,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3724001,4.8935666,tourist attraction museum point of interest establishment
+ChIJLQN6abQJxkcRxdcMtKwAP6w,This is Holland,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3841865,4.9021959,tourist attraction point of interest establishment
+ChIJX-2rTqEJxkcRhjlIZp4bqFk,National Maritime Museum,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3715579,4.9143761999999995,museum history museum tourist attraction point of interest establishment
+ChIJqxRzZuLhxUcRpgvqX1nIp1A,Hortus Botanicus,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.366918899999995,4.9076230999999995,botanical garden tourist attraction point of interest establishment
+ChIJSesAIckJxkcRcenskBkelo4,Amsterdam Center View,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3802678,4.8915776,tourist attraction point of interest establishment
+ChIJEUO-OccJxkcR4VAAGRIGuKA,National Monument,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.372843499999995,4.893629,monument tourist attraction point of interest establishment
+ChIJZabaHsAJxkcRy92UyRY-mT0,Munttoren,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.367041,4.8932901,tourist attraction historical landmark historical place point of interest establishment
+ChIJVVWYeucByEcRdaqHwP-kXPs,Historisch Amsterdam,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.37046240000001,4.901443899999999,tourist attraction point of interest establishment
+ChIJ-cCxPtIJxkcRSvdhGA-KmJI,Walekerkpoort,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3712444,4.8978142,tourist attraction point of interest establishment
+ChIJgd8UOqQJxkcR4XUhj1NDnTQ,Oude Doelenstraat,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.37187170000001,4.8958281999999995,tourist attraction point of interest establishment
+ChIJ19XKKccJxkcRawZK9nzTJz8,Madame Tussauds Amsterdam,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3725915,4.8925782,tourist attraction museum point of interest establishment
+ChIJo_CNmb0JxkcRfXyY9FDKtC4,Jewish Museum,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3671182,4.903815499999999,museum history museum cultural center synagogue tourist attraction place of worship association or organization point of interest establishment
+ChIJP3bYrGIJxkcRA5cOiiSiKaE,The Seafood Bar,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3755708,4.8965746,seafood restaurant restaurant food point of interest establishment
+ChIJrRtggNsJxkcRIpqO9nQb448,Pesca Seafood Restaurant Amsterdam,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,52.372763,4.8788041,seafood restaurant market restaurant food point of interest establishment
+ChIJf2ly3FMJxkcR0rfdI9JGnDE,Restaurant Black Olive Amsterdam,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,52.368479699999995,4.9057376999999995,restaurant tapas restaurant mediterranean restaurant turkish restaurant vegan restaurant vegetarian restaurant italian restaurant spanish restaurant food point of interest establishment
+ChIJJ-S23XoJxkcRDsSNU2mgH34,De Kas,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,52.352156099999995,4.9305109,fine dining restaurant restaurant food point of interest establishment
+ChIJc_vsisAJxkcRYHHoB6BoEIg,Il Vicolo,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3691824,4.8916321,italian restaurant restaurant food point of interest establishment
+ChIJmz2W_bwJxkcR9aW1XLdd9LU,Restaurant Olijfje,4.7,PRICE_LEVEL_MODERATE,Indoor,52.3687767,4.9054562,mediterranean restaurant turkish restaurant vegan restaurant vegetarian restaurant restaurant food point of interest establishment
+ChIJe3hOLH_ixUcRRLECWCyvFZE,Café-Restaurant Amsterdam,4.2,PRICE_LEVEL_MODERATE,Indoor,52.3841384,4.8683342000000005,restaurant food point of interest establishment
+ChIJd75Sd8gJxkcR3jy2XQJJlBo,de Silveren Spiegel,4.8,PRICE_LEVEL_EXPENSIVE,Indoor,52.3777205,4.89392,restaurant dutch restaurant food point of interest establishment
+ChIJGZtKPJwJxkcRBY8QI6tYSO4,The SIREN Restaurant & Bar,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3703657,4.8930596,restaurant bar food point of interest establishment
+ChIJN5jG2B4JxkcRXo3Gu7640HA,Namche Amsterdam,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3631792,4.8858868,indian restaurant cocktail bar bar restaurant food point of interest establishment
+ChIJ-y5x-fEJxkcRCHWqzQtNM9s,Restaurant Watergang,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,52.361045999999995,4.8887463,fine dining restaurant restaurant food point of interest establishment
+ChIJfxDFMbwJxkcReUviSODvJb0,Florentin brunch,4.8,PRICE_LEVEL_INEXPENSIVE,Indoor,52.3561465,4.8975184,brunch restaurant restaurant food point of interest establishment
+ChIJdboLf5IJxkcRmXkoS5qhLcU,Hearth,4.8,PRICE_LEVEL_MODERATE,Indoor,52.358497899999996,4.9129986,vegan restaurant cocktail bar wine bar european restaurant vegetarian restaurant bar restaurant food point of interest establishment
+ChIJp7gGC_4JxkcRqocJjELig4s,WE ARE EDN,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3767917,4.9048642,restaurant family restaurant breakfast restaurant vegan restaurant vegetarian restaurant food point of interest establishment
+ChIJ7YMxGOkJxkcRGFOCwgt61ns,Sherpa Restaurant Amsterdam,4.7,PRICE_LEVEL_MODERATE,Indoor,52.3630948,4.8848844,indian restaurant tibetan restaurant asian restaurant vegan restaurant vegetarian restaurant restaurant food point of interest establishment
+ChIJFepjd7oLxkcRf--jYYUy8ao,Restaurant Showw,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3373962,4.892786399999999,fine dining restaurant restaurant food point of interest establishment
+ChIJAQDAttYLxkcRIrFRzxtbtMQ,A Beautiful Mess - Amsterdam,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3759198,4.9106523,restaurant halal restaurant cocktail bar vegetarian restaurant middle eastern restaurant event venue bar food point of interest establishment
+ChIJaeSvdWoJxkcRX28UfkUWvU4,La Casa di Angelo Amsterdam,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3658808,4.8938635,italian restaurant restaurant food point of interest establishment
+ChIJSfxEsq4JxkcRcAoQGkongQE,Santi & Santini - Puglia restaurant,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,52.369906799999995,4.8803504,italian restaurant mediterranean restaurant restaurant food point of interest establishment
+ChIJXYYUs-kJxkcRgLEv5GixBq8,Restaurant Black,4.2,PRICE_LEVEL_MODERATE,Indoor,52.365353400000004,4.884468099999999,diner cocktail bar steak house breakfast restaurant french restaurant european restaurant bar restaurant food point of interest establishment

@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJVSYjJKIZ2jERpRFinATD52s,Fort Canning Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2943875999999999,103.8458033,park tourist attraction point of interest establishment
+ChIJT4lHCgMZ2jERloDE6WmkdMk,Supertree Grove,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2819616999999999,103.86390569999999,garden tourist attraction point of interest establishment
+ChIJMxZ-kwQZ2jERdsqftXeWCWI,Gardens by the Bay,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2815683,103.8636132,garden tourist attraction park botanical garden point of interest establishment
+ChIJOeEf9S2vewIRM0B9a06CKwg,SkyPark Observation Deck,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2852044,103.8610313,observation deck tourist attraction point of interest establishment
+ChIJ9xUuiNcT2jER49FS2OpE8W8,Night Safari,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4021872,103.7880606,tourist attraction zoo point of interest establishment
+ChIJBTYg1g4Z2jERp_MBbu5erWY,Merlion Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2867449,103.85438719999999,park tourist attraction point of interest establishment
+ChIJh0XICQMZ2jERc-RPjdU9KKo,Garden Rhapsody,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2818914,103.8641627,tourist attraction point of interest establishment
+ChIJ0QX_Brki2jER-pZKNdqk_a8,East Coast Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.3007841999999998,103.9121866,park tourist attraction point of interest establishment
+ChIJd0VihwEZ2jERKeREhO6G1Qg,Cloud Forest,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2838676999999998,103.8660024,botanical garden tourist attraction garden point of interest establishment
+ChIJc-qInBwa2jERpyqg4OcodwA,National Parks Board,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.3157058,103.8161825,tourist attraction garden park point of interest establishment
+ChIJUc0YwKIZ2jERnCfsCKnOamE,Fort Canning Tree Tunnel,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2972839999999999,103.846345,park tourist attraction garden point of interest establishment
+ChIJ1_vobQ0Z2jER8clToFO8Zg0,Singapore DUCKtours,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2960653,103.85932369999999,tourist attraction point of interest establishment
+ChIJnXwAOKAZ2jERAs-MHs1aDgI,CQ @ Clarke Quay,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2906024,103.84647419999999,shopping mall tourist attraction point of interest establishment
+ChIJreQna9kT2jERVuM4al7id9A,Mandai Wildlife Reserve,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4049843,103.79054889999999,tourist attraction wildlife park zoo park point of interest establishment
+ChIJvWDbfRwa2jERgNnTOpAU3-o,Singapore Botanic Gardens,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.3138397,103.8159136,botanical garden tourist attraction point of interest establishment
+ChIJr9wqENkT2jERkRs7pMj6FLQ,Singapore Zoo,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4043485,103.79302299999999,zoo tourist attraction point of interest establishment
+ChIJ_6SSVDUb2jERZzS4PfvOSp0,MUSEUM OF ICE CREAM SINGAPORE,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.30273,103.812423,tourist attraction museum point of interest establishment
+ChIJQ6QPiwkZ2jERIISQDrknWdU,Raffles' Landing Site,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.28772,103.85076509999999,tourist attraction point of interest establishment
+ChIJn8Zw8s4Z2jERDHzhRsKv3sM,Slingshot Singapore,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2903569,103.84706059999999,tourist attraction adventure sports center amusement center amusement park sports complex sports activity location point of interest establishment
+ChIJRZxKoYIZ2jERGplsSHebyHM,Marina City Tourist Hub,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2913622999999999,103.8584892,tourist attraction tourist information center tour agency travel agency transportation service point of interest service establishment
+ChIJLZ9DYnIZ2jERQ51Am7WzJLM,Burnt Ends,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,1.304606,103.8089925,barbecue restaurant restaurant food point of interest establishment
+ChIJSxaj9WgZ2jERRzKy45IsYl8,Kimchi Dining | Korean Restaurant Singapore,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,1.3007562,103.8397289,korean restaurant restaurant food point of interest establishment
+ChIJFzUYYm8Z2jERs4gjq8fcHCA,KOMA Singapore,4.3,PRICE_LEVEL_UNSPECIFIED,Indoor,1.2856950999999999,103.85965739999999,japanese restaurant restaurant food point of interest establishment
+ChIJnwEqK_ob2jERigIup3c7c5I,Arbora @ Mount Faber Peak,4.8,PRICE_LEVEL_MODERATE,Indoor,1.2712866,103.8192883,restaurant event venue cafe food point of interest establishment
+ChIJO9op3n8Z2jERkJtP5VHiksg,Eden Restaurant,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,1.3029903999999999,103.83625359999999,restaurant food point of interest establishment
+ChIJKf8-B1IZ2jERKoqDakRkZy0,Restaurant JAG,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,1.2911017999999999,103.8402617,restaurant french restaurant european restaurant fine dining restaurant food point of interest establishment
+ChIJ5ySHC3IZ2jERu-xiMMTjAVE,Candlenut,4.4,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,1.3058022,103.81009499999999,restaurant food point of interest establishment
+ChIJjYlQqlMQ2jERNTV5U98WYMY,iO Italian Osteria - HillV2 (Singapore),4.6,PRICE_LEVEL_MODERATE,Indoor,1.3629771,103.7645031,italian restaurant restaurant food point of interest establishment
+ChIJ8aeYp7EZ2jER1_QRLriAt_E,NOX - Dine in the Dark,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,1.281828,103.8458368,european restaurant fine dining restaurant restaurant food point of interest establishment
+ChIJ-zvlIDQZ2jERQmjhYTdSKMg,Claudine Restaurant,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,1.3048733000000001,103.8135205,restaurant french restaurant food point of interest establishment
+ChIJEU6YevQZ2jER4gbYl-0KQss,Waterfall Ristorante Italiano,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,1.3117794999999999,103.8261646,italian restaurant meal takeaway meal delivery food delivery restaurant food point of interest establishment
+ChIJ02kZpakZ2jERDQVTq10I8b0,Colony,4.6,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,1.2908431999999999,103.8597971,restaurant buffet restaurant food point of interest establishment
+ChIJaf1jCYoZ2jEREWP4zlROmdc,FIRE | Argentinian Restaurant,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,1.3039288,103.83195119999999,argentinian restaurant south american restaurant restaurant food point of interest establishment
+ChIJFWcLpsUZ2jERFKywmOm7NcM,Marcy's,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,1.2787642,103.8435226,seafood restaurant cocktail bar bar restaurant food point of interest establishment
+ChIJ3x67XiIZ2jERNLoiO6raxGU,Black Pepper Multicuisine Restaurant Singapore,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,1.295069,103.8599416,indian restaurant restaurant food point of interest establishment
+ChIJRR8bWM8Z2jER8ml0qU8UFeE,MTR Singapore,4.5,PRICE_LEVEL_MODERATE,Indoor,1.3130167,103.8565232,vegetarian restaurant breakfast restaurant indian restaurant meal takeaway brunch restaurant restaurant food service point of interest establishment
+ChIJEbQ9xpYZ2jERyBrI8a2FtEY,Restaurant Born,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,1.2803733,103.8438899,fine dining restaurant restaurant food point of interest establishment
+ChIJLaoWoTYZ2jERNj-V9XhIxxg,Le Pristine Singapore,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,1.3062616,103.8334004,italian restaurant restaurant food point of interest establishment
+ChIJKbuqO78Z2jERVOBr1n--EIo,FLNT | Nikkei Restaurant & Bar,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,1.3039288,103.83195119999999,bar restaurant food point of interest establishment
+ChIJ8dGY8gYZ2jERVd0Lk3OwpIs,Spago Dining Room,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,1.2833033999999999,103.8605846,american restaurant restaurant food point of interest establishment

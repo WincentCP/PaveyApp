@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJy6BwuD-uEmsRyiRskH1UG-I,Sydney Tower Eye,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8703155,151.2088801,observation deck tourist attraction point of interest establishment
+ChIJt9trB0euEmsR8NbepO14j3M,Darling Harbour,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.874880000000005,151.2009,tourist attraction point of interest establishment
+ChIJWaTdYGuuEmsRoOfx-Wh9AQ8,Royal Botanic Garden Sydney,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.864185899999995,151.2165708,botanical garden tourist attraction research institute park point of interest establishment
+ChIJSytgJF2uEmsRC6q8BDZh5qA,BridgeClimb Sydney,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.857439,151.2077747,tourist attraction point of interest establishment
+ChIJYV-J-ziuEmsRIMyoFaMedU4,SEA LIFE Sydney Aquarium,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8695997,151.20213809999998,aquarium tourist attraction event venue point of interest establishment
+ChIJLat3W0euEmsRCQCK0yaDjTc,WILD LIFE Sydney Zoo,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8694129,151.2017032,tourist attraction wildlife refuge zoo park point of interest establishment
+ChIJ49XqJV2uEmsRPsTAF7eOlGg,Sydney Harbour Bridge,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.852306299999995,151.2107871,bridge tourist attraction transportation service point of interest establishment
+ChIJ3S-JXmauEmsRUcIaWtf4MzE,Sydney Opera House,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.856784399999995,151.21529669999998,performing arts theater opera house tourist attraction concert hall auditorium live music venue event venue association or organization point of interest establishment
+ChIJDflB7BWuEmsRYPbx-Wh9AQ8,Hyde Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8715202,151.21162429999998,park tourist attraction point of interest establishment
+ChIJYXuDOxyyEmsRtRZV6GZjGuM,Bondi to Coogee Walk,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.9183926,151.2584756,tourist attraction point of interest establishment
+ChIJo7Ntu_OuEmsRaX-EEnZoAwc,Blues Point Reserve,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.849866299999995,151.2038631,tourist attraction national park park point of interest establishment
+ChIJQ9b_zXquEmsRY6cF2rm2v0M,Mrs Macquarie's Chair,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8596639,151.22257059999998,historical landmark tourist attraction historical place point of interest establishment
+ChIJs-MWMVuuEmsRN7STbIW1hv8,Barangaroo Reserve,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.857208,151.20120599999998,park tourist attraction point of interest establishment
+ChIJaZrLHzuuEmsRYPzx-Wh9AQ8,Tumbalong Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8756884,151.2017266,park playground tourist attraction point of interest establishment
+ChIJ_1pC8mmuEmsRrvud0Ftcoyg,Museum of Sydney,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8636288,151.2114567,history museum tourist attraction event venue museum point of interest establishment
+ChIJkeoK_UKuEmsRe-UTnQNgyK0,Susannah Place,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8601509,151.2074096,museum history museum tourist attraction point of interest establishment
+ChIJ47iDxkKuEmsR_bma_SA7k1E,The Rocks Discovery Museum,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8586281,151.2086679,museum tourist attraction point of interest establishment
+ChIJXcQYTmiuEmsRyA0MgDwV01g,Cahill Walk Lookout,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8613561,151.2125127,landmark tourist attraction point of interest establishment
+ChIJUdIgnCSuEmsRLzoJwyTgSW0,Chinatown Sydney,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.879356099999995,151.2041567,tourist attraction market point of interest establishment
+ChIJ9QuJYmeuEmsR3lqy62RL8NA,Hickson Road Reserve,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-33.8554034,151.2103751,city park tourist attraction park point of interest establishment
+ChIJvyZ8WvCvEmsRTqM2KE94_aw,Grana,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.8625166,151.2109494,restaurant food point of interest establishment
+ChIJK2AbsHuvEmsRn_2kVh8Sv5w,Hustlers. Syd,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.8682265,151.2061216,asian fusion restaurant fusion restaurant asian restaurant restaurant food point of interest establishment
+ChIJsfWVuAOvEmsRlIlTGlDNuWI,The Sanderson Sydney,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.8654717,151.2068885,restaurant steak house fine dining restaurant event venue food point of interest establishment
+ChIJdRmuCG2vEmsRYPe76JjEY5I,Aalia Restaurant Sydney,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,-33.8680725,151.2093505,middle eastern restaurant fine dining restaurant restaurant food point of interest establishment
+ChIJQcmNYGauEmsR84D5HAJJUhw,Bennelong,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-33.8574468,151.21474310000002,australian restaurant cocktail bar bar restaurant food point of interest establishment
+ChIJAdgvpTSvEmsRG2zKBNpxNTo,Bouillon L'Entrecôte,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.862500499999996,151.21059590000002,french restaurant restaurant food point of interest establishment
+ChIJy5rTDTavEmsRMzWjIWyf0yw,Lana,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.8625166,151.2109494,italian restaurant cocktail bar fine dining restaurant asian restaurant bar japanese restaurant event venue restaurant food point of interest service establishment
+ChIJT2CGg0GuEmsRYLRNCFoOvv4,Mr. Wong,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,-33.8640567,151.20785210000003,cantonese restaurant asian restaurant chinese restaurant meal takeaway restaurant food point of interest establishment
+ChIJK4Tktz-uEmsR4wAu4Lf6dCg,Infinity at Sydney Tower,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,-33.8704147,151.2089691,fine dining restaurant australian restaurant bar restaurant food point of interest establishment
+ChIJOahrAxKuEmsRiJOniUNkOZY,Cafe Sydney Restaurant,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-33.862079,151.2108919,cocktail bar oyster bar restaurant cafe bar restaurant food point of interest establishment
+ChIJVyiVBxiuEmsRvRl_kNMT5-A,NOMAD Sydney,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-33.8799057,151.2103612,australian restaurant wine bar bar restaurant food point of interest establishment
+ChIJdxxU1WeuEmsR11c4fswX-Io,Aria Restaurant Sydney,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-33.8592041,151.21326349999998,fine dining restaurant australian restaurant restaurant food point of interest establishment
+ChIJ7w7CsmKvEmsR19M0RHhqZL8,BISTECCA,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,-33.8632981,151.2078628,steak house cocktail bar bar italian restaurant restaurant food point of interest establishment
+ChIJF5-RdGquEmsR5rN_H74uSqQ,Restaurant Hubert,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-33.865130400000005,151.2104197,french restaurant restaurant food point of interest establishment
+ChIJnzttoEGuEmsRjBEqGkOTGG8,O Bar and Dining,4.4,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-33.8649023,151.207767,cocktail bar lounge bar night club bar event venue restaurant food point of interest establishment
+ChIJ50FHZs2vEmsRrzNw-VqPOHs,MuMu,4.1,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.8666324,151.20733210000003,restaurant food point of interest establishment
+ChIJqRMc0jKvEmsRjl9q-kI53Is,Harbourfront Seafood Restaurant Sydney The Rocks,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.8572735,151.20942399999998,seafood restaurant cocktail bar wine bar oyster bar restaurant australian restaurant bar event venue restaurant food point of interest service establishment
+ChIJEamSx42vEmsRt_F2c9OX8HQ,Palazzo Salato,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,-33.8697461,151.2051313,italian restaurant family restaurant wedding venue wine bar european restaurant bar event venue restaurant food point of interest service establishment
+ChIJB7lkaV2uEmsRoPnko9dUzYw,6HEAD Sydney,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,-33.856647599999995,151.2090994,fine dining restaurant steak house cocktail bar seafood restaurant wine bar oyster bar restaurant australian restaurant bar restaurant food point of interest establishment
+ChIJ7WdhetixEmsRzIf7Q-q6ocY,Ester Restaurant,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-33.887460499999996,151.20083309999998,australian restaurant restaurant food point of interest establishment

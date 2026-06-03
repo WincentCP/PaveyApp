@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJvQMhJ2CQdkcRa1Xs6dO-dys,Fortress Hohensalzburg,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.794948299999994,13.0476583,historical landmark tourist attraction museum historical place point of interest establishment
+ChIJK-tdP3uQdkcRVd3VZhHZ1Sw,Mirabell Palace,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8054432,13.0416942,castle tourist attraction historical place point of interest establishment
+ChIJiYA55GOQdkcRi7885u5bbJ4,Mozart's Birthplace,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8000079,13.043558899999999,museum tourist attraction point of interest establishment
+ChIJuYYBl2GQdkcRHSa2IHQNv0U,Salzburg Cathedral,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.79789460000001,13.0466354,tourist attraction church place of worship association or organization point of interest establishment
+ChIJ6R6cMzqRdkcRiFyJj2CZ4X0,Hellbrunn Palace,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.7621308,13.060130299999999,castle tourist attraction park historical place point of interest establishment
+ChIJR5iTmmGQdkcRMhe3zatrdSU,DomQuartier Salzburg,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,47.7985009,13.0456487,museum art gallery art museum church place of worship association or organization event venue point of interest service establishment
+ChIJf0zTqWGQdkcRLclzz6-fLmY,St. Peter's Abbey,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.7975729,13.044445,tourist attraction church place of worship association or organization point of interest establishment
+ChIJxWcjzGSQdkcRN1WEyql2-Uk,Mirabell Gardens,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8045848,13.042310299999999,garden tourist attraction point of interest establishment
+ChIJXaLY_5SRdkcR6jtAdojgmc0,Getreidegasse Street,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8000322,13.0424271,tourist attraction point of interest establishment
+ChIJdcwcsWWQdkcRRacRj7tCVGI,Haus der Natur,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8016443,13.0392002,zoo tourist attraction museum point of interest establishment
+ChIJkYyOI2OQdkcRyWkYMvlssps,Linzer Gasse Platzl,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.801709800000005,13.0451804,tourist attraction point of interest establishment
+ChIJqVRh-WGQdkcRQGIOidoSXaU,Mozartplatz,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.7988913,13.0477761,historical landmark tourist attraction historical place point of interest establishment
+ChIJZ4uYm0GQdkcRC5T5jVt7yuo,Stiegl-Brauwelt,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.793684899999995,13.0214374,tourist attraction liquor store brewery austrian restaurant european restaurant museum bar event venue manufacturer restaurant store food point of interest service establishment
+ChIJHd0TY2OQdkcR59EiCmY5mTo,Mozart Residence,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8026282,13.043867899999999,museum tourist attraction point of interest establishment
+ChIJrSTpo4qQdkcRwjiAXeitQHI,Festungsmuseum,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.795045599999995,13.047269,history museum tourist attraction museum point of interest establishment
+ChIJaa0tBXuQdkcRHRndT3tsfQk,Kurgarten,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.8064183,13.041442,garden tourist attraction point of interest establishment
+ChIJ94bLRwCRdkcRAZgAsOYKG4M,Salzburg,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.7944386,13.0535264,tourist attraction point of interest establishment
+ChIJR5iTmmGQdkcRxWwXfH58pS8,Salzburg Residence,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.7982972,13.0450473,museum art museum tourist attraction event venue point of interest service establishment
+ChIJF9E4p9CRdkcRg6doOjNZbxA,Wasserrad,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.7967947,13.045888099999999,tourist attraction point of interest establishment
+ChIJAdNa7Q-RdkcR5mUQDwJF-dM,Imbergstiege,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.801626999999996,13.0456933,tourist attraction point of interest establishment
+ChIJfdzqL3CQdkcR-jzYkazykcQ,Bärenwirt,4.5,PRICE_LEVEL_MODERATE,Indoor,47.805949,13.035836999999999,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJOW9CBoqQdkcRz2JCesYl798,Zwettler's Wirtshaus,4.5,PRICE_LEVEL_MODERATE,Indoor,47.7983325,13.048652500000001,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJv2M4F4qQdkcR5leYz3d_aq0,Wirtshaus zum Zirkelwirt | Salzburg Altstadt,4.5,PRICE_LEVEL_MODERATE,Indoor,47.798067800000005,13.0494439,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJ-a3iRHqQdkcRTPQOXqOuQNs,IMLAUER Sky - Bar & Restaurant in Salzburg,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,47.807601299999995,13.0418632,restaurant bar food point of interest establishment
+ChIJZ6zywm6QdkcRADMxBr4AJTk,Restaurant Brunnauer,4.8,PRICE_LEVEL_EXPENSIVE,Indoor,47.790256799999995,13.047743200000001,restaurant austrian restaurant european restaurant food point of interest establishment
+ChIJSz0BiIqQdkcRNNLtB-AbyjE,Pauli Stubm,4.7,PRICE_LEVEL_MODERATE,Indoor,47.7964389,13.04825,austrian restaurant inn european restaurant lodging restaurant food point of interest establishment
+ChIJXTkrKmKQdkcR7hDF0nXbaXY,Gasthof Goldgasse,4.4,PRICE_LEVEL_MODERATE,Indoor,47.7994026,13.045915599999999,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJUf7ra2OQdkcRLt4VE2l7aTk,JOHANNESKELLER,4.7,PRICE_LEVEL_MODERATE,Indoor,47.8026938,13.0448619,restaurant food point of interest establishment
+ChIJs-7E3leRdkcRWaULc7_NuJs,Meet2Eat,4.9,PRICE_LEVEL_MODERATE,Indoor,47.7984748,13.007332100000001,restaurant food point of interest establishment
+ChIJxTzDO3qQdkcRtMU9MAKdCWA,Braurestaurant IMLAUER,4.5,PRICE_LEVEL_MODERATE,Indoor,47.8089826,13.042066799999999,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJL-IQDICRdkcR5_BEax9vB84,east Salzburg,4.6,PRICE_LEVEL_MODERATE,Indoor,47.8002991,13.041343699999999,fusion restaurant asian restaurant bar restaurant food point of interest establishment
+ChIJqSYw4eiRdkcRwWjnyAHE5II,Mephisto Restaurant Salzburg,4.9,PRICE_LEVEL_MODERATE,Indoor,47.792740699999996,13.0514177,restaurant food point of interest establishment
+ChIJtabfwHGQdkcR0hwnIZ_OY6g,Esszimmer,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,47.80666670000001,13.0341667,fine dining restaurant restaurant food point of interest establishment
+ChIJp07JK32QdkcRLM2x4FIeJQc,Gasthof Alter Fuchs,4.4,PRICE_LEVEL_MODERATE,Indoor,47.804269399999995,13.0479833,restaurant food point of interest establishment
+ChIJUQjd22OQdkcRou2i7tFh-y8,Wirtshaus Elefant,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,47.7997768,13.0444145,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJhQfCFWSQdkcRzrA_0neDDnQ,Sternbräu,4.2,PRICE_LEVEL_MODERATE,Indoor,47.8006515,13.041272099999999,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJK5_-tomQdkcRw3NgWauwe_A,Maier's,4.9,PRICE_LEVEL_EXPENSIVE,Indoor,47.800664,13.051318,restaurant food point of interest establishment
+ChIJp0IwjKmRdkcRLtsC7nTls_g,The Glass Garden,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,47.804200300000005,13.035644300000001,fine dining restaurant restaurant food point of interest establishment
+ChIJw_EHc4eQdkcRG9Vf4sQ-26w,Der Kastner,4.6,PRICE_LEVEL_MODERATE,Indoor,47.806245,13.0535062,restaurant brewery manufacturer food service point of interest establishment
+ChIJH87fKWCQdkcR1XTyL1ixzww,Restaurant Stiegl-Keller,4.2,PRICE_LEVEL_MODERATE,Indoor,47.7961548,13.0472866,restaurant austrian restaurant european restaurant food point of interest establishment

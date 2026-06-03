@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJif9mNYcOZ0gRhlbhwPbNDwU,Dublin Castle,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.342886099999994,-6.2674284,castle tourist attraction historical landmark historical place point of interest establishment
+ChIJbXwkCloMZ0gRO3zBD1Jo1Bg,Kilmainham Gaol,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.341870099999994,-6.309804799999999,museum tourist attraction point of interest service establishment
+ChIJRRL9SksMZ0gRiBtqewjjp4o,Dublin Zoo,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.3572232,-6.3071091,zoo tourist attraction point of interest establishment
+ChIJpVg1bAmnREgRVLEltpvmyJI,St Patrick's Cathedral,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.339515399999996,-6.2714767,tourist attraction church place of worship association or organization point of interest establishment
+ChIJOWcR1pwOZ0gROrdJKmjDYng,The Irish Rock 'n' Roll Museum Experience,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.344926,-6.2644318,tourist attraction point of interest establishment
+ChIJe1F08akNZ0gRa1ndmi3YJqE,Phoenix Park,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.3558823,-6.3298133,park tourist attraction point of interest establishment
+ChIJq-FUnZ0OZ0gR9_TAnOCOC7o,Dubh Linn Garden,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.3423616,-6.2666319,park tourist attraction point of interest establishment
+ChIJTey9PoQOZ0gRimcbHe6gLn8,The Spire,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.349824999999996,-6.2602557,sculpture tourist attraction point of interest establishment
+ChIJ6dPJX5sOZ0gRgwlwZ29L4xg,Irish Whiskey Museum,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.344198,-6.259525,museum tourist attraction history museum point of interest establishment
+ChIJLyAohZsOZ0gRqOeJtavVfXY,National Leprechaun Museum of Ireland,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.347364899999995,-6.2686696,museum tourist attraction point of interest establishment
+ChIJRVhJcpsOZ0gRU0mkyl3emMo,Molly Malone Statue,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.3437409,-6.260972499999999,sculpture tourist attraction monument point of interest establishment
+ChIJGerRTiYMZ0gRuVDCYtqFU50,Dublinia,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.343149,-6.2720614,history museum tourist attraction museum point of interest establishment
+ChIJ3Y7HLZsOZ0gRpE8_XUYbw1A,The Book of Kells Experience,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.343888,-6.256755399999999,tourist attraction point of interest establishment
+ChIJ3VIPQ0ENZ0gRmSfLArET35g,Skyview Tower,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.348479999999995,-6.2778187999999995,tourist attraction point of interest establishment
+ChIJN2VMFYQOZ0gRJOGvwqfeTjQ,GPO Museum,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.349528199999995,-6.2606027,history museum tourist attraction gift shop historical landmark museum historical place store point of interest establishment
+ChIJV2soBIcOZ0gRPPBrxva2Twg,James Joyce Centre,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.3541941,-6.259980499999999,museum tourist attraction cultural center point of interest establishment
+ChIJuwyGmYQOZ0gRSmYoBM2BKVM,Dublin Discovered Boat Tours,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.3478293,-6.2481488999999995,tourist attraction tour agency travel agency point of interest service establishment
+ChIJCRCTLPEPZ0gRjDjM2MOcZIQ,Irish Music Wall of Fame,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.344989899999995,-6.2643016,tourist attraction point of interest establishment
+ChIJD3AENwgNZ0gR2vUq8PD0O_c,Phoenix Park Visitor Centre,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.366117599999995,-6.3309742,visitor center tourist attraction tourist information center tour agency travel agency point of interest service establishment
+ChIJw39ydyoMZ0gR8-2bO_FERjM,14 Henrietta Street,4.9,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.352379799999994,-6.2701587,museum tourist attraction point of interest establishment
+ChIJO0IAQ4UOZ0gRf4GJOMtiPUY,The Vintage Kitchen,4.7,PRICE_LEVEL_MODERATE,Indoor,53.346907200000004,-6.2556946,irish restaurant restaurant food point of interest establishment
+ChIJZe03SoMOZ0gRWnNxijfVrCg,Old Mill Restaurant,4.5,PRICE_LEVEL_MODERATE,Indoor,53.3456589,-6.2629517,irish restaurant restaurant food point of interest establishment
+ChIJI9ohIoEOZ0gReHRyl3GepHw,Mr Fox,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,53.3529755,-6.2648847000000005,restaurant food point of interest establishment
+ChIJnzE5E0sPZ0gRjNWjd1DkvpI,Gloria Osteria Dublin,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,53.3454372,-6.2588729999999995,italian restaurant french restaurant european restaurant fine dining restaurant restaurant food point of interest establishment
+ChIJiTBhtJwOZ0gRQVe4FWJj5Kg,The Old Storehouse Bar and Restaurant,4.5,PRICE_LEVEL_MODERATE,Indoor,53.345175999999995,-6.262646,irish pub pub bar restaurant food point of interest establishment
+ChIJvTI5kJwOZ0gRWNEA2-LZg6U,Trocadero Restaurant Dublin,4.6,PRICE_LEVEL_MODERATE,Indoor,53.343382399999996,-6.2617176,restaurant food point of interest establishment
+ChIJcWbtNYMOZ0gRIznsNiJdnFs,FX Buckley Steakhouse Crow Street,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,53.344601399999995,-6.263882799999999,steak house restaurant food point of interest establishment
+ChIJD6v4w4IOZ0gRtNMc-036ckg,Bar Italia Ristorante,4.5,PRICE_LEVEL_MODERATE,Indoor,53.3464835,-6.2649892,italian restaurant restaurant food point of interest establishment
+ChIJWQO9y5wOZ0gRDUWJDEpAPoE,La Caverna Restaurant and Wine Bar,4.7,PRICE_LEVEL_MODERATE,Indoor,53.3451399,-6.2632768,italian restaurant cocktail bar steak house wine bar mediterranean restaurant seafood restaurant pizza restaurant fine dining restaurant vegan restaurant vegetarian restaurant bar restaurant food point of interest establishment
+ChIJ6cFsPi6xXUgRg4BVYWK5jzg,The Shack Restaurant,4.4,PRICE_LEVEL_MODERATE,Indoor,53.3454477,-6.264407800000001,irish restaurant restaurant food point of interest establishment
+ChIJl9gur5sOZ0gRdWFOYPXJi6c,FIRE Steakhouse Dublin,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,53.3405397,-6.257922199999999,steak house fine dining restaurant restaurant food point of interest establishment
+ChIJe9jxMagPZ0gRDcFKdyrLkJo,Boss Stop Restaurant,4.9,PRICE_LEVEL_MODERATE,Indoor,53.3423723,-6.264357599999999,asian fusion restaurant fusion restaurant asian restaurant chinese restaurant restaurant food point of interest establishment
+ChIJYYy3JZ0PZ0gR5b6JioTM6A4,Mister S,4.7,PRICE_LEVEL_MODERATE,Indoor,53.334629,-6.265060399999999,restaurant food point of interest establishment
+ChIJzwpddJsOZ0gRR_25_UBpZLU,WILDE Restaurant,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,53.3414914,-6.2610798999999995,irish restaurant restaurant food point of interest establishment
+ChIJt0gwg6AOZ0gRc6SIVFIwS6g,Richmond,4.8,PRICE_LEVEL_MODERATE,Indoor,53.331075,-6.264691699999999,restaurant food point of interest establishment
+ChIJC7OZ55sOZ0gRrO9y748QF9k,Café en Seine,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,53.340658,-6.258619899999999,cocktail bar diner wine bar night club live music venue event venue bar cafe brunch restaurant restaurant food point of interest establishment
+ChIJc8evFzEPZ0gRkQ0ubmBvYGI,Ryleigh's Rooftop Steakhouse,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,53.3472714,-6.232456,restaurant food point of interest establishment
+ChIJm5s90JwOZ0gRgqLkHxRkrXU,Il Vicoletto,4.5,PRICE_LEVEL_MODERATE,Indoor,53.3445171,-6.2636742,italian restaurant restaurant food point of interest establishment
+ChIJt3DQzIIOZ0gRw6u7FZ_CZp4,The Stage Door Cafe,4.7,PRICE_LEVEL_MODERATE,Indoor,53.345253799999995,-6.2659495,cafe breakfast restaurant restaurant food point of interest establishment
+ChIJa7Nrz4AOZ0gRptxMf68t1Qk,Chapter One Restaurant,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,53.3544157,-6.2639458,fine dining restaurant restaurant food point of interest establishment

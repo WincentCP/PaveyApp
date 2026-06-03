@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJYYz_cUkdkUcRTBnvlTO2FZo,Schwabentor,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.993002399999995,7.8541387,tourist attraction point of interest establishment
+ChIJ80Y_mpkckUcRR7Rqqut2Sx4,Freiburg Cathedral,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.995582399999996,7.852789499999999,tourist attraction church place of worship association or organization point of interest establishment
+ChIJ0c112J4ckUcRBJQP3nQ5jvQ,Martinstor,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9936972,7.848922299999999,historical landmark landmark tourist attraction historical place point of interest establishment
+ChIJ49zvdJcckUcRO3LE-7g5rF0,Kanonenplatz,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9933401,7.8571766,scenic spot tourist attraction point of interest establishment
+ChIJrxwiYAsbkUcROajgYndeBJE,Seepark Freiburg,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.0126664,7.8203686,park tourist attraction point of interest establishment
+ChIJER11rJYckUcRDGvpaq_Oo5U,Aussichtsturm Schlossberg,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.99508530000001,7.8619333,observation deck tourist attraction hiking area sports activity location point of interest establishment
+ChIJUbXTc5kckUcRngz1k3SJWSo,Historical Merchants' Hall,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.995,7.852777799999999,event venue tourist attraction point of interest establishment
+ChIJ3waKVJgckUcRXOHQKFEzPD4,Augustiner Museum,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9940119,7.8524901,museum tourist attraction point of interest establishment
+ChIJr6OAyp4ckUcRLfGfS8ahftg,Bertoldsbrunnen,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9948927,7.849864899999999,historical landmark tourist attraction historical place point of interest establishment
+ChIJcVw_kiMdkUcRT1jHnGkPDZA,Isfahan,4.9,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.99635,7.8493813999999995,tourist attraction point of interest establishment
+ChIJYwhdbmQdkUcRr8koxLi7nkw,Mammutbaum,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.0018994,7.860311399999999,tourist attraction point of interest establishment
+ChIJQ1oxhpAckUcRrtBSR0aSIY4,Stadtgarten Freiburg,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9981645,7.8576265,garden city park tourist attraction park point of interest establishment
+ChIJ7z_6a4cckUcR6Zy4RjS60ys,Universität Freiburg Botanical Garden,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.0086832,7.8558557,botanical garden tourist attraction point of interest establishment
+ChIJm-D2r0IdkUcR5ogGlQZXkqo,Konviktstraße,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.994286,7.854685099999998,tourist attraction point of interest establishment
+ChIJdfnmxp0ckUcRSAGF3fBg4ow,Colombipark,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9974395,7.8465235,park tourist attraction point of interest establishment
+ChIJUwfUpJsckUcRjmpN64pZLjE,Europaplatz,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9978377,7.8529263,tourist attraction point of interest establishment
+ChIJ2wUZ2ZkckUcRmmVmbyVms2c,Schlossbergsteg,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.9940813,7.855768800000001,historical landmark tourist attraction historical place point of interest establishment
+ChIJx7bSNgAdkUcRWWpT1XWmEDM,Bächle in Freiburg,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,47.995360899999994,7.854074300000001,tourist attraction point of interest establishment
+ChIJ2V7jMoc5kUcRoK3y_wQ0txQ,Europa-Park,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2660194,7.7220076,amusement park tourist attraction point of interest establishment
+ChIJI0kUGggbkUcR-c_NglM4wu0,Japanischer Garten,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.0130239,7.8133832000000005,park tourist attraction point of interest establishment
+ChIJQVE_FKEckUcRHTNUqBkst1w,Das Kartoffelhaus,4.5,PRICE_LEVEL_MODERATE,Indoor,47.9880782,7.846438900000001,german restaurant european restaurant vegan restaurant vegetarian restaurant restaurant food point of interest establishment
+ChIJc3d40p4ckUcRIXc2hYUIlLY,Großer Meyerhof,4.4,PRICE_LEVEL_MODERATE,Indoor,47.9941817,7.8500868,german restaurant european restaurant restaurant food point of interest establishment
+ChIJzWcXyZkckUcRR7z9FxnLyt4,Restaurant Lichtblick Freiburg,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,47.993739999999995,7.85464,restaurant food point of interest establishment
+ChIJz7FX8TIDkUcR1CWq4Cbaoe8,Waldrestaurant St. Valentin,4.8,PRICE_LEVEL_MODERATE,Indoor,47.96761,7.87118,restaurant food point of interest establishment
+ChIJ4_oAVaIckUcRMozjqRvHhBQ,Gasthaus Goldener Anker,4.5,PRICE_LEVEL_MODERATE,Indoor,47.9887166,7.851357200000001,german restaurant european restaurant restaurant food point of interest establishment
+ChIJJ6-J6pkckUcR2OpI_Oev2yc,Wolfshöhle,4.7,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,47.994493999999996,7.8547469,fine dining restaurant german restaurant european restaurant restaurant food point of interest establishment
+ChIJQXu8W0cQkUcR2jCjVv-qZqk,Das Blümchen Freiburg,4.7,PRICE_LEVEL_MODERATE,Indoor,48.0006698,7.716387899999999,restaurant catering service german restaurant beer garden european restaurant vegan restaurant vegetarian restaurant bar food delivery food service point of interest establishment
+ChIJrwDSPZEckUcRtgBs1y4j74Q,Dattler,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,47.9963264,7.8606556,german restaurant european restaurant cafe restaurant food point of interest establishment
+ChIJZ1oer2EdkUcRro7olUe0EHI,Restaurant Löwengrube,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,47.994055599999996,7.85447,restaurant food point of interest establishment
+ChIJ7-4d0J4ckUcRecNPIJFe35s,Martinsbräu,4.4,PRICE_LEVEL_MODERATE,Indoor,47.993652399999995,7.8495611,restaurant german restaurant brewery european restaurant brewpub pub bar manufacturer food service point of interest establishment
+ChIJsY6VzAcbkUcRRcOL_NMVYuk,Magellan - Freiburg im Breisgau,4.7,PRICE_LEVEL_MODERATE,Indoor,48.011279599999995,7.810907299999999,restaurant afghani restaurant vegan restaurant vegetarian restaurant middle eastern restaurant food point of interest establishment
+ChIJsTsPmJkckUcRt8xQ2MOtNig,Zum Kranz,4.8,PRICE_LEVEL_MODERATE,Indoor,47.9946833,7.853855599999999,restaurant german restaurant european restaurant food point of interest establishment
+ChIJIyif0mEbkUcR1eamm26TNW8,Tapas la pepa,4.3,PRICE_LEVEL_MODERATE,Indoor,47.9942053,7.843057799999999,bar restaurant food point of interest establishment
+ChIJSTNOYjEbkUcRqfZvJkJnr80,Restaurant Erbil,4.9,PRICE_LEVEL_MODERATE,Indoor,47.9990297,7.791236899999999,kebab shop restaurant food point of interest establishment
+ChIJOc6b2w8bkUcRGmscjdi5YS4,Hawara Restaurant,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,47.989573,7.856956800000001,fine dining restaurant restaurant food point of interest establishment
+ChIJPykEV5kckUcRPPOWczAYXKE,SKAJO,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,47.9960939,7.850770300000001,restaurant german restaurant european restaurant food point of interest establishment
+ChIJm2fBSpgckUcRwcfbSHYN71s,Zum Schwabentörle,4.7,PRICE_LEVEL_MODERATE,Indoor,47.993323499999995,7.8541962,german restaurant european restaurant restaurant food point of interest establishment
+ChIJG_9_s6EbkUcRvKiTPz_ZRBI,Kashmir Restaurant - Freiburg im Breisgau,4.7,PRICE_LEVEL_INEXPENSIVE,Indoor,48.0155491,7.8233310000000005,indian restaurant vegetarian restaurant meal takeaway restaurant food point of interest establishment
+ChIJK5dOlp0ckUcROOmJyXLM-Xg,Drexlers - Freiburg im Breisgau,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,47.9980921,7.8462513,german restaurant european restaurant restaurant food point of interest establishment
+ChIJNcYz_4EckUcRr3MWTiSheFE,Goldener Sternen,4.5,PRICE_LEVEL_MODERATE,Indoor,48.006262899999996,7.8476215,german restaurant european restaurant restaurant food point of interest establishment

@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJQffkhK1C1moR3Z0-w-t8SS8,Melbourne Skydeck,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8213341,144.9646982,observation deck tourist attraction point of interest establishment
+ChIJ_QzhcE1d1moR9rtoKagNPOI,SEA LIFE Melbourne Aquarium,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.820627,144.95821999999998,aquarium tourist attraction event venue point of interest establishment
+ChIJO40p-5ZC1moRwNcxBXZWBA8,Royal Botanic Gardens Victoria - Melbourne Gardens,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8302443,144.9801496,botanical garden tourist attraction point of interest establishment
+ChIJT8T86bZC1moRqw7W6kVH5zg,Fed Square,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8179789,144.96905759999999,plaza tourist attraction art gallery community center event venue service point of interest establishment
+ChIJsVeQNzRd1moRUNQyBXZWBA8,Queen Victoria Market,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8075798,144.956785,market tourist attraction point of interest establishment
+ChIJuYNitLFC1moRVB5vMAKPcTM,National Gallery of Victoria,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8225942,144.9689278,art gallery tourist attraction point of interest establishment
+ChIJGSSIDKZC1moRisWTaYaaq18,Shrine of Remembrance,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8305164,144.97343189999998,tourist attraction park point of interest establishment
+ChIJYUcwasxC1moResepeNQs7Z0,Old Melbourne Gaol,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.807832,144.9653171,museum tourist attraction point of interest establishment
+ChIJZ_cOG2Ro1moRQbFsJ6rXAL8,Luna Park Melbourne,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8678147,144.976924,amusement park tourist attraction wedding venue event venue service point of interest establishment
+ChIJczgQh8lC1moR9r9gP44FRvY,Chinatown Melbourne,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.812006,144.9668036,historical landmark tourist attraction historical place restaurant food point of interest establishment
+ChIJIXatx-FD1moRN3Q0ci9V5bI,Melbourne Laneways & Arcades Self-Guided Walking Tour,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8159573,144.9647544,tourist attraction tour agency travel agency service point of interest establishment
+ChIJdV4x5cpC1moR4xhUFRPKRRc,The Melbourne Central Clock,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.810138599999995,144.9630396,tourist attraction point of interest establishment
+ChIJFf1Da8FC1moR7xVAiUvPufQ,Cooks' Cottage,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.814500599999995,144.9794476,historical landmark tourist attraction historical place point of interest establishment
+ChIJoS72YKNC1moRL-iksMO0MqE,Kings Domain,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8241558,144.9734846,park tourist attraction point of interest establishment
+ChIJf524UgBd1moRZGbMeh3dHM8,Skyline Melbourne,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8244852,144.95362409999998,tourist attraction point of interest establishment
+ChIJJ7d0VzpD1moRpiff-5QlNp8,Jack The Ripper Self-Guided Walking Tour,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8171538,144.9676222,tourist attraction point of interest establishment
+ChIJIXktmrlC1moRQPgxBXZWBA8,Birrarung Marr,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8187351,144.9742624,city park tourist attraction park point of interest establishment
+ChIJf6HEetBC1moREEcyBXZWBA8,Carlton Gardens,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8054312,144.9714124,garden tourist attraction point of interest establishment
+ChIJQToaDrVC1moR7mgwIR6TbC8,The Public Purse,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8141203,144.96341239999998,sculpture tourist attraction point of interest establishment
+ChIJA9E7R_hD1moRBYb2Z8zRm2I,Melbourne Visitor Booth,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,-37.8139854,144.9642228,tourist information center tourist attraction tour agency travel agency service point of interest establishment
+ChIJXcSD1j9D1moRfZGHKDBtbDo,NOMAD Melbourne,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,-37.816189099999995,144.9683115,fine dining restaurant wine bar austrian restaurant european restaurant bar restaurant food point of interest establishment
+ChIJJRqhf2RD1moRJE_NJVnW784,Gimlet,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-37.8158812,144.9693376,restaurant food point of interest establishment
+ChIJM0eB00pd1moRTO9zNo1_J6A,Palermo,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-37.813901,144.960994,argentinian restaurant steak house south american restaurant bar event venue restaurant food point of interest service establishment
+ChIJudMseRxD1moRxRh9INi-V4g,Kiss & Tell,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,-37.810835999999995,144.971506,asian fusion restaurant fusion restaurant asian restaurant bar restaurant food point of interest establishment
+ChIJbza9ObVC1moRwyyqYG9efx4,Tipo 00,4.5,PRICE_LEVEL_MODERATE,Indoor,-37.8135522,144.9619835,italian restaurant bar restaurant food point of interest establishment
+ChIJG8tycKZD1moRI-cgqIq9ld8,Reine & La Rue,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-37.816657899999996,144.96195659999998,french restaurant restaurant food point of interest establishment
+ChIJ__3SxLdC1moRvQXAfpwM1hI,Chin Chin,4.2,PRICE_LEVEL_MODERATE,Indoor,-37.8156149,144.9703757,asian restaurant thai restaurant asian fusion restaurant fusion restaurant restaurant food point of interest establishment
+ChIJ4_Vc6dZC1moRlwIXnmb2SgA,Vue de monde,4.7,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-37.8187,144.95759999999999,fine dining restaurant australian restaurant diner wedding venue event venue restaurant food point of interest service establishment
+ChIJK8X6ObVC1moR5FRk9vmCwHA,Osteria Ilaria,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-37.813607499999996,144.9619069,italian restaurant wine bar bar restaurant food point of interest establishment
+ChIJd_CK355D1moR9Yeh7VKpxDA,"IKKAI - Sukiyaki, Izakaya & Donburi",4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,-37.8123715,144.960598,japanese restaurant yakiniku restaurant japanese izakaya restaurant bar and grill bar restaurant food point of interest establishment
+ChIJfRplbbZC1moRCL6SojG5F8w,Meatmaiden,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,-37.814305,144.96776069999999,steak house bar and grill cocktail bar barbecue restaurant bar restaurant food point of interest establishment
+ChIJjQLxXzVd1moRm6Cg5UkgViI,Brick Lane Melbourne,4.4,PRICE_LEVEL_MODERATE,Indoor,-37.8113938,144.9598114,cafe brunch restaurant breakfast restaurant restaurant food store store food point of interest establishment
+ChIJFwC1lrJC1moRjtLuCpWlcF0,Left Bank Melbourne Restaurant & Cocktail Bar,4.4,PRICE_LEVEL_MODERATE,Indoor,-37.8210084,144.96286139999998,cocktail bar italian restaurant live music venue bar event venue restaurant food point of interest service establishment
+ChIJdV_nrkpd1moRujiu_BbzOR8,Mjølner,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-37.812146,144.96064880000003,restaurant cocktail bar scandinavian restaurant bar event venue food point of interest establishment
+ChIJj5XQHMlC1moRr-au_PgprUY,Hofbräuhaus Melbourne,4.6,PRICE_LEVEL_MODERATE,Indoor,-37.8116657,144.9692918,german restaurant diner european restaurant live music venue bar event venue restaurant food point of interest service establishment
+ChIJZ-xZZrJC1moRuDmVvlWC5fM,Eureka 89 - Dining & Events,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-37.8213341,144.9646982,restaurant fine dining restaurant wedding venue event venue food point of interest service establishment
+ChIJ3eRbuMlC1moRhuHs0dGuR08,Attica,4.6,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-37.8770094,144.9973091,fine dining restaurant restaurant food point of interest establishment
+ChIJKfQ27RtD1moRVvrptnEEa-g,Thai Town Melbourne,4.7,PRICE_LEVEL_MODERATE,Indoor,-37.8105074,144.9663534,thai restaurant restaurant food point of interest establishment
+ChIJ2QMv5rdC1moRlTlxgCFLl0M,Pastuso,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,-37.8158403,144.9710359,restaurant wine bar latin american restaurant peruvian restaurant steak house south american restaurant bar event venue seafood restaurant food point of interest establishment
+ChIJr1N1BMlC1moR6aJLe1nHgPQ,Flower Drum Restaurant Melbourne,4.4,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-37.8118772,144.96924579999998,chinese restaurant cantonese restaurant restaurant food point of interest establishment

@@ -1,0 +1,40 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJNyGMXGh1hzIRUOWXjQTxdo4,Monumen Lilin,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.49447,124.8381266,monument tourist attraction point of interest establishment
+ChIJu4VVoVhzhzIR9sxb_RpwM5A,Yesus Memberkati Statue,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4380191999999998,124.8476132,monument tourist attraction point of interest establishment
+ChIJe67IhnN1hzIRBjzpNFiIVpI,Paket Wisata Manado- Manggis Travel,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4760281,124.8330888,tourist attraction point of interest establishment
+ChIJ-__pe-J0hzIR3SRPfAcReu8,God Bless Park,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4673015999999999,124.82907580000001,park tourist attraction point of interest establishment
+ChIJP4SACNtzeC0R9-9j9p70bWA,Bunaken National Marine Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.6193012999999998,124.76617399999999,national park tourist attraction park point of interest establishment
+ChIJ_eNXVQB1hzIROPzdJfLy-Os,Menado,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4748305,124.84207939999999,tourist attraction point of interest establishment
+ChIJXdb6FGp1hzIRj_DDslIOGQI,Zero Point,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4907186,124.83914319999998,monument tourist attraction point of interest establishment
+ChIJjXEwPwB1hzIR-SrbFgi906o,Manado,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4705021,124.8472401,tourist attraction point of interest establishment
+ChIJdzbXDQB1hzIRzIqYtm1aFuE,SUN BAE MANADO,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4824685,124.832439,tourist attraction point of interest establishment
+ChIJs0g_YwB1hzIRadoXndDl6JY,Pengemudi,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4748305,124.84207939999999,tourist attraction point of interest establishment
+ChIJ91z60qd0hzIRBwNdza95res,CitraLand WaterPark Manado,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4416773999999999,124.84719039999999,water park tourist attraction amusement park point of interest establishment
+ChIJtxu8ZN51hzIRUSUuhht6Sfo,Puncak Manado,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4507769,124.84603779999998,tourist attraction point of interest establishment
+ChIJ94zMabd1hzIRAiSCHZ0jODk,Paket Wisata Bunaken Manado Kana Tour dan Travel,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4694128,124.8350045,tourist attraction point of interest establishment
+ChIJM9vDbUN1hzIRu7FXABkhmfk,Klenteng KWAN KONG Manado,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.494233,124.84472729999997,place of worship buddhist temple tourist attraction association or organization point of interest establishment
+ChIJn_rvaGp1hzIR-d-QpEKnh8M,Museum Perjuangan Rakyat Sulut,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.490243,124.8391792,museum tourist attraction point of interest establishment
+ChIJbQlBYkh1hzIRrGRJ9vkZFJA,Maleosan Tours Manado,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4893549,124.84544189999998,tourist attraction point of interest establishment
+ChIJu-LACQB1hzIRkF1Em8VNxtU,Nature connection office,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4675379,124.8352922,tourist attraction point of interest establishment
+ChIJY3lu1st0hzIRUxH0A6ezAaU,Golden Lake WaterPark,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4575557,124.8570788,water park tourist attraction amusement park swimming pool sports activity location point of interest establishment
+ChIJkxcilbN1hzIRBlohmLG52tU,tourist attractions and culture,5.0,PRICE_LEVEL_UNSPECIFIED,Mixed,1.4884252,124.83789349999999,point of interest establishment
+ChIJzQ-vRuafhzIRatQMu9kprv0,Dabu Dabu Lemong | Ikan Bakar Khas Manado,4.7,PRICE_LEVEL_MODERATE,Indoor,1.5085131999999999,124.8436998,restaurant food point of interest establishment
+ChIJt6TPo_h1hzIR2aprEdLTyRQ,Hokkaido-Ya Manado Town Square 1,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4720613000000002,124.83140929999999,japanese restaurant restaurant food point of interest establishment
+ChIJb9GfgOJ0hzIRbijlCvwSjns,Pepper Lunch Manado Town Square,4.9,PRICE_LEVEL_MODERATE,Indoor,1.4711336,124.8310432,japanese restaurant restaurant food point of interest establishment
+ChIJ1eauMjB1hzIRw-3jPFA14z0,Carpediem Restaurant & Bar,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4860308,124.8343117,restaurant food point of interest establishment
+ChIJdwUXv8B1hzIRfVoouTa-J4U,Casa Bakudapa Manado,4.3,PRICE_LEVEL_EXPENSIVE,Indoor,1.4722425,124.8399314,restaurant bar food point of interest establishment
+ChIJ2coc8PB0hzIR_XoswVHfP9I,Wisata Bahari Restaurant,4.4,PRICE_LEVEL_MODERATE,Indoor,1.4640254,124.825941,seafood restaurant restaurant food point of interest establishment
+ChIJ3VgmkZ0KhzIRIuObdRfuvbE,City Extra Seafood Restaurant,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,1.4599560999999999,124.77674220000002,seafood restaurant restaurant food point of interest establishment
+ChIJxxRz8C11hzIRSDG0tfIw2QM,Satoe Persen Kitchen (steakbistro),4.9,PRICE_LEVEL_MODERATE,Indoor,1.474743,124.83668259999999,steak house restaurant food point of interest establishment
+ChIJ5Q6-pPV0hzIRaqykMR8OT4c,Big Fish,4.5,PRICE_LEVEL_MODERATE,Indoor,1.4620861,124.82077109999999,seafood restaurant restaurant food point of interest establishment
+ChIJ9eBbdU51hzIRAhHjlQNP5Xk,First Class Cafe & Resto,4.4,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4780427,124.8334948,asian restaurant restaurant food point of interest establishment
+ChIJOazt4dV1hzIRoqEvIPaYL8c,Dapur Solo - Manado Town Square,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4766625,124.8339678,indonesian restaurant restaurant food point of interest establishment
+ChIJa2rQHGN1hzIRi6gUZOxBzag,Bumber (Resto & Function Hall),4.2,PRICE_LEVEL_MODERATE,Indoor,1.4735117,124.83907809999998,restaurant banquet hall event venue food point of interest establishment
+ChIJyXJi-at1hzIRQqHuidMl9NY,Amicoo Restaurant,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4875981999999999,124.83702760000001,italian restaurant restaurant food point of interest establishment
+ChIJD9RwCtF0hzIRLaE2GUkyabU,Warong Kobong Manado,4.5,PRICE_LEVEL_MODERATE,Indoor,1.4653555999999999,124.8550604,restaurant halal restaurant food point of interest establishment
+ChIJ7XBCC7h1hzIRHEc-leiUHNk,Magal Korean BBQ - Manado,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4828047,124.83267760000001,restaurant korean barbecue restaurant korean restaurant food point of interest establishment
+ChIJsV5ORzF1hzIRiUGhRJeI8TM,The People's Cafe Manado Town Square 1,4.8,PRICE_LEVEL_MODERATE,Indoor,1.4723332999999998,124.83195119999999,restaurant food point of interest establishment
+ChIJYUxqptX1aS4R7N1hBttbDFQ,Restoran Beautika - Abdul Muis,4.5,PRICE_LEVEL_MODERATE,Indoor,-6.1792234,106.81800229999999,indonesian restaurant restaurant food point of interest establishment
+ChIJXRb4GwB1hzIRFmm1qOWoG9I,Rasa Cafe & Resto,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4897747,124.8423892,restaurant food point of interest establishment
+ChIJDaF2OhR1hzIR-fbm9-w3qq0,RM Green Garden Manado,4.4,PRICE_LEVEL_MODERATE,Indoor,1.4890128999999999,124.8449749,chinese restaurant seafood restaurant restaurant food point of interest establishment
+ChIJd5epNzV1hzIR7jGY6aTIc7c,AW EATERY Manado,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,1.4921003,124.84535189999998,restaurant noodle shop asian restaurant chinese noodle restaurant chinese restaurant food point of interest establishment
