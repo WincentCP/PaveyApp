@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJOZsoxyeT_zIRsUIddeLtDxg,F.S Catanico Falls,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4508869,124.73164499999999,tourist attraction point of interest establishment
+ChIJrdGqM4yS_zIRMPI9aTz2cGw,Mapawa Nature Park,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4351392,124.70345559999998,tourist attraction park point of interest establishment
+ChIJ1Vi9M7OG_zIRvlHvWCgKPNg,Sinulom Falls,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.252924199999999,124.5823451,tourist attraction point of interest establishment
+ChIJZVTUvseO_zIROiDq7PLMKB0,Macahambus Cave,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.3788188,124.60983749999998,tourist attraction point of interest establishment
+ChIJWxkoBdby_zIRkQ7h4Iizx-Y,Gaston Park,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.475474199999999,124.64213089999998,park tourist attraction point of interest establishment
+ChIJMYBiQCDz_zIRR4wGFvqiRQs,La Castilla,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4884908,124.6400908,museum tourist attraction point of interest establishment
+ChIJUcNdOtzy_zIRW05z874QgU0,Vicente de Lara Park,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4852347,124.6481452,park tourist attraction point of interest establishment
+ChIJ00kKihCN_zIRX7x7GJ6PqZU,Eden's Solace,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.443475399999999,124.65357449999998,tourist attraction point of interest establishment
+ChIJhU83wdby_zIRI7qExT4QGyc,Museo de Oro,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4758781,124.6459584,museum tourist attraction point of interest establishment
+ChIJDak0enWG_zIR8o2pj7PG05E,CDO White Water Rafting,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.3051624,124.59661140000001,tourist attraction point of interest establishment
+ChIJrU0Optfy_zIRCXSQaCGoRbw,Golden Friendship Park,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4776888,124.6438664,park tourist attraction point of interest establishment
+ChIJyS5t_-fy_zIRsP6X9atQrsE,Museum of Three Cultures,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4885355,124.6520071,museum tourist attraction point of interest establishment
+ChIJLZ784tXy_zIRQeuLtkSD4RE,City Museum of Cagayan de Oro and Heritage Studies Center,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4747261,124.6422351,museum tourist attraction point of interest establishment
+ChIJ-_bbxT7z_zIR6RkRgM-Ghmk,Rio de Oro Boulevard - Crossroads,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4801165,124.64165410000001,tourist attraction point of interest establishment
+ChIJt3ItHgCN_zIR0aSZq_xLgH8,Mintugsok Falls,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.427760899999999,124.6861359,tourist attraction point of interest establishment
+ChIJzdSnpdfy_zIRXbRTmcrRky0,Plaza Divisoria,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.477716599999999,124.64380539999998,park tourist attraction point of interest establishment
+ChIJOXMaCbGS_zIRjSY5Poc_HYg,Gardens of Malasag Eco-Tourism Village,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.458325799999999,124.6998194,hotel tourist attraction lodging point of interest establishment
+ChIJQ8GQrtGH_zIRmbsvwxsWk88,Dansoliwood Viewdeck Cafe,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.298764199999999,124.5392323,tourist attraction point of interest establishment
+ChIJVZ4nB__z_zIR2ENZh1QDEJE,Majestic Boat of Cagayan de Oro,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.4781328,124.642346,tourist attraction point of interest establishment
+ChIJkV0qx5rz_zIRnyWL1RL_19Y,Seven Seas Waterpark and Resort,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,8.5185465,124.60908509999997,water park tourist attraction amusement park point of interest establishment
+ChIJo68lVtjy_zIRsKBRfiyRCtw,Cucina Higala,4.7,PRICE_LEVEL_MODERATE,Indoor,8.4815878,124.6433925,filipino restaurant restaurant food point of interest establishment
+ChIJ72hmzibz_zIR3_edM8bV4D4,Circa 1850,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,8.484839,124.6547593,asian fusion restaurant fusion restaurant asian restaurant restaurant food point of interest establishment
+ChIJS-sEeveN_zIRSZpeS4Xrpig,Cuesta Roccia,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,8.417954700000001,124.6355487,restaurant food point of interest establishment
+ChIJ2QOVV73z_zIRRA4pFUwqJHU,Fat Chef Restaurant,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4826413,124.6518985,restaurant food point of interest establishment
+ChIJXywkUdby_zIRTIw2Amn1NtY,Sentro 1850,4.4,PRICE_LEVEL_MODERATE,Indoor,8.4767044,124.6439279,restaurant food point of interest establishment
+ChIJmxUCCwDz_zIRwwcW3scvINI,Yoshimeatsu Ayala Centrio - CDO,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4848983,124.6518368,japanese restaurant restaurant food point of interest establishment
+ChIJtxaZPADt_zIRA8Ag-BTqCl0,La Baia Cucina + Bar,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4726605,124.69755470000001,family restaurant restaurant food point of interest establishment
+ChIJexB-BgDz_zIRUAcHDbQMWaw,Bigby's Cafe and Restaurant SM CDO Downtown,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,8.484352399999999,124.65437379999997,restaurant fusion restaurant food point of interest establishment
+ChIJQ_i8Y8Py_zIRf71Yoyvf6J8,Redtail Shrimps & More,4.5,PRICE_LEVEL_MODERATE,Indoor,8.4831197,124.6558777,seafood restaurant restaurant food point of interest establishment
+ChIJA3RcwNzy_zIRXFl0PVPMU7Q,Ribs & Bibs Centrio Branch,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4845766,124.65122849999999,restaurant food point of interest establishment
+ChIJd4IwxC6N_zIRE6UGfyBwELI,High Ridge,4.3,PRICE_LEVEL_MODERATE,Indoor,8.4625349,124.6477814,restaurant event venue food point of interest service establishment
+ChIJUdI0UODz_zIR6oXK_eIdsfw,Cuchara Verde,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4702714,124.6463151,restaurant food point of interest establishment
+ChIJgQqIgAzz_zIRofZUrife2m0,"Tong Yang, SM CDO Downtown",4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4844445,124.65388910000001,japanese restaurant restaurant food point of interest establishment
+ChIJ6UZUOhDz_zIRVgPzZJ9cZAU,Ribs & Bibs SM CDO Downtown,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4841362,124.6546545,restaurant food point of interest establishment
+ChIJA01vRcTy_zIRaB4smmnMvtQ,Kagay-anon Restaurant,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4829178,124.65641699999999,filipino restaurant restaurant food point of interest establishment
+ChIJ1fXs_v-N_zIRuFfKAMcOsvg,"Tia Maria Restaurant, Uptown Cagayan de Oro City",4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4422631,124.6212224,restaurant food point of interest establishment
+ChIJCXNCujrz_zIRrkJDAUyNf4g,Resto Freeno,4.4,PRICE_LEVEL_MODERATE,Indoor,8.472131,124.64603089999999,restaurant food point of interest establishment
+ChIJcXiyGACN_zIRXdGh8NPVlYo,House of Yang - Uptown,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,8.456968999999999,124.6217944,chinese restaurant cocktail bar bar restaurant food point of interest establishment
+ChIJC0LAT23z_zIRqqVpKCoTSPQ,Botejyu - SM CDO Downtown,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,8.4848774,124.6544677,japanese restaurant restaurant food point of interest establishment
+ChIJj_g2PsPy_zIRN5i5xmN6qSA,Fat Monk,4.1,PRICE_LEVEL_MODERATE,Indoor,8.484401199999999,124.65377439999999,asian fusion restaurant fusion restaurant asian restaurant restaurant food point of interest establishment

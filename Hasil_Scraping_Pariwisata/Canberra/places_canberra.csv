@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJ7wRAy3ZNFmsR5izUOK6G70E,Australian War Memorial,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2811355,149.1484327,tourist attraction museum point of interest establishment
+ChIJST-TgTtNFmsRdlEDcbl12-A,National Museum of Australia,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2929214,149.12051689999998,tourist attraction museum point of interest establishment
+ChIJEbzQhz1NFmsROGnVx-b_j2I,National Carillon,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.298505399999996,149.1417833,tourist attraction point of interest establishment
+ChIJyeout2VeNAARo8dTDDhVS3Y,National Arboretum Canberra,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2878936,149.069267,tourist attraction nature preserve botanical garden park point of interest establishment
+ChIJEZ4yqr6sF2sRGEFZkiSjCv8,Cockington Green Gardens,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.1916089,149.0863082,garden tourist attraction point of interest establishment
+ChIJCUsl4BhNFmsRhaBxEayyx04,Old Parliament House,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.3022644,149.1297341,museum tourist attraction point of interest establishment
+ChIJB3tFOEtNFmsR4C1Xi2_qAA8,Australian National Botanic Gardens,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.278878,149.108918,botanical garden tourist attraction garden park point of interest establishment
+ChIJeb_-XhdNFmsR5ZuDF8x3UFw,Questacon - National Science and Technology Centre,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.298035899999995,149.1309561,tourist attraction museum point of interest establishment
+ChIJG7ZqeRdNFmsRK1ZmolWslHE,National Gallery of Australia,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.300630999999996,149.13683699999999,art gallery art museum museum point of interest establishment
+ChIJX5cK6BlNFmsRgLRtsxzHXqQ,National Portrait Gallery,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2998693,149.13383489999998,art gallery tourist attraction art museum museum point of interest establishment
+ChIJZVquFyBNFmsRKR9OYAmlor4,Canberra Centenary Trail,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.306001099999996,149.1263847,tourist attraction point of interest establishment
+ChIJyVCSt3tSFmsRuisG4DhEWuo,Mount Ainslie Lookout,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2703529,149.1580644,landmark hiking area tourist attraction sports activity location point of interest establishment
+ChIJoTvEfyRNFmsRgCEEETuvBdE,Canberra Nara Peace Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2984088,149.1212779,park tourist attraction point of interest establishment
+ChIJTzOiIFZMFmsRA2p7aD5HJVA,Canberra Museum and Gallery,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2805471,149.1309537,art museum tourist attraction art gallery museum point of interest establishment
+ChIJAQHfPiNNFmsRAEpXi2_qAA8,Lennox Gardens,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2981677,149.1216169,garden tourist attraction point of interest establishment
+ChIJodiDyWhNFmsRSxeYxiQqXyc,Canberra Times Fountain,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2805259,149.1325099,tourist attraction point of interest establishment
+ChIJkWQQczZNFmsRcrWJpzqdWKI,Captain Cook Memorial Globe,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2904639,149.1296253,tourist attraction point of interest establishment
+ChIJFQLmlGlNFmsR-ddvpFj2OaE,City Hill,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.282078,149.1286816,city park tourist attraction park point of interest establishment
+ChIJ7WYObHRNFmsR0j5zP3Tp-OU,The Big Parcel,3.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2784327,149.12758589999999,tourist attraction point of interest establishment
+ChIJqxCNWgWzF2sRwDtXi2_qAA8,National Zoo & Aquarium,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,-35.2995206,149.07054499999998,zoo aquarium tourist attraction wildlife park playground tour agency travel agency park service point of interest establishment
+ChIJM3girPtNFmsR_bbRhRA3sQ8,Wilma,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.2774784,149.1319064,restaurant fine dining restaurant cocktail bar asian fusion restaurant asian restaurant fusion restaurant event venue bar food point of interest service establishment
+ChIJZa3NFGZNFmsR5eLhpLKOFhc,Akiba,4.8,PRICE_LEVEL_MODERATE,Indoor,-35.277774199999996,149.1313395,asian fusion restaurant cocktail bar asian restaurant barbecue restaurant fusion restaurant japanese restaurant bar restaurant food point of interest establishment
+ChIJz2eZiGlNFmsRn1Ky7RAZf_w,Black Salt Dining,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.3113009,149.1466969,restaurant food point of interest establishment
+ChIJnXHxA6hNFmsRi7rL_ngxYns,The Boat House,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,-35.3045099,149.1504196,fine dining restaurant wedding venue event venue restaurant food point of interest service establishment
+ChIJCU_qVm9NFmsRKTr7MXLO7M4,Raku,4.7,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-35.2796868,149.13333319999998,japanese restaurant restaurant food point of interest establishment
+ChIJ1zxc85hNFmsRJlTyB93Bqzw,Such and Such Restaurant,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.2821858,149.131415,restaurant food point of interest establishment
+ChIJ1YrCSGFNFmsRVV5cXnGX928,Les Bistronomes,4.9,PRICE_LEVEL_EXPENSIVE,Indoor,-35.2895566,149.1541092,fine dining restaurant french restaurant restaurant food point of interest establishment
+ChIJDzCZbp1NFmsRIR3BdkDal3c,Flui,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.2790124,149.1287585,restaurant food point of interest establishment
+ChIJW3XOk0VNFmsRRvyuM56Ip-w,Rebel Rebel,4.6,PRICE_LEVEL_MODERATE,Indoor,-35.2840701,149.12461389999999,restaurant food point of interest establishment
+ChIJg0iaF39NFmsRTmxavC7FgzI,KOTO Japanese Restaurant,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.3003566,149.1285969,japanese restaurant restaurant food point of interest establishment
+ChIJDSx7ZTFNFmsRwCmAZYq_NiE,The Flames Galore (Stonegrill Dining) | Best Stonegrill Restaurant in Canberra,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.2760835,149.1281206,restaurant food point of interest establishment
+ChIJVQSnOvRNFmsR5jnlx8bArps,Corella,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.2741863,149.1329247,restaurant food point of interest establishment
+ChIJC1Ye4SFNFmsRkYjYq2J1LRA,Onzieme,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.3166882,149.1414601,restaurant wine bar bar food point of interest establishment
+ChIJ6beo-BZNFmsRQS08W-RfJ2I,Terra Canberra,4.6,PRICE_LEVEL_MODERATE,Indoor,-35.2784763,149.1259279,restaurant food point of interest establishment
+ChIJaWhxWV1NFmsRQqzVA8HGkkE,Courgette Restaurant,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,-35.276247,149.1268566,restaurant fine dining restaurant event venue food point of interest service establishment
+ChIJ53PG0ipNFmsR2usJXWEXnmY,OMI Canberra,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.278445,149.13308469999998,japanese restaurant restaurant food point of interest establishment
+ChIJw0Fb0mhNFmsRPQemQ7NDV5o,Banana Leaf Restaurant,4.5,PRICE_LEVEL_MODERATE,Indoor,-35.2819387,149.1325401,sri lankan restaurant restaurant food point of interest establishment
+ChIJ84kceCdNFmsRq-YJB12iGks,Clover Dining,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,-35.2815698,149.1321174,restaurant cocktail bar italian restaurant japanese restaurant bar food point of interest establishment
+ChIJbY3oLWNNFmsR1YnSF85-1W4,INKA Japanese restaurant,4.6,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,-35.2804802,149.13438259999998,japanese restaurant restaurant food point of interest establishment
+ChIJ80zS52NNFmsRomlXP8GsrHs,eightysix restaurant,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,-35.273045599999996,149.133149,restaurant food point of interest establishment

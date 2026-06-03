@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJWS6-eJz_-jERUyRZ7Zr1P4s,Kampung Budaya Sarawak,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.7500924,110.3159462,museum tourist attraction point of interest establishment
+ChIJKQlHS1IE-zERJHi_j8INEKk,Kubah National Park,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.6127690000000001,110.196905,national park tourist attraction park point of interest establishment
+ChIJEabDttjpHjIRWGlhHAJkjfA,Niah National Park,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,3.8014873999999996,113.7853389,national park tourist attraction park point of interest establishment
+ChIJn38e5pdt-zER_lGRIiX5u9M,Fairy Caves,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.3817723,110.1171684,tourist attraction nature preserve park point of interest establishment
+ChIJ-eL9R5oB-zERcBU5zQME8O8,Kuching Wetlands National Park,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.6895038999999998,110.2519226,national park tourist attraction park point of interest establishment
+ChIJw3T9gBPa-DER0Fq3Sw25mlU,Batang Ai National Park,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.2227770999999998,111.94780159999999,national park tourist attraction park point of interest establishment
+ChIJYS7oo2R1-zERbLMHEKPgYGo,Semenggoh Wildlife Centre,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4019845,110.3144405,wildlife park tourist attraction zoo park point of interest establishment
+ChIJ8ZPJfLSn-zERcm674Uq78Z8,Kuching Waterfront,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.5604695,110.3457446,tourist attraction point of interest establishment
+ChIJB2jltixT-jERpv3vxRTzu1o,Bako National Park,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.7066873999999999,110.46632489999999,national park tourist attraction park point of interest establishment
+ChIJWZ3KB5j8-jERA87DIlGOhQI,Taman Negara Talang Satang,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.7842703,110.1642622,national park tourist attraction park point of interest establishment
+ChIJy76jUZj_-jERAkCJPiD_CPM,Damai Beach,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.7499882999999998,110.3135568,tourist attraction point of interest establishment
+ChIJHZzYUbYDGTIRKZ8z74xqVcw,Gunung Mulu National Park,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,4.09207,114.8958021,national park tourist attraction park point of interest establishment
+ChIJ8XwJmbojHzIRARyeTXaFay4,Tusan Cliff Sarawak,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,4.1216425,113.8183688,tourist attraction point of interest establishment
+ChIJo-Vqlnp1-zER1wrnhmPeUz0,Semenggoh Nature Reserve,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.4016855,110.3144962,nature preserve tourist attraction park point of interest establishment
+ChIJKQlHS1IE-zERfNQctsUbMj0,Matang Wildlife Centre,3.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.6093743,110.1602235,wildlife park tourist attraction zoo park point of interest establishment
+ChIJHWeeC_q-AjIRgJ016MvIPs8,Fort Sylvia,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,2.0172155,112.9419233,museum tourist attraction historical landmark historical place point of interest establishment
+ChIJydx27J_BHTIRenh9uNKXVnQ,Taman Tumbina Zoo,4.1,PRICE_LEVEL_UNSPECIFIED,Outdoor,3.2040272,113.04757769999999,tourist attraction park point of interest establishment
+ChIJn-Bz5uOf-zERYsApfMOfeug,Jong's Crocodile Farm & Zoo,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.3640379,110.41217719999999,zoo tourist attraction point of interest establishment
+ChIJNwDLKCkn-zEREcdB1tNIGkU,Gunung Gading National Park,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,1.6905556,109.8458333,national park tourist attraction park point of interest establishment
+ChIJWyMd2_LPGDIRf-4xW7dfo6Q,Fort Hose,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,4.1771023,114.3247443,historical landmark tourist attraction historical place point of interest establishment
+ChIJK81x1uqn-zER5bxM0FyA92A,Lepau Restaurant,4.4,PRICE_LEVEL_MODERATE,Indoor,1.5535226,110.351873,restaurant food point of interest establishment
+ChIJ1WLMieun-zERnkaJynDmziw,Ceylonese Restaurant Sdn Bhd,4.6,PRICE_LEVEL_MODERATE,Indoor,1.5563669,110.34873160000001,halal restaurant sri lankan restaurant restaurant food point of interest establishment
+ChIJV5R-Tuqn-zERDwFypnywUIs,Topspot Food Court,4.3,PRICE_LEVEL_MODERATE,Indoor,1.5565096999999999,110.3524369,food court restaurant food point of interest establishment
+ChIJPcbOAkCn-zERhSBaJLIkw_U,KANTIN at The Granary,4.3,PRICE_LEVEL_MODERATE,Indoor,1.5571595999999999,110.34778879999999,restaurant event venue food point of interest establishment
+ChIJucB1Al-n-zERns8Lnr6bVWw,Lagenda Hill‘s Seafood Restaurant,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5401563999999999,110.3556077,seafood restaurant restaurant food point of interest establishment
+ChIJpSDl5Fen-zERX8jySH4cSRo,ROOTS Restaurant,4.4,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5590959,110.34506309999999,restaurant food point of interest establishment
+ChIJ2Wg9cOyn-zERbcnoxjcp6IE,Zinc Restaurant & Bar,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,1.553491,110.348669,western restaurant wine bar cocktail bar fusion restaurant bar restaurant food point of interest establishment
+ChIJq2YHieyn-zERs8cXPBXTsNw,Bla Bla Bla,4.0,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5554278,110.34797499999999,asian restaurant restaurant food point of interest establishment
+ChIJDW2Z6E6n-zERs0XQvv9vNY0,Little Fairy Cafe (Bidayuh Cuisine),4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5538564,110.3581126,restaurant food point of interest establishment
+ChIJV2augj6n-zERCdlUHuBaopA,Ken’s Kitchen Kuching,4.4,PRICE_LEVEL_MODERATE,Indoor,1.5047351,110.36196989999999,western restaurant european restaurant fusion restaurant cafe restaurant food point of interest establishment
+ChIJgahuBeyn-zERF0eCxrY_Z9Y,The Junk,4.3,PRICE_LEVEL_MODERATE,Indoor,1.5558532,110.347983,restaurant lounge bar night club bar food point of interest establishment
+ChIJOQuBre-n-zERdW4kXJJ0XyA,The Round Tower 1886 Cafe & Restaurant,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5587467,110.3449347,restaurant western restaurant food point of interest establishment
+ChIJl0RLG-yn-zER-cW6_-xQHGI,Borneo Delight,4.4,PRICE_LEVEL_INEXPENSIVE,Indoor,1.5576329999999998,110.3479765,malaysian restaurant restaurant food point of interest establishment
+ChIJ9UqtSpWn-zERekK7OqStcE0,Choon Hui Cafe,4.2,PRICE_LEVEL_MODERATE,Indoor,1.5527309,110.35431799999999,cafe food court coffee shop food store food store point of interest establishment
+ChIJX-rwaBOn-zERbg17D9FH9gA,Howdy Grillhouse,4.4,PRICE_LEVEL_MODERATE,Indoor,1.5220949,110.356422,barbecue restaurant western restaurant restaurant food point of interest establishment
+ChIJ3WWuYu6n-zERhLQp96WTUOg,Lau Ya Keng Foodcourt,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5585111999999999,110.34568689999999,food court food point of interest establishment
+ChIJlwsAL2yn-zER8245Xnkq16s,DinDin Noodles,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5552989,110.3564486,restaurant food point of interest establishment
+ChIJ7fOyBOyn-zER4GTZAsHsCxU,Life Cafe Padungan,4.4,PRICE_LEVEL_MODERATE,Indoor,1.5562006,110.3542291,chinese restaurant dumpling restaurant chinese noodle restaurant asian restaurant tea house restaurant food point of interest establishment
+ChIJw7p5T-qn-zER8FDm6VncnG4,Topspot - No.6 & 33 Ling Loong Seafood,4.1,PRICE_LEVEL_UNSPECIFIED,Indoor,1.5561312999999999,110.35239949999999,seafood restaurant asian restaurant restaurant food point of interest establishment
+ChIJaw1y--un-zERXrMkiX5fUBE,James Brooke Bistro & Cafe,3.9,PRICE_LEVEL_MODERATE,Indoor,1.5575643,110.3493749,cafe breakfast restaurant restaurant food point of interest establishment

@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJPwVVvlqfqTMR8k8YW0-7Luo,Temple of Leah,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.3688615,123.87325349999998,tourist attraction point of interest establishment
+ChIJiYix3uCbqTMRAqkwfbD7es0,Fort San Pedro,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.292456999999999,123.905636,tourist attraction museum point of interest establishment
+ChIJAeJQylufqTMRoYHzWBE4lzM,TOPS Cebu,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.3706141,123.8708714,observation deck tourist attraction point of interest establishment
+ChIJH7-Frg-hqTMRcR-eubefklo,Sirao Garden,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.406157799999999,123.86584160000001,tourist attraction point of interest establishment
+ChIJQVwA2-ObqTMR--ZXFjrCXiQ,Magellan's Cross,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.2935626,123.9019549,historical landmark tourist attraction monument historical place point of interest establishment
+ChIJdZVg9F6ZqTMRbU7ErBLR6vU,Casa Gorordo Museum,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.299913,123.9048616,museum tourist attraction historical landmark historical place point of interest establishment
+ChIJmRDV5l6ZqTMR_TGUzibVfww,Yap-San Diego Ancestral House,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.299271599999999,123.9039535,historical landmark tourist attraction historical place museum point of interest establishment
+ChIJdWAY9omZqTMR5PT1YBVRFhM,Beverly Hills Lahug Cebu City,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.3331125,123.8896094,tourist attraction point of interest establishment
+ChIJz_XF1U-ZqTMRLuh28VvaWq0,Sky Experience Adventure,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.3078635,123.8941119,tourist attraction amusement center point of interest establishment
+ChIJSWEB-vehqTMRqKcQS5qhODE,Budlaan Falls,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.385899199999999,123.88509779999998,tourist attraction point of interest establishment
+ChIJXZDS_wqcqTMRtjB3-gvX4X4,The Cube - SM Seaside City,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.281869900000002,123.8830231,landmark tourist attraction point of interest establishment
+ChIJkRLIDF2ZqTMRYsvjh5V6j3M,Museo Sugbo,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.303791,123.90643109999998,museum tourist attraction point of interest establishment
+ChIJp45-1uObqTMRKiyk55UEjGY,Minor Basilica of the Holy Child of Cebu (Basilica Minore Del Sto. Niño de Cebu),4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.2941085,123.90210569999999,tourist attraction church place of worship association or organization point of interest establishment
+ChIJS5JJOgadqTMRUJqM5_VlPyo,Cebu Ocean Park,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.2811506,123.8785948,aquarium wildlife park zoo park point of interest establishment
+ChIJ8ZcMGyuZqTMRh0kBRAhSv_o,Cebu Taoist Temple,4.3,PRICE_LEVEL_UNSPECIFIED,Indoor,10.334248299999999,123.88798429999999,place of worship association or organization point of interest establishment
+ChIJO88KUwCfqTMRXjMon7rGBD0,Busay Cebu,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.328263999999999,123.90392589999998,tourist attraction point of interest establishment
+ChIJhwbYF6KhqTMRnblKTxe9bqo,Heritage of Cebu Monument,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.2988468,123.9035745,historical landmark tourist attraction historical place park point of interest establishment
+ChIJtUqLDKibqTMRvX48jFWyLX8,Downtown Cebu City,3.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.296277199999999,123.89822830000001,tourist attraction point of interest establishment
+ChIJocIZfv6bqTMRMHD_dmj-wqg,Taboan Public Market,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.295522,123.8911419,market tourist attraction point of interest establishment
+ChIJlWUN8-GbqTMRepueypood48,Cebu Metropolitan Cathedral,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,10.2955765,123.90299519999998,tourist attraction church place of worship association or organization point of interest establishment
+ChIJG9_J88ShqTMRf3LZ4nE3NrE,7107 Restaurant - Cebu City,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,10.3280289,123.90894120000002,restaurant food point of interest establishment
+ChIJN_ykxTiZqTMRZ59ExS6Cur4,House of Lechon,4.4,PRICE_LEVEL_MODERATE,Indoor,10.3177386,123.90172150000001,filipino restaurant restaurant food point of interest establishment
+ChIJPf_y_06ZqTMRpf16ceOieLM,Bell+Amadeus,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,10.328279,123.9090234,restaurant food point of interest establishment
+ChIJ05K0ulufqTMRD6TIgEY1-U8,Top of Cebu,4.4,PRICE_LEVEL_MODERATE,Indoor,10.3706646,123.87085769999999,restaurant food point of interest establishment
+ChIJmW7-GkGZqTMRiG012PHP5fU,The Pig and Palm,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,10.3128745,123.90452610000001,restaurant food point of interest establishment
+ChIJQUWnz2eXqTMRokdRtiJuaJQ,The Cove Beach Resto,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,10.309790099999999,124.0236218,restaurant food point of interest establishment
+ChIJxznNgG2ZqTMRzB2YrCFXkSc,"Vikings Luxury Buffet, SM City Cebu",4.8,PRICE_LEVEL_EXPENSIVE,Indoor,10.312646599999999,123.91917360000001,buffet restaurant restaurant food point of interest establishment
+ChIJd_jrWVWZqTMRxkCd_5mYRjs,Lakeview Le Jardin,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,10.418756,123.79879690000001,garden cafe lodging restaurant food point of interest establishment
+ChIJAxPWL7eXqTMRnAmytLofdiU,Cabana Restaurant,4.8,PRICE_LEVEL_MODERATE,Indoor,10.309953499999999,124.02319009999998,restaurant food point of interest establishment
+ChIJb6kdsJOdqTMRZATzH-FjDOo,Mott 32 Cebu - NUSTAR,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,10.2725291,123.88118750000001,chinese restaurant restaurant food point of interest establishment
+ChIJ-RpVc1WaqTMRahsEx9XxEE4,Lantaw Native Restaurant - Cordova,4.3,PRICE_LEVEL_MODERATE,Outdoor,10.2559854,123.9331126,filipino restaurant tourist attraction restaurant food point of interest establishment
+ChIJc7IY5zOZqTMRKC_F-qIVjNc,Acacia Steakhouse,4.5,PRICE_LEVEL_MODERATE,Indoor,10.323151099999999,123.8919049,steak house restaurant food point of interest establishment
+ChIJndRuByiZqTMRWrKfZq3FAOk,Anzani New Mediterranean Restaurant,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,10.3356199,123.8968658,cocktail bar steak house pizza restaurant event venue bar restaurant food service point of interest establishment
+ChIJc4cbqXGZqTMRw2KA-IEkQRk,Abli Cebu,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,10.3131998,123.8902952,restaurant food point of interest establishment
+ChIJc44nEbyZqTMRHpWWeEBqASA,Seared Prime,4.3,PRICE_LEVEL_UNSPECIFIED,Indoor,10.3111839,123.89181699999999,restaurant food point of interest establishment
+ChIJb2RFay-dqTMRATb3Kah9kl8,"Tong Yang, SM Seaside Cebu",4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,10.2800696,123.8815387,buffet restaurant restaurant food point of interest establishment
+ChIJ2aQvC-KWqTMR5I3oWKMBi_4,"Cowrie Cove at Shangri-La Mactan, Cebu",4.5,PRICE_LEVEL_EXPENSIVE,Indoor,10.3059546,124.02114890000001,seafood restaurant restaurant food point of interest establishment
+ChIJyc2Cst67qTMRR0RFwy16TSY,Lantaw Seafood and Grill,4.8,PRICE_LEVEL_MODERATE,Indoor,10.448900499999999,124.0110296,filipino restaurant restaurant food point of interest establishment
+ChIJJxjQCHKZqTMRWWK5J_hGJAw,Feria | Radisson Blu Cebu,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,10.310184399999999,123.9197845,filipino restaurant restaurant food point of interest establishment
+ChIJ935lagCfqTMROfTaUCj8JYI,La Vie In The Sky,4.0,PRICE_LEVEL_UNSPECIFIED,Indoor,10.372824399999999,123.870861,italian restaurant restaurant food point of interest establishment
