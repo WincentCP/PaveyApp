@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: ./backend
+    container_name: pavey_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - ai-core
+    restart: always
+
+  ai-core:
+    build: ./ai-core
+    container_name: pavey_ai_core
+    ports:
+      - "8080:8000"
+    env_file:
+      - ./ai-core/.env
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: pavey_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
