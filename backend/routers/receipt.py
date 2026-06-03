@@ -5,6 +5,7 @@ from services.gemini_service import analyze_image
 from middleware.auth_middleware import get_current_user
 from typing import Optional
 import json
+import re
 
 router = APIRouter()
 
@@ -18,23 +19,33 @@ async def scan_receipt(
         image_bytes = await file.read()
 
         prompt = """
-        Kamu adalah AI scanner struk belanja.
-        Analisis gambar struk ini dan extract informasi berikut dalam format JSON:
+        You are a receipt scanner AI.
+        Analyze this receipt image and extract the following information in JSON format:
         {
-            "merchant_name": "nama toko/restoran",
+            "merchant_name": "store/restaurant name",
             "total_amount": 0,
             "currency": "IDR",
             "items": [
-                {"name": "nama item", "price": 0, "quantity": 1}
+                {"name": "item name", "price": 0, "quantity": 1}
             ],
-            "date": "tanggal transaksi jika ada"
+            "date": "transaction date if available"
         }
-        Hanya return JSON saja, tidak perlu penjelasan lain.
-        Jika tidak bisa dibaca, return {"error": "Struk tidak terbaca"}.
+        Return ONLY the raw JSON object, no explanation, no markdown, no code blocks.
+        If the receipt cannot be read, return {"error": "Struk tidak terbaca"}.
         """
 
         result_text = await analyze_image(image_bytes, prompt)
-        clean = result_text.strip().replace("```json", "").replace("```", "")
+        print(f"[Receipt Debug] Raw response: {repr(result_text)}")
+
+        # Bersihkan markdown code block
+        clean = result_text.strip().replace("```json", "").replace("```", "").strip()
+
+        # Ekstrak JSON object dari dalam teks jika model nulis teks tambahan
+        json_match = re.search(r'\{.*\}', clean, re.DOTALL)
+        if json_match:
+            clean = json_match.group(0)
+
+        print(f"[Receipt Debug] Clean JSON: {repr(clean)}")
         result = json.loads(clean)
 
         if trip_id and "total_amount" in result and not result.get("error"):
@@ -48,7 +59,9 @@ async def scan_receipt(
 
         return result
 
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        print(f"[Receipt Debug] JSONDecodeError: {e}")
         raise HTTPException(status_code=422, detail="Gagal parse hasil scan")
     except Exception as e:
+        print(f"[Receipt Debug] Exception: {e}")
         raise HTTPException(status_code=500, detail=str(e))
