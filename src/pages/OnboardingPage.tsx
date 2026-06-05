@@ -3,6 +3,8 @@ import {
   ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp,
   Eye, EyeOff, Lock,
   Mail, MapPin, Plus, RefreshCw, User, X,
+  Trees, Coffee, Compass, Landmark, Sparkles, Bell,
+  Wallet, Info, AlertTriangle,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -25,19 +27,35 @@ type Step =
   | 'generating'
   | 'auth_form';
 
-const VIBES: { id: Vibe; label: string; emoji: string; desc: string }[] = [
-  { id: 'nature', label: 'Nature', emoji: '🌿', desc: 'Outdoors, parks & scenic spots' },
-  { id: 'cafe', label: 'Café Hopping', emoji: '☕', desc: 'Coffee shops, food & cozy hangouts' },
-  { id: 'activities', label: 'Activities', emoji: '🎯', desc: 'Fun, adventure & active experiences' },
-  { id: 'cultural', label: 'Cultural', emoji: '🏛️', desc: 'History, museums & local traditions' },
-  { id: 'balanced', label: 'Balanced', emoji: '⚖️', desc: 'A bit of everything — no strong preference' },
+const VIBES: { id: Vibe; label: string; desc: string }[] = [
+  { id: 'nature', label: 'Nature', desc: 'Outdoors, parks & scenic spots' },
+  { id: 'cafe', label: 'Café Hopping', desc: 'Coffee shops, food & cozy hangouts' },
+  { id: 'activities', label: 'Activities', desc: 'Fun, adventure & active experiences' },
+  { id: 'cultural', label: 'Cultural', desc: 'History, museums & local traditions' },
+  { id: 'balanced', label: 'Balanced', desc: 'A bit of everything — no strong preference' },
 ];
+
+function getVibeIcon(id: Vibe, className = "w-6 h-6") {
+  switch (id) {
+    case 'nature':
+      return <Trees className={className} />;
+    case 'cafe':
+      return <Coffee className={className} />;
+    case 'activities':
+      return <Compass className={className} />;
+    case 'cultural':
+      return <Landmark className={className} />;
+    case 'balanced':
+    default:
+      return <Sparkles className={className} />;
+  }
+}
 
 // Round 11 #1 & #2 — destinations comes first (anchors the vibe question),
 // dates flow into a preview confirmation, auth is deferred until the user
 // has seen a generated plan.
 const FLOW: Step[] = ['welcome', 'destinations', 'vibe', 'dates', 'preview', 'budget', 'location', 'generating', 'auth_form'];
-const PROGRESS_STEPS: Step[] = ['destinations', 'vibe', 'dates', 'budget', 'location'];
+const PROGRESS_STEPS: Step[] = ['destinations', 'vibe', 'dates', 'preview', 'budget', 'location'];
 
 const GEN_STEPS = [
   'Finding top-rated spots…',
@@ -159,7 +177,11 @@ export default function OnboardingPage() {
     const phaseTimer = setInterval(() => setGenPhase((p) => (p + 1) % GEN_STEPS.length), 700);
     setTimeout(() => {
       clearInterval(phaseTimer);
-      go('auth_form');
+      if (authMode === 'signup') {
+        finalizeOnboarding();
+      } else {
+        go('auth_form');
+      }
     }, 2200);
   };
 
@@ -172,8 +194,8 @@ export default function OnboardingPage() {
       : 'today';
     justCompletedRef.current = true;
     completeOnboarding({
-      name: authMode === 'signup' ? name : (name || 'Traveler'),
-      email,
+      name: authMode === 'signup' ? 'Guest' : (name || 'Traveler'),
+      email: authMode === 'signup' ? 'guest@pavey.app' : email,
       vibe: selectedVibe,
       destinations: destList.length > 0
         ? destList.map((d) => ({ name: d.name, days: d.days }))
@@ -381,7 +403,8 @@ export default function OnboardingPage() {
                   <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">CONFIRM PASSWORD</div>
                   <input
                     type="password" value={confirmPassword}
-                    onChange={(e) => { setConfirmPassword(e.target.value); setConfirmTouched(true); }}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onBlur={() => setConfirmTouched(true)}
                     placeholder="Repeat password"
                     className={`w-full bg-ink-50 rounded-xl px-3 py-3 text-sm text-ink-900 placeholder:text-ink-400 outline-none border-2 transition-colors ${(authErrors.confirmPassword || (confirmTouched && confirmPassword && password !== confirmPassword)) ? 'border-red-400' : 'border-transparent focus:border-brand-400'}`}
                   />
@@ -488,7 +511,7 @@ export default function OnboardingPage() {
                               <Check className="w-3 h-3 text-white" />
                             </div>
                           )}
-                          <div className={`text-3xl mb-2 ${v.id === 'balanced' ? 'inline-block' : ''}`}>{v.emoji}</div>
+                          <div className={`text-brand-500 mb-2 ${v.id === 'balanced' ? 'inline-block' : ''}`}>{getVibeIcon(v.id, "w-8 h-8")}</div>
                           <div className="font-bold text-ink-900 font-display">{v.label}</div>
                           <div className="text-xs text-ink-500 mt-0.5 leading-snug">{v.desc}</div>
                         </motion.button>
@@ -663,7 +686,7 @@ export default function OnboardingPage() {
                     <div className="text-xs text-ink-500 mt-2 leading-snug">
                       {startDate ? startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Today'}
                       {endDate ? ` → ${endDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}` : ''}
-                      {' · '}{VIBES.find((v) => v.id === selectedVibe)?.emoji} {VIBES.find((v) => v.id === selectedVibe)?.label}
+                      {' · '}{VIBES.find((v) => v.id === selectedVibe)?.label} vibe
                     </div>
                   </div>
                   <button
@@ -704,7 +727,7 @@ export default function OnboardingPage() {
                     ))}
                     {totalDays > 1 && (
                       <div className="mt-2 flex items-center gap-3 bg-brand-50 border border-brand-100 rounded-2xl p-3">
-                        <span className="text-xl shrink-0">💰</span>
+                        <Wallet className="w-5 h-5 text-brand-500 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="text-xs text-ink-500">Est. total trip budget</div>
                           <div className="font-bold text-brand-700 text-sm">{fmtBudget(budget * totalDays)}</div>
@@ -713,7 +736,7 @@ export default function OnboardingPage() {
                       </div>
                     )}
                     <div className="flex items-start gap-2.5 bg-ink-50 rounded-2xl p-3">
-                      <span className="text-lg shrink-0">💡</span>
+                      <Info className="w-5 h-5 text-brand-500 shrink-0 mt-0.5" />
                       <p className="text-xs text-ink-600 leading-relaxed">
                         Budget covers entry fees, food, and activities per day. Transport is extra. We'll always show you free alternatives.
                       </p>
@@ -729,12 +752,12 @@ export default function OnboardingPage() {
                   <div className="mt-6 space-y-4">
                     <div className="bg-brand-50 rounded-2xl p-4 border border-brand-100 space-y-3">
                       {[
-                        { icon: '📍', title: 'Nearby discovery', desc: 'Find hidden gems within walking distance' },
-                        { icon: '🧭', title: 'Turn-by-turn navigation', desc: 'Live directions between stops' },
-                        { icon: '🔔', title: 'Smart alerts', desc: "Know when you're close to your next stop" },
+                        { icon: <MapPin className="w-5 h-5 text-brand-500 shrink-0" />, title: 'Nearby discovery', desc: 'Find hidden gems within walking distance' },
+                        { icon: <Compass className="w-5 h-5 text-brand-500 shrink-0" />, title: 'Turn-by-turn navigation', desc: 'Live directions between stops' },
+                        { icon: <Bell className="w-5 h-5 text-brand-500 shrink-0" />, title: 'Smart alerts', desc: "Know when you're close to your next stop" },
                       ].map((item) => (
                         <div key={item.title} className="flex items-start gap-3">
-                          <span className="text-xl shrink-0">{item.icon}</span>
+                          {item.icon}
                           <div>
                             <div className="font-semibold text-ink-900 text-sm">{item.title}</div>
                             <div className="text-xs text-ink-500">{item.desc}</div>
@@ -748,7 +771,7 @@ export default function OnboardingPage() {
                           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                           className="flex items-start gap-2.5 bg-amber-50 rounded-xl p-3 border border-amber-200"
                         >
-                          <span className="text-lg shrink-0">⚠️</span>
+                          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                           <div>
                             <div className="font-semibold text-amber-800 text-sm">Location access denied</div>
                             <div className="text-xs text-amber-700 mt-0.5">You can enable it later in Settings → Location</div>

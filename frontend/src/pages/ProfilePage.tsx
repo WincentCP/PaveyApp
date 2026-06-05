@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Mail, Phone, MapPin, ChevronRight, Bookmark, Clock, CreditCard, HelpCircle, X, Crown,
+  Mail, Phone, MapPin, ChevronRight, Bookmark, Clock, CreditCard, HelpCircle, X,
   Compass, Footprints, Star, LogOut, User,
 } from 'lucide-react';
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -17,31 +18,7 @@ const RECENT_TRIPS = [
   { name: 'Nusa Penida Day', date: 'Mar 30', days: 1, spent: 650_000, places: 4 },
 ];
 
-const LOCKED_BADGES = [
-  { id: 'explorer', name: 'Explorer', sub: 'Visit 5 places', icon: '🗺️', color: '#E5E7EB' },
-  { id: 'foodie', name: 'Foodie', sub: 'Try 3 restaurants', icon: '🍜', color: '#E5E7EB' },
-  { id: 'gem', name: 'Gem Hunter', sub: 'Find hidden gems', icon: '💎', color: '#E5E7EB' },
-  { id: 'culture', name: 'Culture Kid', sub: 'Visit 2 temples', icon: '🏛️', color: '#E5E7EB' },
-];
 
-const DEST_FLAG: Record<string, string> = {
-  bali: '🇮🇩', indonesia: '🇮🇩', jakarta: '🇮🇩',
-  japan: '🇯🇵', tokyo: '🇯🇵', osaka: '🇯🇵', kyoto: '🇯🇵',
-  france: '🇫🇷', paris: '🇫🇷',
-  singapore: '🇸🇬',
-  usa: '🇺🇸', 'new york': '🇺🇸', 'los angeles': '🇺🇸',
-  australia: '🇦🇺', sydney: '🇦🇺', melbourne: '🇦🇺',
-  thailand: '🇹🇭', bangkok: '🇹🇭',
-  korea: '🇰🇷', seoul: '🇰🇷',
-};
-
-function getFlag(destination: string): string {
-  const lower = destination.toLowerCase();
-  for (const [key, flag] of Object.entries(DEST_FLAG)) {
-    if (lower.includes(key)) return flag;
-  }
-  return '🗺️';
-}
 
 export default function ProfilePage() {
   const { visited, savedPlaces, logout, transactions, authUser, trips, visitedPlaceIds } = useApp();
@@ -128,30 +105,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Persona progress — hide if new user */}
-      {!isNewUser && (
-        <div className="px-5 mt-3">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl bg-brand-50 border border-brand-100 p-4 flex items-center gap-3"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-soft flex items-center justify-center shrink-0">
-              <Crown className="w-5 h-5 text-purple-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Persona Traveler</div>
-              <div className="font-bold text-ink-900">{USER.persona.title}</div>
-              <div className="mt-2 h-1.5 bg-white/70 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${USER.persona.progress * 100}%` }} transition={{ duration: 0.8 }} className="h-full bg-brand-500 rounded-full" />
-              </div>
-              <div className="text-[10px] text-ink-500 mt-1">
-                {Math.round(USER.persona.progress * 100)}% · Next: <span className="font-semibold text-purple-600">{USER.persona.nextLevel}</span>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-ink-400 shrink-0" />
-          </motion.div>
-        </div>
-      )}
+
 
       {/* New user welcome banner */}
       {isNewUser && (
@@ -213,7 +167,6 @@ export default function ProfilePage() {
           </div>
           <div className="space-y-2">
             {userTrips.map((t, i) => {
-              const flag = getFlag(t.destination);
               const totalSpent = t.transactions.filter((x) => x.amount < 0).reduce((s, x) => s + Math.abs(x.amount), 0);
               const dateStr = new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               return (
@@ -222,7 +175,7 @@ export default function ProfilePage() {
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                   className="flex items-center gap-3 bg-white border-l-4 border-brand-500 border border-ink-100 rounded-2xl px-4 py-3"
                 >
-                  <div className="text-2xl shrink-0">{flag}</div>
+                  <MapPin className="w-5 h-5 text-brand-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-ink-900 text-sm leading-snug">{t.name}</div>
                     <div className="text-[10px] text-ink-500 uppercase tracking-wider mt-0.5">{t.destination}</div>
@@ -242,7 +195,7 @@ export default function ProfilePage() {
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                 className="flex items-center gap-3 bg-white border-l-4 border-ink-300 border border-ink-100 rounded-2xl px-4 py-3"
               >
-                <div className="text-2xl">🇮🇩</div>
+                <MapPin className="w-5 h-5 text-ink-400 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-ink-900 text-sm">{t.name}</div>
                   <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5">
@@ -259,48 +212,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Badges */}
-      <div className="px-5 mt-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="font-bold text-ink-900 font-display">My Badges</div>
-        </div>
-        {isNewUser ? (
-          <div className="grid grid-cols-4 gap-2">
-            {LOCKED_BADGES.map((b) => (
-              <div key={b.id} className="bg-ink-50 border border-ink-100 rounded-2xl p-2 text-center opacity-60">
-                <div className="relative mx-auto w-12 h-14 bg-ink-200 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl grayscale opacity-40">{b.icon}</span>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-ink-400 text-lg">🔒</span>
-                  </div>
-                </div>
-                <div className="text-[10px] font-bold text-ink-500 mt-1 leading-tight">{b.name}</div>
-                <div className="text-[9px] text-ink-400">{b.sub}</div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-4 gap-2">
-            {USER.badges.map((b, i) => (
-              <motion.div
-                key={b.id}
-                initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.05 * i, type: 'spring', stiffness: 360, damping: 18 }}
-                className="bg-white border border-ink-100 rounded-2xl p-2 text-center"
-              >
-                <div
-                  className="relative mx-auto w-12 h-14"
-                  style={{ background: b.color, clipPath: 'polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%)' }}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center text-2xl">{b.icon}</div>
-                </div>
-                <div className="text-[10px] font-bold text-ink-900 mt-1 leading-tight">{b.name}</div>
-                <div className="text-[9px] text-ink-500">{b.sub}</div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
+
 
       {/* Settings list */}
       <div className="px-5 mt-5 space-y-2">

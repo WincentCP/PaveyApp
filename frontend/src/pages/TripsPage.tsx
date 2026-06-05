@@ -23,12 +23,12 @@ function dayTabDate(startISO: string, dayIndex: number): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
-const VIBES: { id: string; label: string; icon: string }[] = [
-  { id: 'nature', label: 'Nature', icon: '🌿' },
-  { id: 'cafe', label: 'Café Hopping', icon: '☕' },
-  { id: 'activities', label: 'Activities', icon: '🎯' },
-  { id: 'cultural', label: 'Cultural', icon: '🏛️' },
-  { id: 'balanced', label: 'Balanced', icon: '⚖️' },
+const VIBES: { id: string; label: string }[] = [
+  { id: 'nature', label: 'Nature' },
+  { id: 'cafe', label: 'Café Hopping' },
+  { id: 'activities', label: 'Activities' },
+  { id: 'cultural', label: 'Cultural' },
+  { id: 'balanced', label: 'Balanced' },
 ];
 
 export default function TripsPage() {
@@ -126,7 +126,7 @@ export default function TripsPage() {
               <div>
                 <div className="text-xs font-bold tracking-widest text-brand-500">ACTIVE TRIP</div>
                 <div className="font-bold text-ink-900 font-display mt-0.5">
-                  {vibeInfo.icon} {vibeInfo.label} · {allStops.length} stops{dayCount > 1 ? ` · ${dayCount} days` : ''}
+                  {vibeInfo.label} vibe · {allStops.length} stops{dayCount > 1 ? ` · ${dayCount} days` : ''}
                 </div>
                 {dayCount > 1 && journeyStart.date && journeyStart.date !== 'today' && (
                   <div className="text-xs text-ink-400 mt-0.5">{formatDateRange(journeyStart.date, dayCount)}</div>
@@ -196,7 +196,7 @@ export default function TripsPage() {
               {activeDest ? `Build your ${activeDest.name.split(',')[0]} itinerary` : 'Start planning your trip'}
             </div>
             <button
-              onClick={() => nav('/generate')}
+              onClick={() => nav('/?newPlan=1')}
               className="h-12 px-8 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2 mx-auto"
             >
               <Wand2 className="w-4 h-4" /> Plan My Trip
@@ -319,16 +319,15 @@ export default function TripsPage() {
                   <div className="text-sm font-semibold text-ink-900 mb-2">Trip pace</div>
                   <div className="flex gap-2">
                     {([
-                      { id: 'relaxed', icon: '🌿', label: 'Relaxed' },
-                      { id: 'balanced', icon: '⚖️', label: 'Balanced' },
-                      { id: 'fast', icon: '⚡', label: 'Fast' },
-                    ] as { id: TripPace; icon: string; label: string }[]).map((p) => (
+                      { id: 'relaxed', label: 'Relaxed' },
+                      { id: 'balanced', label: 'Balanced' },
+                      { id: 'fast', label: 'Fast' },
+                    ] as { id: TripPace; label: string }[]).map((p) => (
                       <button
                         key={p.id}
                         onClick={() => { setPace(p.id); show(`Pace set to ${p.label}`, 'success'); }}
-                        className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-lg text-xs font-semibold press transition-colors ${pace === p.id ? 'bg-brand-50 border-2 border-brand-400 text-brand-700' : 'bg-white border border-ink-200 text-ink-600'}`}
+                        className={`flex-1 flex flex-col items-center gap-0.5 py-3 rounded-lg text-xs font-semibold press transition-colors ${pace === p.id ? 'bg-brand-50 border-2 border-brand-400 text-brand-700' : 'bg-white border border-ink-200 text-ink-600'}`}
                       >
-                        <span>{p.icon}</span>
                         <span>{p.label}</span>
                       </button>
                     ))}

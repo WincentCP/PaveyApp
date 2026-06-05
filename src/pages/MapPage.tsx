@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ChevronDown, Crosshair, List, Navigation, X, MapPin,
+  ChevronDown, Crosshair, Navigation, X, MapPin,
   Clock, Star, DollarSign, Bookmark,
   ChevronUp, Map, Pencil, Wand2, AlertTriangle,
 } from 'lucide-react';
@@ -17,14 +17,14 @@ import { useToast } from '../components/Toast';
 import type { Place, Vibe } from '../data/places';
 import { getCulturalIntel } from '../data/cultural';
 
-type ViewMode = 'map' | 'list';
 
-const MAP_VIBES: { id: Vibe; label: string; tint: string; icon: string }[] = [
-  { id: 'nature', label: 'Nature', tint: '#10B981', icon: '🌿' },
-  { id: 'cafe', label: 'Café Hopping', tint: '#F97316', icon: '☕' },
-  { id: 'activities', label: 'Activities', tint: '#3B5BFF', icon: '🎯' },
-  { id: 'cultural', label: 'Cultural', tint: '#A855F7', icon: '🏛️' },
-  { id: 'balanced', label: 'Balanced', tint: '#6B7280', icon: '⚖️' },
+
+const MAP_VIBES: { id: Vibe; label: string; tint: string }[] = [
+  { id: 'nature', label: 'Nature', tint: '#10B981' },
+  { id: 'cafe', label: 'Café Hopping', tint: '#F97316' },
+  { id: 'activities', label: 'Activities', tint: '#3B5BFF' },
+  { id: 'cultural', label: 'Cultural', tint: '#A855F7' },
+  { id: 'balanced', label: 'Balanced', tint: '#6B7280' },
 ];
 
 export default function MapPage() {
@@ -37,7 +37,7 @@ export default function MapPage() {
     perDayItineraries, journeyStart,
   } = useApp();
   const { show } = useToast();
-  const [view, setView] = useState<ViewMode>('map');
+
   const [activeMapDay, setActiveMapDay] = useState(0);
   const [selected, setSelected] = useState<Place | null>(null);
   // Issue 14: undo on remove
@@ -150,16 +150,6 @@ export default function MapPage() {
           : destinations.length > 0
             ? `${destinations[activeDestIdx]?.name.split(',')[0] ?? 'My Trip'} · ${activeItinerary.length} stops`
             : `${activeItinerary.length} stop${activeItinerary.length !== 1 ? 's' : ''}`}
-        right={
-          activeItinerary.length > 0 ? (
-            <button
-              onClick={() => setView(view === 'map' ? 'list' : 'map')}
-              className="press flex items-center gap-1.5 px-3 h-9 rounded-full bg-ink-50 text-ink-800 text-xs font-semibold"
-            >
-              <List className="w-4 h-4" /> {view === 'map' ? 'List' : 'Map'}
-            </button>
-          ) : undefined
-        }
       />
 
       {/* ── Destination Switcher ── */}
@@ -223,7 +213,7 @@ export default function MapPage() {
             inline
           />
         </div>
-      ) : view === 'map' ? (
+      ) : (
         <div className="flex-1 relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
@@ -245,10 +235,6 @@ export default function MapPage() {
           </div>
 
           <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} currency={activeTrip.currency} />
-        </div>
-      ) : (
-        <div className="flex-1 overflow-y-auto px-5 pb-40 no-scrollbar">
-          <ListView itinerary={activeItinerary} onStart={startNavigation} totals={totals} onPin={setSelected} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} currency={activeTrip.currency} />
         </div>
       )}
 
@@ -392,9 +378,7 @@ export default function MapPage() {
                   )}
                 </div>
 
-                {/* Vibe summary */}
                 <div className="flex items-center gap-2 bg-ink-50 rounded-xl px-3 py-2.5">
-                  <span className="text-base">{MAP_VIBES.find((v) => v.id === (intentVibe ?? 'balanced'))?.icon ?? '⚖️'}</span>
                   <span className="text-xs text-ink-600 flex-1">
                     <span className="font-semibold">{MAP_VIBES.find((v) => v.id === (intentVibe ?? 'balanced'))?.label ?? 'Balanced'}</span> vibe · {formatCost(intentBudget ?? budget, activeTrip.currency)}/day
                   </span>
@@ -628,91 +612,7 @@ function nineColon(i: number, addMin = 0) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-/* ----------------- LIST VIEW ----------------- */
 
-function ListView({ itinerary, onStart, totals, onPin, onRemove, onEdit, currency }: {
-  itinerary: Place[]; onStart: () => void; totals: { cost: number; time: number; dist: number }; onPin: (p: Place) => void; onRemove: (p: Place) => void; onEdit: () => void; currency: Currency;
-}) {
-  return (
-    <div className="pt-2">
-      <div className="grid grid-cols-3 bg-ink-50 rounded-2xl p-3 mb-4">
-        <Block label="Time" value={`${Math.floor(totals.time / 60)}h ${totals.time % 60}m`} />
-        <Block label="Distance" value={`${totals.dist.toFixed(1)} km`} />
-        <Block label="Cost" value={formatCost(totals.cost, currency)} />
-      </div>
-      <div className="space-y-4">
-        {itinerary.map((p, i) => (
-          <div key={p.id}>
-            {i > 0 && (
-              <div className="flex items-center gap-2 py-1 px-2">
-                <div className="flex-1 h-px bg-ink-100" />
-                <span className="text-[10px] text-ink-400 font-medium shrink-0">
-                  📍 {p.distanceKm} km · ~{Math.round(p.distanceKm * 3)} min drive
-                </span>
-                <div className="flex-1 h-px bg-ink-100" />
-              </div>
-            )}
-            <div className="relative">
-              <button
-                onClick={() => onPin(p)}
-                className="w-full rounded-2xl border border-ink-100 overflow-hidden press hover:border-brand-200 transition-colors text-left"
-              >
-              <div className="relative h-28">
-                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute top-2 left-2 w-7 h-7 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center ring-2 ring-white">
-                  {i + 1}
-                </div>
-                <div className="absolute bottom-2 left-3 right-3 flex items-end justify-between">
-                  <div>
-                    <div className="text-white font-bold text-sm leading-tight">{p.name}</div>
-                    <div className="text-white/80 text-xs">{p.category}</div>
-                  </div>
-                  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span className="text-white text-xs font-semibold">{p.rating}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-3">
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="flex items-center gap-1 text-ink-600">
-                    <Clock className="w-3.5 h-3.5 text-ink-400" />
-                    <span>{p.openingHours}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-ink-600">
-                    <span>{formatCost(p.priceRange.min, currency)}{p.priceRange.max !== p.priceRange.min ? '+' : ''}</span>
-                  </div>
-                  <div className="text-right text-[11px] text-brand-600 font-semibold">
-                    {nineColon(i)} – {nineColon(i, p.durationMin)}
-                  </div>
-                </div>
-                <div className="text-xs text-ink-500 mt-1.5 line-clamp-2">{p.description}</div>
-              </div>
-              </button>
-              {/* Inline remove button */}
-              <button
-                onClick={() => onRemove(p)}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center press z-10 transition-colors hover:bg-red-500/70"
-                aria-label="Remove stop"
-              >
-                <X className="w-3.5 h-3.5 text-white" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-5 space-y-2">
-        <button onClick={onEdit} className="w-full h-10 rounded-2xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5">
-          <Pencil className="w-3.5 h-3.5" /> Edit Plan
-        </button>
-        <button onClick={onStart} disabled={itinerary.length === 0} className="w-full h-12 bg-brand-500 disabled:bg-ink-200 disabled:text-ink-400 text-white font-bold rounded-2xl shadow-glow press disabled:shadow-none flex items-center justify-center gap-2">
-          <Navigation className="w-4 h-4" /> Start Navigation
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* ----------------- PLACE CARD (slides from bottom) ----------------- */
 

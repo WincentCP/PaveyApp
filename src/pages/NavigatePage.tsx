@@ -34,7 +34,7 @@ export default function NavigatePage() {
   const [prompt, setPrompt] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
-  const [showBackTooltip, setShowBackTooltip] = useState(false);
+
   // UI8 — rating overlay
   const [ratingPlace, setRatingPlace] = useState<typeof itinerary[number] | null>(null);
   const ratingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,8 +48,7 @@ export default function NavigatePage() {
   const [lateWarning, setLateWarning] = useState(false);
   const [lateMinutes, setLateMinutes] = useState(0);
   const startedAtRef = useRef(Date.now());
-  const backTappedRef = useRef(false);
-  const backTooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const promptedRef = useRef(false);
 
   const current = itinerary[navIndex];
@@ -192,30 +191,11 @@ export default function NavigatePage() {
       <div className="px-4 pb-2 flex items-center gap-2 shrink-0">
         <div className="relative">
           <button
-            onClick={() => {
-              if (!backTappedRef.current) {
-                backTappedRef.current = true;
-                setShowBackTooltip(true);
-                if (backTooltipTimer.current) clearTimeout(backTooltipTimer.current);
-                backTooltipTimer.current = setTimeout(() => { setShowBackTooltip(false); backTappedRef.current = false; }, 3000);
-              } else {
-                nav('/map');
-              }
-            }}
+            onClick={() => nav('/map')}
             className="w-10 h-10 -ml-1 flex items-center justify-center text-ink-700 press"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <AnimatePresence>
-            {showBackTooltip && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                className="absolute top-12 left-0 bg-ink-900 text-white text-xs font-medium rounded-xl px-3 py-2 whitespace-nowrap z-50 shadow-lg"
-              >
-                Tap again to exit navigation
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
 
         <div className="flex-1 bg-brand-500 text-white rounded-2xl px-4 py-2.5 shadow-glow">

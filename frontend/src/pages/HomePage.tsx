@@ -4,6 +4,7 @@ import {
   X, Star, MapPin, Clock, Pencil,
   ChevronRight, DollarSign, Plus, Navigation, RefreshCw,
   ArrowRight, Compass, Zap, Link2, AlertTriangle,
+  Trees, Coffee, Landmark, Sparkles,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -31,13 +32,29 @@ import { suggestCurrency, DEFAULT_TRIP } from '../data/wallet';
 
 const MAX_DESTINATIONS = 6;
 
-const VIBES: { id: Vibe; label: string; icon: string; tint: string }[] = [
-  { id: 'nature', label: 'Nature', icon: '🌿', tint: '#10B981' },
-  { id: 'cafe', label: 'Café Hopping', icon: '☕', tint: '#F97316' },
-  { id: 'activities', label: 'Activities', icon: '🎯', tint: '#3B5BFF' },
-  { id: 'cultural', label: 'Cultural', icon: '🏛️', tint: '#A855F7' },
-  { id: 'balanced', label: 'Balanced', icon: '⚖️', tint: '#6B7280' },
+const VIBES: { id: Vibe; label: string; tint: string }[] = [
+  { id: 'nature', label: 'Nature', tint: '#10B981' },
+  { id: 'cafe', label: 'Café Hopping', tint: '#F97316' },
+  { id: 'activities', label: 'Activities', tint: '#3B5BFF' },
+  { id: 'cultural', label: 'Cultural', tint: '#A855F7' },
+  { id: 'balanced', label: 'Balanced', tint: '#6B7280' },
 ];
+
+function getVibeIcon(id: Vibe, className = "w-6 h-6") {
+  switch (id) {
+    case 'nature':
+      return <Trees className={className} />;
+    case 'cafe':
+      return <Coffee className={className} />;
+    case 'activities':
+      return <Compass className={className} />;
+    case 'cultural':
+      return <Landmark className={className} />;
+    case 'balanced':
+    default:
+      return <Sparkles className={className} />;
+  }
+}
 
 const CATEGORIES: Category[] = ['Cafe', 'Nature', 'Cultural', 'Historic', 'Foodie', 'Hidden Gem', 'Cozy'];
 
@@ -91,6 +108,7 @@ export default function HomePage() {
   const [socialResult, setSocialResult] = useState<typeof SOCIAL_MOCK[string] | null>(null);
   const [socialError, setSocialError] = useState(false);
   const socialInputRef = useRef<HTMLInputElement>(null);
+  const [socialExpanded, setSocialExpanded] = useState(false);
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [addDestSheet, setAddDestSheet] = useState(false);
   const [newDestName, setNewDestName] = useState('');
@@ -182,8 +200,6 @@ export default function HomePage() {
 
   // ── Trip state logic ──────────────────────────────────────────
   const todayStops = perDayItineraries.length > 0 ? (perDayItineraries[0] ?? []) : itinerary;
-  const PREVIEW_COUNT = 2;
-  const previewStops = todayStops.slice(0, PREVIEW_COUNT);
   const hasTodayPlan = todayStops.length > 0;
   const activeDest = destinations[activeDestIdx];
   const nextDest = destinations[activeDestIdx + 1];
@@ -546,8 +562,9 @@ export default function HomePage() {
           <div className="w-px h-10 bg-ink-200/60 shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-bold tracking-widest text-brand-500">TODAY'S VIBE</div>
-            <div className="text-ink-900 font-bold leading-snug font-display">
-              {VIBES.find((v) => v.id === vibe)?.icon} {VIBES.find((v) => v.id === vibe)?.label} day ✨
+            <div className="text-ink-900 font-bold leading-snug font-display flex items-center gap-1.5">
+              {getVibeIcon(vibe, "w-4 h-4 text-brand-500")}
+              <span>{VIBES.find((v) => v.id === vibe)?.label} Day</span>
             </div>
             <div className="text-xs text-ink-500 mt-0.5">Budget · {formatCost(budget, activeTrip.currency)}/day</div>
           </div>
@@ -699,9 +716,11 @@ export default function HomePage() {
             <span className="text-[11px] font-bold tracking-widest text-ink-500">MY PLAN{todayStops.length > 0 ? ` · ${todayStops.length} STOPS` : ''}</span>
             <button
               onClick={() => setVibeSheet(true)}
-              className="flex items-center gap-1 bg-brand-50 text-brand-600 text-[11px] font-semibold px-2 py-0.5 rounded-full border border-brand-100 press"
+              className="flex items-center gap-1.5 bg-brand-50 text-brand-600 text-[11px] font-semibold px-2 py-1 rounded-full border border-brand-100 press"
             >
-              {VIBES.find((v) => v.id === vibe)?.icon} {VIBES.find((v) => v.id === vibe)?.label} ✏️
+              {getVibeIcon(vibe, "w-3 h-3 text-brand-500")}
+              <span>{VIBES.find((v) => v.id === vibe)?.label}</span>
+              <Pencil className="w-2.5 h-2.5 opacity-60 ml-0.5" />
             </button>
           </div>
         </div>
@@ -736,80 +755,38 @@ export default function HomePage() {
               </motion.button>
             )}
 
-            {/* Preview — first 2 stops only */}
-            <div className="relative">
-              <div className="absolute left-2.5 top-0 bottom-0 w-px bg-ink-200" />
-              <div className="space-y-3">
-                {previewStops.map((p, i) => {
-                  const startMin = 10 * 60 + 30 + i * 150;
-                  const h = Math.floor(startMin / 60) % 24;
-                  const m = startMin % 60;
-                  const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                  return (
-                    <motion.div
-                      key={p.id}
-                      initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-                      className="relative pl-7"
-                    >
-                      <span className="absolute left-0.5 top-4 w-4 h-4 rounded-full bg-brand-500 ring-4 ring-brand-100 flex items-center justify-center z-10">
-                        <span className="text-[8px] text-white font-bold">{i + 1}</span>
-                      </span>
-                      <div className="text-xs font-semibold text-ink-600 mb-1 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {timeStr}
-                        {i > 0 && <span className="text-ink-400 font-normal ml-1">· {p.distanceKm} km from prev</span>}
-                      </div>
-                      <button
-                        onClick={() => setDetailPlace(p)}
-                        className="w-full bg-white rounded-2xl border border-ink-100 p-2.5 flex items-center gap-3 press text-left hover:border-brand-200 transition-colors"
-                      >
-                        <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-ink-900 truncate">{p.name}</div>
-                          <div className="text-xs text-ink-500 flex items-center gap-1.5 mt-0.5">
-                            <span>{p.category}</span>
-                            <span className="text-ink-300">·</span>
-                            <span className="flex items-center gap-0.5"><Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}</span>
-                          </div>
-                          <div className="text-xs text-brand-600 font-semibold mt-0.5">
-                            {formatCost(p.priceRange.min, activeTrip.currency)}{p.priceRange.max !== p.priceRange.min && ` – ${formatCost(p.priceRange.max, activeTrip.currency)}`}
-                          </div>
-                        </div>
-                        <Bookmark
-                          onClick={(e) => { e.stopPropagation(); isSaved(p.id) ? removeSavedPlace(p.id) : savePlace(p); }}
-                          className={`w-4 h-4 shrink-0 transition-colors ${isSaved(p.id) ? 'fill-brand-500 text-brand-500' : 'text-ink-300'}`}
-                        />
-                      </button>
-                    </motion.div>
-                  );
-                })}
+            {/* Clean summary card */}
+            <div className="bg-ink-50 rounded-2xl p-4 border border-ink-100/60 mb-3 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-ink-900 text-base truncate font-display">
+                    {activeTrip.name || `${dayHeaderInfo.cityName} Trip`}
+                  </h3>
+                  <p className="text-xs text-ink-500 mt-1">
+                    Currently exploring {dayHeaderInfo.cityName}.
+                  </p>
+                  <div className="flex items-center gap-2 mt-3 text-xs font-medium text-ink-600">
+                    <span className="px-2 py-0.5 bg-white rounded-full border border-ink-200/50">
+                      Day {dayHeaderInfo.dayNum} of {activeTrip.daysTotal || destinations.length}
+                    </span>
+                    <span className="px-2 py-0.5 bg-white rounded-full border border-ink-200/50">
+                      {todayStops.length} stops planned
+                    </span>
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center shrink-0 border border-brand-100">
+                  <Compass className="w-6 h-6 text-brand-600" />
+                </div>
               </div>
             </div>
 
-            {/* Footer: compact action links + View full plan */}
-            <div className="mt-3">
-              <div className="flex items-center gap-3 mb-2">
-                <button
-                  onClick={() => nav('/generate?edit=1')}
-                  className="flex items-center gap-1 text-xs text-ink-400 font-semibold press hover:text-ink-700"
-                >
-                  <Pencil className="w-3 h-3" /> Edit
-                </button>
-                <span className="text-ink-200">·</span>
-                <button
-                  onClick={() => nav('/map')}
-                  className="flex items-center gap-1 text-xs text-ink-400 font-semibold press hover:text-ink-700"
-                >
-                  <MapPin className="w-3 h-3" /> Map
-                </button>
-              </div>
-              <button
-                onClick={() => nav('/trips')}
-                className="w-full h-10 rounded-2xl bg-brand-50 border border-brand-100 text-brand-600 font-semibold text-sm press flex items-center justify-center gap-1.5"
-              >
-                Open My Plan
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => nav('/trips')}
+              className="w-full h-11 rounded-2xl bg-brand-50 border border-brand-100 text-brand-600 font-semibold text-sm press flex items-center justify-center gap-1.5"
+            >
+              Open My Plan
+              <ChevronRight className="w-4 h-4" />
+            </button>
 
             {/* UI7 — Plan tomorrow shortcut */}
             {destinations.length > 1 && activeDestIdx < destinations.length - 1 && (
@@ -1058,102 +1035,118 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Social Media Parser */}
+      {/* Social Media Parser Accordion */}
       <div className="px-5 mt-8">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] font-bold tracking-widest text-ink-500">IMPORT FROM SOCIAL</span>
-        </div>
-        <div className="bg-ink-50 rounded-2xl p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-              <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
-              TikTok
-            </div>
-            <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-              <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              Instagram
-            </div>
-            <span className="text-xs text-ink-400">links supported</span>
-          </div>
-          <div className="flex gap-2">
-            <div className="flex-1 bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-ink-100">
-              <Link2 className="w-4 h-4 text-ink-400 shrink-0" />
-              <input
-                ref={socialInputRef}
-                value={socialUrl}
-                onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
-                placeholder="Paste a TikTok or Instagram link…"
-                className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
-              />
-              {socialUrl && <button onClick={() => { setSocialUrl(''); setSocialResult(null); }}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
-            </div>
-            <button
-              onClick={parseSocialLink}
-              disabled={!socialUrl.trim() || socialParsing}
-              className="shrink-0 h-10 px-4 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white text-sm font-semibold press"
+        <button
+          onClick={() => setSocialExpanded((v) => !v)}
+          className="w-full flex items-center justify-between py-1 border-b border-ink-100 press"
+        >
+          <span className="text-[11px] font-bold tracking-widest text-ink-500 uppercase">Import from Social Media</span>
+          <span className="text-xs font-semibold text-brand-600">{socialExpanded ? 'Hide' : 'Show'}</span>
+        </button>
+
+        <AnimatePresence>
+          {socialExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mt-3"
             >
-              {socialParsing ? '…' : 'Parse'}
-            </button>
-          </div>
-          {socialError && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2 flex items-center gap-1">
-              <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
-            </motion.p>
-          )}
-          <AnimatePresence>
-            {socialParsing && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  </motion.div>
-                  Extracting place information…
-                </div>
-                <div className="h-2 rounded shimmer w-3/4" />
-              </motion.div>
-            )}
-            {socialResult && !socialParsing && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-white rounded-xl border border-ink-100 overflow-hidden">
-                <div className="flex items-start gap-3 p-3">
-                  <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full">From {socialResult.platform}</span>
-                    <div className="font-semibold text-ink-900 text-sm truncate mt-1">{socialResult.name}</div>
-                    <div className="text-xs text-ink-600 mt-0.5 line-clamp-2">{socialResult.desc}</div>
-                    <div className="text-xs text-brand-600 font-semibold mt-1">{formatCost(socialResult.cost, activeTrip.currency)}</div>
+              <div className="bg-ink-50 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
+                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
+                    TikTok
                   </div>
+                  <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
+                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                    Instagram
+                  </div>
+                  <span className="text-xs text-ink-400">links supported</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-ink-100">
+                    <Link2 className="w-4 h-4 text-ink-400 shrink-0" />
+                    <input
+                      ref={socialInputRef}
+                      value={socialUrl}
+                      onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
+                      placeholder="Paste a TikTok or Instagram link…"
+                      className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
+                    />
+                    {socialUrl && <button onClick={() => { setSocialUrl(''); setSocialResult(null); }}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
+                  </div>
                   <button
-                    onClick={() => {
-                      const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                      addStop(place);
-                      show(`${socialResult!.name} added to plan`, 'success');
-                      setSocialResult(null);
-                      setSocialUrl('');
-                      nav('/map');
-                    }}
-                    className="h-9 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1 shadow-glow"
+                    onClick={parseSocialLink}
+                    disabled={!socialUrl.trim() || socialParsing}
+                    className="shrink-0 h-10 px-4 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white text-sm font-semibold press"
                   >
-                    <MapPin className="w-3.5 h-3.5" /> Add to Plan
-                  </button>
-                  <button
-                    onClick={() => {
-                      const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                      savePlace(place);
-                      show(`${socialResult!.name} saved for later`, 'success');
-                      setSocialResult(null);
-                      setSocialUrl('');
-                    }}
-                    className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1"
-                  >
-                    <Bookmark className="w-3.5 h-3.5" /> Save for Later
+                    {socialParsing ? '…' : 'Parse'}
                   </button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                {socialError && (
+                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
+                  </motion.p>
+                )}
+                <AnimatePresence>
+                  {socialParsing && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
+                      <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </motion.div>
+                        Extracting place information…
+                      </div>
+                      <div className="h-2 rounded shimmer w-3/4" />
+                    </motion.div>
+                  )}
+                  {socialResult && !socialParsing && (
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-white rounded-xl border border-ink-100 overflow-hidden">
+                      <div className="flex items-start gap-3 p-3">
+                        <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full">From {socialResult.platform}</span>
+                          <div className="font-semibold text-ink-900 text-sm truncate mt-1">{socialResult.name}</div>
+                          <div className="text-xs text-ink-600 mt-0.5 line-clamp-2">{socialResult.desc}</div>
+                          <div className="text-xs text-brand-600 font-semibold mt-1">{formatCost(socialResult.cost, activeTrip.currency)}</div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                        <button
+                          onClick={() => {
+                            const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
+                            addStop(place);
+                            show(`${socialResult!.name} added to plan`, 'success');
+                            setSocialResult(null);
+                            setSocialUrl('');
+                            nav('/map');
+                          }}
+                          className="h-9 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1 shadow-glow"
+                        >
+                          <MapPin className="w-3.5 h-3.5" /> Add to Plan
+                        </button>
+                        <button
+                          onClick={() => {
+                            const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
+                            savePlace(place);
+                            show(`${socialResult!.name} saved for later`, 'success');
+                            setSocialResult(null);
+                            setSocialUrl('');
+                          }}
+                          className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1"
+                        >
+                          <Bookmark className="w-3.5 h-3.5" /> Save for Later
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Pre-Generation Intent Sheet ── */}
@@ -1436,16 +1429,15 @@ export default function HomePage() {
                     <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">PACE</div>
                     <div className="flex gap-2">
                       {([
-                        { id: 'relaxed', icon: '🌿', label: 'Relaxed', hint: '2 stops/day' },
-                        { id: 'balanced', icon: '⚖️', label: 'Balanced', hint: '3 stops/day' },
-                        { id: 'fast', icon: '⚡', label: 'Fast-paced', hint: '4 stops/day' },
-                      ] as { id: TripPace; icon: string; label: string; hint: string }[]).map((p) => (
+                        { id: 'relaxed', label: 'Relaxed', hint: '2 stops/day' },
+                        { id: 'balanced', label: 'Balanced', hint: '3 stops/day' },
+                        { id: 'fast', label: 'Fast-paced', hint: '4 stops/day' },
+                      ] as { id: TripPace; label: string; hint: string }[]).map((p) => (
                         <button
                           key={p.id}
                           onClick={() => setIntentPace(p.id)}
-                          className={`flex-1 flex flex-col items-center gap-0.5 py-2 rounded-xl text-xs font-semibold press transition-colors ${intentPace === p.id ? 'bg-brand-50 border-2 border-brand-400 text-brand-700' : 'bg-ink-50 border border-ink-200 text-ink-600'}`}
+                          className={`flex-1 flex flex-col items-center gap-0.5 py-3 rounded-xl text-xs font-semibold press transition-colors ${intentPace === p.id ? 'bg-brand-50 border-2 border-brand-400 text-brand-700' : 'bg-ink-50 border border-ink-200 text-ink-600'}`}
                         >
-                          <span className="text-base">{p.icon}</span>
                           <span>{p.label}</span>
                           <span className="text-[9px] text-ink-400 font-normal">{p.hint}</span>
                         </button>
@@ -1492,7 +1484,7 @@ export default function HomePage() {
 
                 {/* Current vibe/budget summary — not editable here, link to settings */}
                 <div className="flex items-center gap-2 bg-ink-50 rounded-xl px-3 py-2.5">
-                  <span className="text-base">{VIBES.find((v) => v.id === vibe)?.icon}</span>
+                  <span className="text-brand-500">{getVibeIcon(vibe, "w-4 h-4")}</span>
                   <span className="text-xs text-ink-600 flex-1">
                     <span className="font-semibold">{VIBES.find((v) => v.id === vibe)?.label}</span> vibe · {formatCost(budget, activeTrip.currency)}/day
                   </span>
@@ -1714,7 +1706,7 @@ export default function HomePage() {
                           animate={{ scale: active ? 1.04 : 1 }}
                           className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-colors ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
                         >
-                          <span className="text-2xl leading-none">{v.icon}</span>
+                           <span className="text-brand-500 mb-1">{getVibeIcon(v.id, "w-5 h-5")}</span>
                           <span className={`text-[9px] font-semibold leading-tight text-center ${active ? 'text-brand-600' : 'text-ink-700'}`}>{v.label}</span>
                         </motion.button>
                       );

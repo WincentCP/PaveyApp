@@ -339,7 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const createTripFn = (data: Omit<Trip, 'id' | 'transactions' | 'createdAt'>): string => {
     const id = `trip-${Math.random().toString(36).slice(2, 9)}`;
     const newTrip: Trip = { ...data, id, transactions: [], createdAt: new Date().toISOString() };
-    setTrips((prev) => [...prev, newTrip]);
+    setTrips([newTrip]);
     setActiveTripId(id);
     return id;
   };
