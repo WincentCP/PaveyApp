@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
   Clock, Star, Pencil, Search, ChevronUp, ChevronDown, Wallet,
-  Plane, Train, Sun, Compass,
+  Plane, Train, Sun, Compass, Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -1635,12 +1635,12 @@ function StopCard({
       {/* Swipe reveal backgrounds */}
       {editable && dragX < 0 && canSwap && (
         <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-600 rounded-3xl flex items-center justify-end pr-6">
-          <span className="text-white text-xs font-bold">Swap</span>
+          <RefreshCw className="w-5 h-5 text-white animate-pulse" />
         </div>
       )}
       {editable && dragX > 0 && (
         <div className="absolute inset-0 bg-red-500 rounded-3xl flex items-center justify-start pl-6">
-          <span className="text-white text-xs font-bold">Remove</span>
+          <Trash2 className="w-5 h-5 text-white animate-pulse" />
         </div>
       )}
 
@@ -1734,20 +1734,22 @@ function StopCard({
         </div>
 
         {editable && (
-          <div className="shrink-0 flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-1.5">
             {canSwap && (
               <button
                 onClick={onReplace}
-                className="text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors press px-1"
+                className="w-8 h-8 rounded-full bg-violet-50 hover:bg-violet-100 flex items-center justify-center text-violet-600 transition-colors press"
+                title="Swap stop"
               >
-                Swap
+                <RefreshCw className="w-3.5 h-3.5" />
               </button>
             )}
             <button
               onClick={onRemove}
-              className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors press px-1"
+              className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors press"
+              title="Remove stop"
             >
-              Remove
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
