@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
-  Clock, Star, DollarSign, Pencil, Search, ChevronUp, ChevronDown, AlertTriangle, Wallet,
+  Clock, Star, Pencil, Search, ChevronUp, ChevronDown, Wallet,
+  Plane, Train, Sun, Compass,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -44,7 +45,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations, authUser, signIn } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -58,13 +59,13 @@ export default function GeneratePage() {
   const [showAdd, setShowAdd] = useState(false);
   // UI5 — what-if comparison: { currentPlace, alt }
   const [whatIf, setWhatIf] = useState<{ current: Place; alt: Place } | null>(null);
+  const [signupSheetOpen, setSignupSheetOpen] = useState(false);
   // Density-aware "Add" prompt — opens a small decision sheet when the picked
   // recommendation would make the active day tight (5+ stops, 30+ km, 10+ h).
   const [tightAdd, setTightAdd] = useState<{ place: Place; reason: string } | null>(null);
   const [confirmingPulse, setConfirmingPulse] = useState(false);
   const [stopTimes, setStopTimes] = useState<Record<string, string>>({});
   const [editingTimeFor, setEditingTimeFor] = useState<string | null>(null);
-  const [dismissedCultural, setDismissedCultural] = useState<Set<string>>(new Set());
   const [activeDay, setActiveDay] = useState(0);
   const [swipeHintDismissed, setSwipeHintDismissed] = useState(() => {
     try { return localStorage.getItem('pavey_hint_swipe_dismissed') === '1'; } catch { return false; }
@@ -82,14 +83,11 @@ export default function GeneratePage() {
   const [densityDismissed, setDensityDismissed] = useState(() => {
     try { return localStorage.getItem('pavey_density_hint_dismissed') === '1'; } catch { return false; }
   });
-  // "Why?" expand under the density banner — Round 11 #13.
-  const [densityWhyOpen, setDensityWhyOpen] = useState(false);
-  // Cultural cards are capped to 2 per day until this is true.
-  const [culturalAllTips, setCulturalAllTips] = useState(false);
+
   // Read-only vs edit affordances. Defaults to read-only on a fresh generation
   // so the user sees the plan first. Switches on when ?edit=1 or via the
   // header toggle. Manual mode is always editable.
-  const [editAffordances, setEditAffordances] = useState(isEditMode || isManualMode);
+  const [editAffordances, setEditAffordances] = useState(true);
   // Track which stops/days the user has edited so re-roll can warn before
   // wiping work in progress.
   const [userEdited, setUserEdited] = useState(false);
@@ -99,6 +97,121 @@ export default function GeneratePage() {
   const dismissDensity = () => {
     setDensityDismissed(true);
     try { localStorage.setItem('pavey_density_hint_dismissed', '1'); } catch { /* ignore */ }
+  };
+
+  // Swipe Review Deck state
+  const [showReviewDeck, setShowReviewDeck] = useState(false);
+  const [reviewQueue, setReviewQueue] = useState<Place[]>([]);
+  const [deckIndex, setDeckIndex] = useState(0);
+  const [swipeHistory, setSwipeHistory] = useState<{
+    place: Place;
+    action: 'keep' | 'discard';
+    dayIndex: number;
+    index: number;
+  }[]>([]);
+
+  // Active cultural tip bottom sheet state
+  const [activeCulturalIntel, setActiveCulturalIntel] = useState<CulturalIntel | null>(null);
+
+  // Drag state for Tinder-style review deck
+  const [deckDragX, setDeckDragX] = useState(0);
+
+  const getPlaceDayNumber = (placeId: string) => {
+    if (!isMultiDay) return 1;
+    const dayIdx = perDayItineraries.findIndex((day) => day.some((p) => p.id === placeId));
+    return dayIdx !== -1 ? dayIdx + 1 : 1;
+  };
+
+  const discardStopFromItinerary = (place: Place) => {
+    if (isMultiDay) {
+      let targetDayIdx = -1;
+      let targetPlaceIdx = -1;
+      for (let d = 0; d < perDayItineraries.length; d++) {
+        const pIdx = perDayItineraries[d].findIndex((p) => p.id === place.id);
+        if (pIdx !== -1) {
+          targetDayIdx = d;
+          targetPlaceIdx = pIdx;
+          break;
+        }
+      }
+      if (targetDayIdx !== -1) {
+        const newDays = perDayItineraries.map((day, d) =>
+          d === targetDayIdx ? day.filter((p) => p.id !== place.id) : day
+        );
+        setPerDayItineraries(newDays);
+        setItinerary(newDays.flat());
+        return { dayIndex: targetDayIdx, index: targetPlaceIdx };
+      }
+    } else {
+      const targetPlaceIdx = itinerary.findIndex((p) => p.id === place.id);
+      removeStop(place.id);
+      return { dayIndex: 0, index: targetPlaceIdx };
+    }
+    return null;
+  };
+
+  const restoreStopToItinerary = (place: Place, dayIndex: number, index: number) => {
+    if (isMultiDay) {
+      const newDays = perDayItineraries.map((day, d) => {
+        if (d !== dayIndex) return day;
+        const next = day.slice();
+        next.splice(Math.min(index, next.length), 0, place);
+        return next;
+      });
+      setPerDayItineraries(newDays);
+      setItinerary(newDays.flat());
+    } else {
+      const next = itinerary.slice();
+      next.splice(Math.min(index, next.length), 0, place);
+      setItinerary(next);
+    }
+  };
+
+  const completeReview = () => {
+    setShowReviewDeck(false);
+    show('Review complete! All choices saved.', 'success');
+  };
+
+  const handleSwipe = (action: 'keep' | 'discard', place: Place) => {
+    let historyEntry: any = { place, action, dayIndex: 0, index: 0 };
+    
+    if (action === 'discard') {
+      const removedInfo = discardStopFromItinerary(place);
+      if (removedInfo) {
+        historyEntry = { ...historyEntry, ...removedInfo };
+      }
+    }
+    
+    setSwipeHistory((prev) => [...prev, historyEntry]);
+    
+    setDeckIndex((prev) => {
+      const next = prev + 1;
+      if (next >= reviewQueue.length) {
+        setTimeout(() => {
+          completeReview();
+        }, 300);
+      }
+      return next;
+    });
+  };
+
+  const handleButtonSwipe = (action: 'keep' | 'discard') => {
+    if (deckIndex >= reviewQueue.length) return;
+    const place = reviewQueue[deckIndex];
+    handleSwipe(action, place);
+  };
+
+  const handleSwipeUndo = () => {
+    if (swipeHistory.length === 0) return;
+    const lastAction = swipeHistory[swipeHistory.length - 1];
+    setSwipeHistory((prev) => prev.slice(0, -1));
+    
+    if (lastAction.action === 'discard') {
+      restoreStopToItinerary(lastAction.place, lastAction.dayIndex, lastAction.index);
+      show(`Restored ${lastAction.place.name}`, 'success');
+    }
+    
+    setDeckIndex((prev) => Math.max(0, prev - 1));
   };
 
   const removeWithUndo = (place: Place, idx: number, isManual: boolean) => {
@@ -207,6 +320,16 @@ export default function GeneratePage() {
     return () => { clearInterval(t1); clearTimeout(t2); };
   }, [phase]); // eslint-disable-line
 
+  // Load review deck queue when reveal phase starts
+  useEffect(() => {
+    if (phase === 'reveal' && !isManualMode && !isEditMode && itinerary.length > 0 && reviewQueue.length === 0) {
+      setReviewQueue(itinerary);
+      setDeckIndex(0);
+      setSwipeHistory([]);
+      setShowReviewDeck(true);
+    }
+  }, [phase, itinerary]); // eslint-disable-line
+
   const isMultiDay = perDayItineraries.length > 1;
   const displayItinerary = isMultiDay ? (perDayItineraries[activeDay] ?? []) : itinerary;
   const activeItinerary = isManualMode ? manualStops : displayItinerary;
@@ -252,6 +375,14 @@ export default function GeneratePage() {
   };
 
   const onConfirm = () => {
+    if (authUser?.name === 'Guest') {
+      setSignupSheetOpen(true);
+      return;
+    }
+    proceedConfirm();
+  };
+
+  const proceedConfirm = () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setUndoItem(null);
     if (isManualMode) setItinerary(manualStops);
@@ -286,6 +417,9 @@ export default function GeneratePage() {
   };
 
   const runReroll = () => {
+    setReviewQueue([]);
+    setDeckIndex(0);
+    setSwipeHistory([]);
     if (isMultiDay) {
       buildFullItinerary(perDayItineraries.length, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00');
     } else {
@@ -310,12 +444,11 @@ export default function GeneratePage() {
         {!isManualMode ? (
           <button
             onClick={() => setEditAffordances((v) => !v)}
-            className={`text-xs font-semibold press px-2.5 py-1 rounded-full flex items-center gap-1 ${
+            className={`text-xs font-semibold press px-2.5 py-1 rounded-full transition-colors ${
               editAffordances ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
             }`}
             aria-pressed={editAffordances}
           >
-            <Pencil className="w-3 h-3" />
             {editAffordances ? 'Done' : 'Edit'}
           </button>
         ) : (
@@ -337,9 +470,33 @@ export default function GeneratePage() {
                   transition={{ type: 'spring', stiffness: 280, damping: 28 }}
                   className="flex-1 flex flex-col overflow-hidden"
                 >
+                  {/* Summary card */}
+                  <div className="mx-5 mt-2 p-4 rounded-2xl bg-brand-600 text-white shrink-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
+                        <Wand2 className="w-4 h-4" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
+                      </div>
+                      <button
+                        onClick={() => nav('/?openIntent=1')}
+                        className="text-[11px] font-semibold opacity-80 hover:opacity-100 press flex items-center gap-1"
+                      >
+                        <Pencil className="w-3 h-3" /> Edit trip
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mt-3">
+                      <SummStat label="Stops" value={String(displayItinerary.length)} />
+                      <SummStat label="Distance" value={`${totals.dist.toFixed(1)} km`} />
+                      <SummStat label="Est. Time" value={`${Math.round(totals.time / 60)}h ${totals.time % 60}m`} />
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
+                      <span className="text-xs opacity-80">Total Budget</span>
+                      <span className="font-bold">{formatCost(totals.cost, activeTrip.currency)}</span>
+                    </div>
+                  </div>
+
                   {/* Day tabs */}
                   {isMultiDay && (
-                    <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+                    <div className="px-5 pt-3 pb-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
                       {perDayItineraries.map((_, i) => {
                         let dateStr = '';
                         let isToday = false;
@@ -371,36 +528,11 @@ export default function GeneratePage() {
                     </div>
                   )}
 
-                  {/* Summary card */}
-                  <div className="mx-5 mt-2 p-4 rounded-2xl bg-brand-600 text-white shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
-                        <Wand2 className="w-4 h-4" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
-                      </div>
-                      <button
-                        onClick={() => nav('/?openIntent=1')}
-                        className="text-[11px] font-semibold opacity-80 hover:opacity-100 press flex items-center gap-1"
-                      >
-                        <Pencil className="w-3 h-3" /> Edit trip
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3 mt-3">
-                      <SummStat label="Stops" value={String(displayItinerary.length)} />
-                      <SummStat label="Distance" value={`${totals.dist.toFixed(1)} km`} />
-                      <SummStat label="Est. Time" value={`${Math.round(totals.time / 60)}h ${totals.time % 60}m`} />
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
-                      <span className="text-xs opacity-80">Total Budget</span>
-                      <span className="font-bold">{formatCost(totals.cost, activeTrip.currency)}</span>
-                    </div>
-                  </div>
-
                   {/* Stop list */}
                   <div className="flex-1 overflow-y-auto no-scrollbar mt-3 px-5 pb-28">
                     {/* Issue 8: Error state when generation yields empty itinerary */}
                     {generationError && displayItinerary.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4 py-12">
-                        <div className="text-5xl">😕</div>
                         <div className="font-bold text-ink-900 text-lg font-display">Couldn't generate a plan</div>
                         <div className="text-sm text-ink-500">Check your vibe and budget settings and try again.</div>
                         <button
@@ -439,12 +571,11 @@ export default function GeneratePage() {
                       )}
                     </div>
 
-                    {/* Gesture hint — only when edit affordances are visible. */}
+                    {/* Gesture hint */}
                     {editAffordances && !swipeHintDismissed && (
-                      <div className="mb-2 flex items-center gap-1.5 text-[11px] text-ink-400">
-                        <span>←</span>
-                        <span className="flex-1">Swipe left to remove · Use arrows to reorder</span>
-                        <button onClick={dismissSwipeHint} className="press text-ink-400 hover:text-ink-700">
+                      <div className="mb-2.5 bg-violet-50/50 border border-violet-100 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-[10px] text-violet-600 font-medium">
+                        <span className="flex-1">Swipe left to swap · Swipe right to remove</span>
+                        <button onClick={dismissSwipeHint} className="text-violet-400 hover:text-violet-600 press">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -459,22 +590,13 @@ export default function GeneratePage() {
                       const farApart = totalDist > 30;
                       const tooLong = totalTime > 600;
                       if (!tooMany && !farApart && !tooLong) return null;
-                      const reason = tooMany ? `${stops.length} stops` : farApart ? `${totalDist.toFixed(0)} km of travel` : `${Math.round(totalTime / 60)}h of activity`;
+                      const reason = tooMany ? `${stops.length} stops` : farApart ? `${totalDist.toFixed(0)} km` : `${Math.round(totalTime / 60)}h activity`;
                       return (
-                        <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-                          <div className="text-xs font-semibold text-amber-800 mb-1">
-                            {isMultiDay ? `Day ${activeDay + 1} looks tight (${reason}).` : `This day looks tight (${reason}).`} Try fewer stops or a more relaxed pace.
-                          </div>
-                          <button
-                            onClick={() => setDensityWhyOpen((v) => !v)}
-                            className="text-[11px] text-amber-700 font-semibold press underline-offset-2 hover:underline mb-1.5"
-                          >
-                            {densityWhyOpen ? 'Hide' : 'Why?'}
-                          </button>
-                          {densityWhyOpen && (
-                            <div className="text-[11px] text-amber-700 leading-snug mb-1.5">{COPY.hints.densityWhy}</div>
-                          )}
-                          <div className="flex gap-2">
+                        <div className="mb-3 bg-amber-50/60 border border-amber-100 rounded-2xl p-3 flex items-center justify-between gap-3 text-amber-800">
+                          <span className="text-xs font-medium truncate">
+                            {isMultiDay ? `Day ${activeDay + 1}` : 'Schedule'} looks tight ({reason}).
+                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
                             {pace !== 'relaxed' && (
                               <button
                                 onClick={() => {
@@ -487,16 +609,13 @@ export default function GeneratePage() {
                                   }
                                   show('Switched to Relaxed pace', 'success');
                                 }}
-                                className="flex-1 h-8 rounded-lg bg-amber-500 text-white text-xs font-bold press"
+                                className="text-xs font-bold bg-amber-500 text-white px-2.5 py-1 rounded-lg press"
                               >
-                                Switch to Relaxed
+                                Relax
                               </button>
                             )}
-                            <button
-                              onClick={dismissDensity}
-                              className="flex-1 h-8 rounded-lg bg-white border border-amber-300 text-amber-700 text-xs font-semibold press"
-                            >
-                              Dismiss
+                            <button onClick={dismissDensity} className="text-amber-500 hover:text-amber-700 p-1 press">
+                              <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -506,17 +625,10 @@ export default function GeneratePage() {
                     <div className="space-y-0">
                       <AnimatePresence>
                         {(() => {
-                          // Round 11 #6 — cap visible cultural cards per day to 2;
-                          // the rest are gated behind an expand link below the list.
-                          let culturalShown = 0;
-                          const CULTURAL_CAP = 2;
                           return displayItinerary.map((p, i) => {
                             const intel = getCulturalIntel(p.id, p.category);
                             const timeStr = getTime(p.id, i);
                             const conflict = hasConflict(p, timeStr);
-                            const showCultural = intel && !dismissedCultural.has(p.id)
-                              && (culturalAllTips || culturalShown < CULTURAL_CAP);
-                            if (showCultural) culturalShown++;
                             return (
                               <div key={p.id}>
                                 <StopCard
@@ -529,14 +641,19 @@ export default function GeneratePage() {
                                   onReplace={() => setReplaceFor(p.id)}
                                   onMoveUp={() => reorderDayStop(i, Math.max(0, i - 1))}
                                   onMoveDown={() => reorderDayStop(i, Math.min(displayItinerary.length - 1, i + 1))}
+                                  onFixTime={(newTime) => {
+                                    setUserEdited(true);
+                                    setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
+                                  }}
                                 />
-                                {showCultural && (
-                                  <div className="mb-2">
-                                    <CulturalCard
-                                      intel={intel!}
-                                      autoExpand={i === 0}
-                                      onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
-                                    />
+                                {intel && (
+                                  <div className="mt-1.5 flex items-center justify-end px-1.5">
+                                    <button
+                                      onClick={() => setActiveCulturalIntel(intel)}
+                                      className="flex items-center gap-1 bg-violet-50 text-violet-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full hover:bg-violet-100 transition-colors press"
+                                    >
+                                      💡 Tip: {intel.prompt}
+                                    </button>
                                   </div>
                                 )}
                                 {i < displayItinerary.length - 1 && (
@@ -553,41 +670,39 @@ export default function GeneratePage() {
                       </AnimatePresence>
                     </div>
 
-                    {/* Show-all-tips expand — only when capped tips exist for this day. */}
-                    {!culturalAllTips && displayItinerary.some((p) => {
-                      const intel = getCulturalIntel(p.id, p.category);
-                      return intel && !dismissedCultural.has(p.id);
-                    }) && displayItinerary.filter((p) => {
-                      const intel = getCulturalIntel(p.id, p.category);
-                      return intel && !dismissedCultural.has(p.id);
-                    }).length > 2 && (
-                      <button
-                        onClick={() => setCulturalAllTips(true)}
-                        className="mt-1 text-[11px] text-brand-600 font-semibold press"
-                      >
-                        Show all tips
-                      </button>
-                    )}
+
 
                     {editAffordances && (
-                      <button
-                        onClick={() => {
-                          if (userEdited) {
-                            setRerollConfirmOpen(true);
-                          } else {
-                            runReroll();
-                          }
-                        }}
-                        className="mt-4 mx-auto flex items-center gap-2 text-xs font-semibold text-ink-600 px-4 py-2 rounded-full bg-ink-50 press"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" /> Re-roll suggestions
-                      </button>
+                      <div className="mt-4 flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => {
+                            setReviewQueue(itinerary);
+                            setDeckIndex(0);
+                            setSwipeHistory([]);
+                            setShowReviewDeck(true);
+                          }}
+                          className="flex items-center gap-2 text-xs font-semibold text-brand-600 px-4 py-2 rounded-full bg-brand-50 press"
+                        >
+                          <Wand2 className="w-3.5 h-3.5" /> Swipe review
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (userEdited) {
+                              setRerollConfirmOpen(true);
+                            } else {
+                              runReroll();
+                            }
+                          }}
+                          className="flex items-center gap-2 text-xs font-semibold text-ink-600 px-4 py-2 rounded-full bg-ink-50 press"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" /> Re-roll suggestions
+                        </button>
+                      </div>
                     )}
 
                     {/* Places exhaustion hint */}
                     {isMultiDay && perDayItineraries.flat().length < journeyStart.days * PACE_STOPS[pace] * 0.7 && (
-                      <div className="mt-3 flex items-start gap-2 bg-ink-50 rounded-xl px-3 py-2.5">
-                        <span className="text-base leading-none mt-0.5 shrink-0">ℹ️</span>
+                      <div className="mt-3 flex items-start gap-2 bg-ink-50/50 rounded-xl px-3 py-2.5">
                         <span className="text-xs text-ink-500">We've shown all available spots for this destination — some days may have fewer stops than your pace setting.</span>
                       </div>
                     )}
@@ -595,42 +710,25 @@ export default function GeneratePage() {
                     {/* Recommendations — hidden in read-only mode. */}
                     {editAffordances && !isMultiDay && alternatives(itinerary.map((p) => p.id)).length > 0 && (
                       <div className="mt-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold tracking-widest text-ink-500">RECOMMENDATIONS</span>
-                          <span className="text-[10px] text-ink-400">Tap Add to drop into your day</span>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="text-[11px] font-bold tracking-wider text-ink-400 uppercase">Discover Alternatives</span>
                         </div>
                         <div className="space-y-2">
-                          {alternatives(itinerary.map((p) => p.id)).slice(0, 4).map((altP) => (
-                            <motion.div
+                          {alternatives(itinerary.map((p) => p.id)).slice(0, 3).map((altP) => (
+                            <AlternativeCard
                               key={altP.id}
-                              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                              className="bg-ink-50/60 border border-ink-100 rounded-2xl p-3 flex items-center gap-3"
-                            >
-                              <img src={altP.image} alt={altP.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-ink-900 text-sm truncate">{altP.name}</div>
-                                <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-                                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{altP.rating}
-                                  <span className="text-ink-300">·</span>{altP.category}
-                                </div>
-                                <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatCost(altP.cost, activeTrip.currency)}</div>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  const projected = [...displayItinerary, altP];
-                                  const check = dayIsTight(projected);
-                                  if (check.tight) {
-                                    setTightAdd({ place: altP, reason: check.reason });
-                                  } else {
-                                    addStop(altP);
-                                    show(COPY.recommendations.addedToast(altP.name), 'success');
-                                  }
-                                }}
-                                className="text-xs font-bold text-white bg-brand-500 px-3 py-1.5 rounded-lg press shadow-soft shrink-0 flex items-center gap-1"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> {COPY.recommendations.add}
-                              </button>
-                            </motion.div>
+                              altP={altP}
+                              onAdd={() => {
+                                const projected = [...displayItinerary, altP];
+                                const check = dayIsTight(projected);
+                                if (check.tight) {
+                                  setTightAdd({ place: altP, reason: check.reason });
+                                } else {
+                                  addStop(altP);
+                                  show(COPY.recommendations.addedToast(altP.name), 'success');
+                                }
+                              }}
+                            />
                           ))}
                         </div>
                       </div>
@@ -701,14 +799,19 @@ export default function GeneratePage() {
                               isManual
                               onMoveUp={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.max(0, i - 1), 0, x); return n; })}
                               onMoveDown={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.min(prev.length - 1, i + 1), 0, x); return n; })}
+                              onFixTime={(newTime) => {
+                                setUserEdited(true);
+                                setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
+                              }}
                             />
-                            {intel && !dismissedCultural.has(p.id) && (
-                              <div className="mb-2">
-                                <CulturalCard
-                                  intel={intel}
-                                  autoExpand={i === 0}
-                                  onDismiss={() => setDismissedCultural((s) => new Set(s).add(p.id))}
-                                />
+                            {intel && (
+                              <div className="mt-1.5 flex items-center justify-end px-1.5">
+                                <button
+                                  onClick={() => setActiveCulturalIntel(intel)}
+                                  className="flex items-center gap-1 bg-violet-50 text-violet-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full hover:bg-violet-100 transition-colors press"
+                                >
+                                  💡 Tip: {intel.prompt}
+                                </button>
                               </div>
                             )}
                             {i < manualStops.length - 1 && (
@@ -798,33 +901,16 @@ export default function GeneratePage() {
               {/* ── RECOMMENDATIONS (secondary) ── */}
               {alternatives(manualStops.map((p) => p.id)).length > 0 && (
                 <div className="mt-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold tracking-widest text-ink-500">RECOMMENDATIONS</span>
-                    <span className="text-[10px] text-ink-400">Tap + to add</span>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <span className="text-[11px] font-bold tracking-wider text-ink-400 uppercase">Discover Alternatives</span>
                   </div>
                   <div className="space-y-2">
-                    {alternatives(manualStops.map((p) => p.id)).slice(0, 4).map((p) => (
-                      <motion.div
+                    {alternatives(manualStops.map((p) => p.id)).slice(0, 3).map((p) => (
+                      <AlternativeCard
                         key={p.id}
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        className="bg-ink-50/60 border border-ink-100 rounded-2xl p-3 flex items-center gap-3"
-                      >
-                        <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
-                          <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />{p.rating}
-                            <span className="text-ink-300">·</span>{p.category}
-                          </div>
-                          <div className="text-xs text-brand-600 font-semibold mt-0.5">{formatCost(p.cost, activeTrip.currency)}</div>
-                        </div>
-                        <button
-                          onClick={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
-                          className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center press shadow-soft shrink-0"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </motion.div>
+                        altP={p}
+                        onAdd={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
+                      />
                     ))}
                   </div>
                 </div>
@@ -832,12 +918,11 @@ export default function GeneratePage() {
 
               {/* Empty state */}
               {manualStops.length === 0 && !manualSearch && (
-                <div className="text-center py-6">
-                  <div className="text-4xl mb-3">📝</div>
-                  <div className="font-semibold text-ink-700">No stops yet</div>
-                  <div className="text-sm text-ink-500 mt-1">Search above or pick from recommendations</div>
-                  <button onClick={importAi} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-sm font-semibold press">
-                    <Wand2 className="w-4 h-4" /> Import AI suggestions
+                <div className="text-center py-8">
+                  <div className="font-semibold text-ink-700 text-sm">No stops yet</div>
+                  <div className="text-xs text-ink-500 mt-1">Search above or pick from recommendations</div>
+                  <button onClick={importAi} className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold press">
+                    <Wand2 className="w-3.5 h-3.5" /> Import AI suggestions
                   </button>
                 </div>
               )}
@@ -852,6 +937,142 @@ export default function GeneratePage() {
               >
                 <Check className="w-5 h-5" /> Confirm My Journey ({manualStops.length} stops)
               </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tinder-style Review Deck Overlay */}
+      <AnimatePresence>
+        {showReviewDeck && reviewQueue.length > 0 && deckIndex < reviewQueue.length && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-white flex flex-col overflow-hidden"
+          >
+            {/* Header */}
+            <div className="px-5 py-4 flex items-center justify-between shrink-0 border-b border-ink-50">
+              <div className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-brand-500 animate-pulse" />
+                <div className="font-bold text-ink-900 font-display">Review Your Places</div>
+              </div>
+              <div className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
+                {deckIndex + 1} of {reviewQueue.length}
+              </div>
+            </div>
+
+            {/* Stack Area */}
+            <div className="flex-1 relative flex items-center justify-center p-6 select-none bg-ink-50/20 overflow-hidden">
+              {/* Left Side Keep Cue Circle */}
+              <div
+                style={{
+                  opacity: deckDragX < 0 
+                    ? Math.min(1, 0.15 + (Math.abs(deckDragX) / 100) * 0.85) 
+                    : Math.max(0, 0.15 - (deckDragX / 30) * 0.15),
+                  scale: deckDragX < 0 
+                    ? Math.min(1.2, 0.95 + (Math.abs(deckDragX) / 100) * 0.25) 
+                    : Math.max(0.8, 0.95 - (deckDragX / 100) * 0.15),
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
+              >
+                <div className="w-14 h-14 rounded-full bg-violet-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                  <Check className="w-7 h-7 stroke-[3px]" />
+                </div>
+                <span className="text-[10px] font-bold text-violet-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
+                  Keep
+                </span>
+              </div>
+
+              {/* Right Side Remove Cue Circle */}
+              <div
+                style={{
+                  opacity: deckDragX > 0 
+                    ? Math.min(1, 0.15 + (deckDragX / 100) * 0.85) 
+                    : Math.max(0, 0.15 - (Math.abs(deckDragX) / 30) * 0.15),
+                  scale: deckDragX > 0 
+                    ? Math.min(1.2, 0.95 + (deckDragX / 100) * 0.25) 
+                    : Math.max(0.8, 0.95 - (Math.abs(deckDragX) / 100) * 0.15),
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
+              >
+                <div className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                  <X className="w-7 h-7 stroke-[3px]" />
+                </div>
+                <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
+                  Remove
+                </span>
+              </div>
+
+              {reviewQueue.slice(deckIndex, deckIndex + 3).reverse().map((place, offsetIdx, sliceArr) => {
+                const actualIdx = deckIndex + sliceArr.length - 1 - offsetIdx;
+                const isTop = actualIdx === deckIndex;
+                const depth = actualIdx - deckIndex;
+
+                return (
+                  <SwipeCard
+                    key={place.id}
+                    place={place}
+                    isTop={isTop}
+                    depth={depth}
+                    dayIndex={getPlaceDayNumber(place.id)}
+                    onSwipeLeft={() => {
+                      setDeckDragX(0);
+                      handleSwipe('keep', place);
+                    }}
+                    onSwipeRight={() => {
+                      setDeckDragX(0);
+                      handleSwipe('discard', place);
+                    }}
+                    dragX={isTop ? deckDragX : 0}
+                    setDragX={isTop ? setDeckDragX : () => {}}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Controls */}
+            <div className="px-5 pt-4 pb-8 flex flex-col items-center gap-4 bg-white border-t border-ink-50 shrink-0">
+              <div className="flex items-center justify-center gap-6">
+                {/* Discard Button (✕) */}
+                <button
+                  onClick={() => handleButtonSwipe('discard')}
+                  className="w-14 h-14 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center shadow-sm hover:shadow-md border border-red-200 text-red-500 transition-all active:scale-95 press"
+                  aria-label="Discard stop"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                {/* Undo Button */}
+                <button
+                  onClick={handleSwipeUndo}
+                  disabled={swipeHistory.length === 0}
+                  className="w-12 h-12 rounded-full bg-ink-50 hover:bg-ink-100 disabled:opacity-40 flex items-center justify-center shadow-sm border border-ink-200 text-ink-600 transition-all active:scale-95 press"
+                  aria-label="Undo last swipe"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+
+                {/* Keep Button (Check) */}
+                <button
+                  onClick={() => handleButtonSwipe('keep')}
+                  className="w-14 h-14 rounded-full bg-brand-50 hover:bg-brand-150 flex items-center justify-center shadow-sm hover:shadow-md border border-brand-200 text-brand-600 transition-all active:scale-95 press"
+                  aria-label="Keep stop"
+                >
+                  <Check className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Skip button */}
+              <button
+                onClick={() => {
+                  setShowReviewDeck(false);
+                  show('Review skipped. Remaining stops kept.', 'info');
+                }}
+                className="text-xs font-semibold text-ink-400 hover:text-ink-600 underline press mt-1"
+              >
+                Skip review & view itinerary
+              </button>
             </div>
           </motion.div>
         )}
@@ -1115,6 +1336,143 @@ export default function GeneratePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Guest Save Sheet */}
+      <AnimatePresence>
+        {signupSheetOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setSignupSheetOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-8 px-5 pt-4"
+            >
+              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mb-4" />
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-bold text-ink-900 font-display">Save your progress?</h3>
+                <p className="text-xs text-ink-500 mt-1">Sign up to access your plan on any device later.</p>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1">NAME</div>
+                  <input
+                    type="text"
+                    placeholder="Your Name"
+                    id="guest_signup_name"
+                    className="w-full bg-ink-50 rounded-xl px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 outline-none border border-transparent focus:border-brand-400"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1">EMAIL</div>
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    id="guest_signup_email"
+                    className="w-full bg-ink-50 rounded-xl px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 outline-none border border-transparent focus:border-brand-400"
+                  />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1">PASSWORD</div>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    id="guest_signup_password"
+                    className="w-full bg-ink-50 rounded-xl px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-400 outline-none border border-transparent focus:border-brand-400"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    const nameEl = document.getElementById('guest_signup_name') as HTMLInputElement;
+                    const emailEl = document.getElementById('guest_signup_email') as HTMLInputElement;
+                    const passEl = document.getElementById('guest_signup_password') as HTMLInputElement;
+                    const nameVal = nameEl?.value?.trim() || 'Traveler';
+                    const emailVal = emailEl?.value?.trim();
+                    const passVal = passEl?.value;
+
+                    if (!emailVal || !passVal || passVal.length < 6) {
+                      show('Please enter a valid email and minimum 6-character password', 'warn');
+                      return;
+                    }
+                    signIn(nameVal, emailVal);
+                    setSignupSheetOpen(false);
+                    proceedConfirm();
+                  }}
+                  className="w-full h-12 rounded-xl bg-brand-500 text-white font-bold text-sm press shadow-glow flex items-center justify-center gap-1"
+                >
+                  Create Account & Save
+                </button>
+                <button
+                  onClick={() => {
+                    setSignupSheetOpen(false);
+                    proceedConfirm();
+                  }}
+                  className="w-full h-10 rounded-xl text-ink-500 hover:text-ink-800 font-semibold text-xs press flex items-center justify-center"
+                >
+                  Continue as Guest (local-only)
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Cultural Intel Sheet */}
+      <AnimatePresence>
+        {activeCulturalIntel && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActiveCulturalIntel(null)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-8 px-5 pt-4"
+            >
+              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mb-4" />
+              <div className="flex items-center justify-between mb-4 border-b border-ink-50 pb-2">
+                <h3 className="text-base font-bold text-ink-900 font-display flex items-center gap-1.5">
+                  💡 Cultural Insight
+                </h3>
+                <button
+                  onClick={() => setActiveCulturalIntel(null)}
+                  className="w-8 h-8 rounded-full bg-ink-50 hover:bg-ink-100 flex items-center justify-center press text-ink-500"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 no-scrollbar">
+                <div className="text-xs font-semibold text-ink-500">{activeCulturalIntel.prompt}</div>
+                <div className="space-y-3">
+                  {activeCulturalIntel.tips.map((tip, i) => (
+                    <div key={i} className="flex items-start gap-2 bg-brand-50/20 border border-brand-100/50 p-3 rounded-2xl">
+                      <span className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 shrink-0" />
+                      <div>
+                        <div className="text-xs font-bold text-ink-900">{tip.title}</div>
+                        <div className="text-xs text-ink-500 mt-1 leading-relaxed">{tip.body}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1122,11 +1480,11 @@ export default function GeneratePage() {
 /* ── Sub-components ─────────────────────────────── */
 
 const TRAVEL_DAY_IDEAS = [
-  '☕ Airport café & people-watch',
-  '🍜 Local dinner near your hotel',
-  '🚶 Easy evening walk around the neighborhood',
-  '🛎️ Check in, unpack, rest up',
-  '🛍️ Browse a local convenience store or market',
+  'Airport café & people-watch',
+  'Local dinner near your hotel',
+  'Easy evening walk around the neighborhood',
+  'Check in, unpack, rest up',
+  'Browse a local convenience store or market',
 ];
 
 function EmptyDayCard({ dayIndex, totalDays, arrivalTime, departureTime, kind, fromCity, toCity, crossRegion }: {
@@ -1140,11 +1498,12 @@ function EmptyDayCard({ dayIndex, totalDays, arrivalTime, departureTime, kind, f
     kind ?? (isFirst ? 'arrival' : isLast ? 'departure' : 'free');
 
   if (resolvedKind === 'travel') {
-    const emoji = crossRegion ? '✈️' : '🚄';
     const idea = TRAVEL_DAY_IDEAS[dayIndex % TRAVEL_DAY_IDEAS.length];
     return (
       <div className="flex flex-col items-center gap-4 py-10 text-center px-6">
-        <div className="text-5xl">{emoji}</div>
+        <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
+          {crossRegion ? <Plane className="w-8 h-8 text-brand-500" /> : <Train className="w-8 h-8 text-brand-500" />}
+        </div>
         <div>
           <div className="font-bold text-ink-900 text-lg font-display">
             Travel day{(fromCity && toCity) ? ` — ${fromCity} to ${toCity}` : ''}
@@ -1160,7 +1519,6 @@ function EmptyDayCard({ dayIndex, totalDays, arrivalTime, departureTime, kind, f
     );
   }
 
-  const emoji = resolvedKind === 'arrival' ? '✈️' : resolvedKind === 'departure' ? '🛫' : '🌤️';
   const title = resolvedKind === 'arrival' ? 'Arrival Day' : resolvedKind === 'departure' ? 'Departure Day' : 'Free Day';
   const time = resolvedKind === 'arrival' ? arrivalTime : resolvedKind === 'departure' ? departureTime : null;
   const note = resolvedKind === 'arrival'
@@ -1171,7 +1529,13 @@ function EmptyDayCard({ dayIndex, totalDays, arrivalTime, departureTime, kind, f
 
   return (
     <div className="flex flex-col items-center gap-4 py-10 text-center">
-      <div className="text-5xl">{emoji}</div>
+      <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
+        {resolvedKind === 'arrival' || resolvedKind === 'departure' ? (
+          <Plane className="w-8 h-8 text-brand-500" />
+        ) : (
+          <Sun className="w-8 h-8 text-brand-500" />
+        )}
+      </div>
       <div>
         <div className="font-bold text-ink-900 text-lg font-display">{title}</div>
         <div className="text-sm text-ink-500 mt-1.5 max-w-[240px] leading-relaxed">{note}</div>
@@ -1228,72 +1592,24 @@ function StopConnector({ distanceKm, fromTime, durationMin }: { distanceKm: numb
   const nextTime = `${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`;
 
   return (
-    <div className="flex items-center gap-3 ml-5 my-1">
+    <div className="flex items-center gap-3 ml-5 my-0.5">
       <div className="flex flex-col items-center w-4 shrink-0">
-        <div className="w-px bg-ink-200" style={{ height: 28 }} />
+        <div className="w-px bg-ink-100" style={{ height: 20 }} />
       </div>
-      <div className="flex items-center gap-2 text-[11px] text-ink-400 py-0.5">
-        <span className="font-medium">{distanceKm} km</span>
-        <span>·</span>
-        <span>~{driveMin} min drive</span>
-        <span>·</span>
-        <Clock className="w-3 h-3" />
+      <div className="flex items-center gap-1.5 text-[10px] text-ink-400 font-medium py-0.5">
+        <span>{driveMin}m drive ({distanceKm} km)</span>
+        <span>•</span>
         <span>Arrive {nextTime}</span>
       </div>
     </div>
   );
 }
 
-/* ── Cultural Intelligence Card ── */
-function CulturalCard({ intel, autoExpand, onDismiss }: { intel: CulturalIntel; autoExpand?: boolean; onDismiss: () => void }) {
-  const [expanded, setExpanded] = useState(autoExpand ?? false);
-  const visibleTips = expanded ? intel.tips : intel.tips.slice(0, 1);
-  const extraCount = intel.tips.length - 1;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-      className="mx-0 mb-0 overflow-hidden"
-    >
-      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 overflow-hidden">
-        <div className="flex items-start gap-2.5 p-3">
-          <div className="w-1 self-stretch rounded-full shrink-0" style={{ background: intel.accentColor }} />
-          <div className="flex-1 min-w-0">
-            <div className="text-[11px] font-bold text-ink-500 mb-1.5">{intel.prompt}</div>
-            <div className="space-y-2">
-              {visibleTips.map((tip, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="text-base leading-none mt-0.5 shrink-0">{tip.icon}</span>
-                  <div>
-                    <div className="text-xs font-semibold text-ink-800">{tip.title}</div>
-                    <div className="text-xs text-ink-500 mt-0.5 leading-relaxed">{tip.body}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {!expanded && extraCount > 0 && (
-              <button onClick={() => setExpanded(true)} className="mt-1.5 text-[11px] font-semibold text-brand-600 press">
-                + {extraCount} more tip{extraCount > 1 ? 's' : ''}
-              </button>
-            )}
-            {expanded && (
-              <button onClick={() => setExpanded(false)} className="mt-1.5 text-[11px] font-semibold text-ink-400 press">
-                Show less
-              </button>
-            )}
-          </div>
-          <button onClick={onDismiss} className="shrink-0 w-6 h-6 rounded-full hover:bg-ink-200 flex items-center justify-center press">
-            <X className="w-3 h-3 text-ink-400" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 /* ── Stop Card ── */
 function StopCard({
-  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual, editable = true,
+  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual, editable = true, onFixTime,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
@@ -1302,9 +1618,11 @@ function StopCard({
   /** When false, all edit affordances are hidden (read-only mode). Time edit
    * remains tappable so users can tweak schedule without entering full edit. */
   editable?: boolean;
+  onFixTime?: (newTime: string) => void;
 }) {
   const { activeTrip } = useApp();
   const [dragX, setDragX] = useState(0);
+  const canSwap = editable && !isManual;
 
   return (
     <motion.div
@@ -1314,97 +1632,123 @@ function StopCard({
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       className="relative mb-2"
     >
-      {/* Swipe-to-delete reveal — only in editable mode. */}
-      {editable && (
-        <div className="absolute inset-0 bg-red-500 rounded-2xl flex items-center justify-end pr-5">
-          <div className="text-white text-center">
-            <X className="w-5 h-5 mx-auto" />
-            <div className="text-[10px] font-semibold mt-0.5">Remove</div>
-          </div>
+      {/* Swipe reveal backgrounds */}
+      {editable && dragX < 0 && canSwap && (
+        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-600 rounded-3xl flex items-center justify-end pr-6">
+          <span className="text-white text-xs font-bold">Swap</span>
+        </div>
+      )}
+      {editable && dragX > 0 && (
+        <div className="absolute inset-0 bg-red-500 rounded-3xl flex items-center justify-start pl-6">
+          <span className="text-white text-xs font-bold">Remove</span>
         </div>
       )}
 
       <motion.div
         drag={editable ? 'x' : false}
-        dragConstraints={{ left: -90, right: 0 }} dragElastic={{ left: 0.15, right: 0 }}
+        dragConstraints={canSwap ? { left: -90, right: 90 } : { left: 0, right: 90 }}
+        dragElastic={{ left: canSwap ? 0.15 : 0, right: 0.15 }}
         onDrag={(_, info) => setDragX(info.offset.x)}
-        onDragEnd={(_, info) => { if (info.offset.x < -55) onRemove(); setDragX(0); }}
-        className={`relative bg-white rounded-2xl border border-ink-100 p-3 flex items-start gap-2.5 ${editable ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        onDragEnd={(_, info) => {
+          if (info.offset.x > 55) {
+            onRemove();
+          } else if (info.offset.x < -55 && canSwap) {
+            onReplace();
+          }
+          setDragX(0);
+        }}
+        className={`relative bg-white rounded-3xl border border-ink-100/60 p-3 flex items-center gap-3.5 shadow-sm hover:shadow transition-shadow duration-300 ${
+          editable ? 'cursor-grab active:cursor-grabbing' : ''
+        }`}
         style={{ x: dragX }}
       >
         {/* Reorder arrows — editable mode only. */}
         {editable && (
-          <div className="flex flex-col items-center gap-0.5 pt-0.5 shrink-0">
-            <button onClick={onMoveUp} disabled={index === 0} className="p-0.5 text-ink-300 disabled:opacity-20 press hover:text-ink-600">
-              <ChevronUp className="w-4 h-4" />
+          <div className="flex flex-col items-center bg-violet-50/70 border border-violet-100 rounded-xl p-0.5 shrink-0">
+            <button onClick={onMoveUp} disabled={index === 0} className="p-0.5 text-violet-400 hover:text-violet-600 disabled:opacity-20 transition-colors press">
+              <ChevronUp className="w-3.5 h-3.5" />
             </button>
-            <div className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center">{index + 1}</div>
-            <button onClick={onMoveDown} disabled={index === total - 1} className="p-0.5 text-ink-300 disabled:opacity-20 press hover:text-ink-600">
-              <ChevronDown className="w-4 h-4" />
+            <span className="text-[10px] font-bold text-violet-600 px-1.5 my-0.5">{index + 1}</span>
+            <button onClick={onMoveDown} disabled={index === total - 1} className="p-0.5 text-violet-400 hover:text-violet-600 disabled:opacity-20 transition-colors press">
+              <ChevronDown className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
         {/* Number badge alone in read-only mode so the user still sees order. */}
         {!editable && (
-          <div className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">{index + 1}</div>
+          <div className="w-6 h-6 rounded-xl bg-violet-50 text-violet-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
         )}
 
         <div className="relative shrink-0">
-          <img src={place.image} alt={place.name} className="w-16 h-16 rounded-xl object-cover" />
+          <img src={place.image} alt={place.name} className="w-14 h-14 rounded-2xl object-cover shadow-sm border border-ink-100/50" />
           {isManual && (
-            <div className="absolute -bottom-1.5 -right-1.5 bg-ink-700 text-white text-[9px] font-bold px-1 py-0.5 rounded-full">✎</div>
+            <div className="absolute -bottom-1 -right-1 bg-ink-905 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">✎</div>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-ink-900 text-sm truncate leading-tight">{place.name}</div>
           <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" /><span>{place.rating}</span>
-            <span className="text-ink-300">·</span><span>{place.category}</span>
-          </div>
-          <button onClick={onTimeEdit} className="mt-1.5 flex items-center gap-1 bg-brand-50 rounded-full px-2 py-1 press">
-            <Clock className="w-3 h-3 text-brand-500" />
-            <span className="text-xs font-semibold text-brand-600">
-              {scheduledTime}–{(() => {
-                const [h, m] = scheduledTime.split(':').map(Number);
-                const end = h * 60 + m + place.durationMin;
-                return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
-              })()}
-            </span>
-            <Pencil className="w-2.5 h-2.5 text-brand-400" />
-          </button>
-          <div className="flex items-center gap-1.5 text-[11px] mt-1.5 flex-wrap">
-            <Clock className="w-3 h-3 text-ink-400" />
-            <span className="text-ink-400">{place.openingHours}</span>
+            <span>{place.rating}</span>
             <span className="text-ink-300">·</span>
-            <DollarSign className="w-3 h-3 text-ink-400" />
-            <span className="text-brand-600 font-semibold">
+            <span className="truncate">{place.category}</span>
+            <span className="text-ink-300">·</span>
+            <span className="text-brand-600 font-semibold shrink-0">
               {formatCost(place.priceRange.min, activeTrip.currency)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
             </span>
-            {hasConflict && (
-              <span className="flex items-center gap-0.5 text-amber-600 font-semibold ml-1">
-                <AlertTriangle className="w-3 h-3" /> Closes before visit ends
+          </div>
+          
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            <button onClick={onTimeEdit} className="flex items-center gap-1.5 bg-brand-50 hover:bg-brand-100 rounded-full px-2.5 py-0.5 border border-brand-100 transition-colors press shrink-0">
+              <span className="text-[10px] font-bold text-brand-600">
+                {scheduledTime}–{(() => {
+                  const [h, m] = scheduledTime.split(':').map(Number);
+                  const end = h * 60 + m + place.durationMin;
+                  return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+                })()}
               </span>
+              <span className="text-[9px] text-brand-400 font-medium">Edit</span>
+            </button>
+
+            {hasConflict && (
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+                <span>Closes early</span>
+                {editable && onFixTime && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const latestStartMin = place.closeHour * 60 - place.durationMin;
+                      const h = Math.floor(latestStartMin / 60) % 24;
+                      const m = latestStartMin % 60;
+                      const newTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                      onFixTime(newTime);
+                    }}
+                    className="underline ml-0.5 hover:text-amber-900 press"
+                  >
+                    Fix
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
 
         {editable && (
-          <div className="shrink-0 flex flex-col items-end gap-1">
-            {/* Always-visible remove button — taps work without discovering
-                the swipe gesture. Swipe remains as a shortcut. */}
-            <button
-              onClick={onRemove}
-              aria-label="Remove stop"
-              className="w-7 h-7 rounded-full bg-ink-50 hover:bg-red-50 text-ink-500 hover:text-red-500 flex items-center justify-center press"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-            {!isManual && (
-              <button onClick={onReplace} className="px-2 h-7 rounded-lg bg-ink-50 text-ink-600 text-[11px] font-semibold press">
+          <div className="shrink-0 flex items-center gap-2">
+            {canSwap && (
+              <button
+                onClick={onReplace}
+                className="text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors press px-1"
+              >
                 Swap
               </button>
             )}
+            <button
+              onClick={onRemove}
+              className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors press px-1"
+            >
+              Remove
+            </button>
           </div>
         )}
       </motion.div>
@@ -1521,4 +1865,194 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
     </AnimatePresence>
   );
 }
+
+/* ── Alternative Card (swipable-to-add) ── */
+function AlternativeCard({ altP, onAdd }: { altP: Place; onAdd: () => void }) {
+  const [dragX, setDragX] = useState(0);
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -80, height: 0 }}
+      className="relative overflow-hidden rounded-2xl"
+    >
+      {dragX < 0 && (
+        <div className="absolute inset-0 bg-emerald-500 flex items-center justify-end pr-6">
+          <span className="text-white text-xs font-bold">Add to Itinerary</span>
+        </div>
+      )}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -90, right: 0 }}
+        dragElastic={{ left: 0.15, right: 0 }}
+        onDrag={(_, info) => setDragX(info.offset.x)}
+        onDragEnd={(_, info) => {
+          if (info.offset.x < -55) {
+            onAdd();
+          }
+          setDragX(0);
+        }}
+        className="relative bg-ink-50/40 hover:bg-ink-50 border border-ink-100/60 p-2.5 flex items-center justify-between gap-3 transition-colors cursor-grab active:cursor-grabbing"
+        style={{ x: dragX }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src={altP.image} alt={altP.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          <div className="min-w-0">
+            <div className="font-semibold text-ink-900 text-xs truncate">{altP.name}</div>
+            <div className="text-[10px] text-ink-500 mt-0.5">
+              {altP.rating} · {altP.category}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={onAdd}
+          className="text-[10px] font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 border border-brand-100 px-3 py-1.5 rounded-lg press shrink-0"
+        >
+          Add
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ── Tinder-Style swipe card for review queue ── */
+interface SwipeCardProps {
+  place: Place;
+  isTop: boolean;
+  depth: number;
+  dayIndex: number;
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
+  dragX: number;
+  setDragX: (x: number) => void;
+}
+
+function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, dragX, setDragX }: SwipeCardProps) {
+  const { activeTrip } = useApp();
+
+  const scale = 1 - depth * 0.05;
+  const yOffset = depth * 12;
+  const zIndex = 10 - depth;
+  const rotateVal = dragX * 0.08;
+
+  const keepStampOpacity = Math.min(1, Math.max(0, -dragX - 25) / 75);
+  const discardStampOpacity = Math.min(1, Math.max(0, dragX - 25) / 75);
+
+  return (
+    <motion.div
+      style={{
+        zIndex,
+        scale: isTop ? 1 : scale,
+        y: isTop ? 0 : yOffset,
+        x: isTop ? dragX : 0,
+        rotate: isTop ? rotateVal : 0,
+      }}
+      animate={
+        isTop
+          ? {}
+          : {
+              scale,
+              y: yOffset,
+              x: 0,
+              rotate: 0,
+            }
+      }
+      drag={isTop ? 'x' : false}
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDrag={(_, info) => {
+        if (isTop) {
+          setDragX(info.offset.x);
+        }
+      }}
+      onDragEnd={(_, info) => {
+        if (!isTop) return;
+        if (info.offset.x < -120) {
+          onSwipeLeft();
+        } else if (info.offset.x > 120) {
+          onSwipeRight();
+        } else {
+          setDragX(0);
+        }
+      }}
+      className="absolute w-full max-w-sm aspect-[3/4.2] bg-white rounded-3xl border border-ink-100 shadow-xl overflow-hidden flex flex-col transition-shadow duration-300"
+    >
+      <div className="relative h-[58%] w-full bg-ink-100">
+        <img
+          src={place.image}
+          alt={place.name}
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
+
+        <div className="absolute top-4 left-4 flex gap-2">
+          <span className="bg-brand-500 text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-sm">
+            Day {dayIndex}
+          </span>
+          <span className="bg-white/90 backdrop-blur text-ink-800 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+            {place.category}
+          </span>
+        </div>
+
+        {isTop && (
+          <>
+            <div
+              style={{ opacity: keepStampOpacity }}
+              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-violet-500 rounded-xl px-4 py-2 text-violet-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+            >
+              Keep
+            </div>
+
+            <div
+              style={{ opacity: discardStampOpacity }}
+              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+            >
+              Remove
+            </div>
+          </>
+        )}
+
+        <div className="absolute bottom-4 inset-x-4">
+          <h2 className="text-lg font-bold text-white leading-tight font-display drop-shadow">
+            {place.name}
+          </h2>
+          <div className="flex items-center gap-1.5 text-white/90 text-[11px] mt-1 drop-shadow">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400 stroke-none" />
+            <span className="font-bold">{place.rating}</span>
+            <span>·</span>
+            <span>{place.openingHours}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 p-4 flex flex-col justify-between bg-white text-ink-800">
+        <div className="space-y-2">
+          <p className="text-xs text-ink-500 leading-relaxed line-clamp-3">
+            {place.description || 'Enjoy this wonderful spot carefully selected for your journey.'}
+          </p>
+          <div className="flex items-center gap-3 text-[11px] font-semibold text-ink-500">
+            <div className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-ink-400" />
+              <span>{place.durationMin} mins</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Compass className="w-3.5 h-3.5 text-ink-400" />
+              <span>{place.distanceKm} km dist</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2.5 border-t border-ink-50 flex items-center justify-between shrink-0">
+          <span className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Est. Cost</span>
+          <span className="text-xs font-bold text-brand-600">
+            {formatCost(place.cost, activeTrip.currency)}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 
