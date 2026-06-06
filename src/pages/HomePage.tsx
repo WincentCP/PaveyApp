@@ -117,7 +117,7 @@ export default function HomePage() {
   const [newDestError, setNewDestError] = useState<string | null>(null);
   const [newDestCalendarOpen, setNewDestCalendarOpen] = useState(false);
   // Pre-generation intent sheet
-  const [intentSheet, setIntentSheet] = useState<'ai' | 'manual' | null>(null);
+  const [intentSheet, setIntentSheet] = useState<'ai' | 'manual' | 'choice' | null>(null);
   const [intentDest, setIntentDest] = useState('');
   // Rotating placeholder doubles as a teaching prompt: "country or city?"
   const [destPlaceholderIdx, setDestPlaceholderIdx] = useState(0);
@@ -251,6 +251,23 @@ export default function HomePage() {
 
   // Auto-open intent sheet when arriving with ?newPlan=1 (from Wallet) or
   // ?openIntent=1 (from "Edit trip" on GeneratePage — restores prior draft).
+  // Open plan choice sheet with defaults
+  const openPlanChoiceSheet = () => {
+    setIntentVibe(vibe);
+    setIntentBudget(budget);
+    setIntentDest(activeDest?.name.split(',')[0] ?? '');
+    setIntentDate('');
+    setIntentEndDate('');
+    setIntentStartTime('09:00');
+    setIntentEndTimeSet(false);
+    setIntentErrors({});
+    setShowFlightTimes(false);
+    setShowOverlapWarning(null);
+    setOverlapAcknowledged(false);
+    setIntentPace(pace);
+    setIntentSheet('choice');
+  };
+
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
     if (searchParams.get('openIntent') === '1' && intentDraft) {
@@ -271,20 +288,7 @@ export default function HomePage() {
       return;
     }
     if (searchParams.get('newPlan') === '1') {
-      setIntentVibe(vibe);
-      setIntentBudget(budget);
-      setIntentDest(activeDest?.name.split(',')[0] ?? '');
-      setIntentDate('');
-      setIntentEndDate('');
-      setIntentStartTime('09:00');
-      setIntentEndTimeSet(false);
-      setIntentErrors({});
-      setShowFlightTimes(false);
-     
-      setShowOverlapWarning(null);
-      setOverlapAcknowledged(false);
-      setIntentPace(pace);
-      setIntentSheet('ai');
+      openPlanChoiceSheet();
       // Strip the param so the sheet doesn't re-open on back navigation
       const next = new URLSearchParams(searchParams);
       next.delete('newPlan');
@@ -809,30 +813,22 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* ── CASE B: No plan today — single bold AI CTA, manual is a quiet secondary link ── */}
+        {/* ── CASE B: No plan today — single bold choice CTA ── */}
         {!hasTodayPlan && (
-          <>
-            <motion.button
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setShowFlightTimes(false); setShowOverlapWarning(null); setOverlapAcknowledged(false); setIntentPace(pace); setIntentSheet('ai'); }}
-              className="w-full bg-brand-500 text-white rounded-2xl p-5 text-left press shadow-glow flex items-center justify-between"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-white text-base font-display">Plan your trip</div>
-                <div className="text-xs text-white/80 mt-0.5">
-                  {activeDest ? `Tap to start a ${activeDest.name.split(',')[0]} itinerary` : 'Tap to start your first itinerary'}
-                </div>
+          <motion.button
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={openPlanChoiceSheet}
+            className="w-full bg-brand-500 text-white rounded-2xl p-5 text-left press shadow-glow flex items-center justify-between"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-white text-base font-display">Plan your trip</div>
+              <div className="text-xs text-white/80 mt-0.5">
+                Build with Buddy AI or stop-by-stop manually
               </div>
-              <ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
-            </motion.button>
-            <button
-              onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setShowFlightTimes(false); setShowOverlapWarning(null); setOverlapAcknowledged(false); setIntentPace(pace); setIntentSheet('manual'); }}
-              className="mt-2 w-full text-center text-xs text-ink-500 font-medium press"
-            >
-              {COPY.hints.manualSecondary}
-            </button>
-          </>
+            </div>
+            <ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
+          </motion.button>
         )}
 
         {/* ── CASE C: Future destination preview ── */}
@@ -940,27 +936,18 @@ export default function HomePage() {
       {/* CTA — Generate options (only when a plan exists; the no-plan state has its own primary CTA above) */}
       {hasTodayPlan && (
         <div className="px-5 mt-5 space-y-3">
-          {/* Primary: AI plan — recommended */}
+          {/* Primary: Add another plan choice */}
           <motion.button
             whileTap={{ scale: 0.97 }}
-            onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setShowFlightTimes(false); setShowOverlapWarning(null); setOverlapAcknowledged(false); setIntentPace(pace); setIntentSheet('ai'); }}
-            className="relative w-full rounded-2xl p-4 text-left flex items-center justify-between press bg-brand-500 shadow-glow"
+            onClick={openPlanChoiceSheet}
+            className="w-full bg-brand-500 text-white rounded-2xl p-4 text-left flex items-center justify-between press shadow-glow"
           >
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-sm font-display leading-tight">Add another with AI</div>
-              <div className="text-[11px] text-white/75 mt-0.5 leading-tight">Let Buddy plan it for you</div>
+              <div className="font-bold text-white text-sm font-display leading-tight">Add another plan</div>
+              <div className="text-[11px] text-white/75 mt-0.5 leading-tight">Build with Buddy AI or stop-by-stop manually</div>
             </div>
-            <span className="absolute top-2 right-2 text-[9px] font-bold text-brand-600 bg-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Recommended</span>
             <ChevronRight className="w-4 h-4 text-white/80 shrink-0" />
           </motion.button>
-
-          {/* Secondary: manual escape hatch */}
-          <button
-            onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setShowFlightTimes(false); setShowOverlapWarning(null); setOverlapAcknowledged(false); setIntentPace(pace); setIntentSheet('manual'); }}
-            className="w-full text-center text-sm text-brand-600 font-semibold press flex items-center justify-center gap-1"
-          >
-            or build it stop by stop <ArrowRight className="w-3.5 h-3.5" />
-          </button>
 
           {/* Short outing — trim existing plan to short window */}
           <motion.button
@@ -1152,6 +1139,47 @@ export default function HomePage() {
               </div>
 
               <div className="px-5 pb-4 space-y-4">
+                {intentSheet === 'choice' && (
+                  <div className="space-y-4 py-2">
+                    <button
+                      onClick={() => setIntentSheet('ai')}
+                      className="w-full text-left p-4 rounded-2xl bg-brand-50 border border-brand-200 hover:border-brand-500 transition-all flex items-start gap-4 press"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center shrink-0">
+                        <Wand2 className="w-5 h-5 text-brand-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-ink-900 text-sm">Plan with AI</span>
+                          <span className="text-[9px] font-bold text-brand-600 bg-white border border-brand-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Recommended</span>
+                        </div>
+                        <p className="text-xs text-ink-600 mt-1 leading-normal">
+                          Tell us your destination and dates — Buddy will automatically generate a complete, optimized daily itinerary for you.
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-ink-400 mt-3 shrink-0" />
+                    </button>
+
+                    <button
+                      onClick={() => setIntentSheet('manual')}
+                      className="w-full text-left p-4 rounded-2xl bg-ink-50 hover:bg-ink-100 transition-all flex items-start gap-4 press border border-ink-100"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-ink-100 text-ink-700 flex items-center justify-center shrink-0">
+                        <Pencil className="w-5 h-5 text-ink-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-ink-900 text-sm">Build Manually</span>
+                        <p className="text-xs text-ink-600 mt-1 leading-normal">
+                          Add stops stop-by-stop yourself. Organize your daily schedule and customize it exactly how you want.
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-ink-400 mt-3 shrink-0" />
+                    </button>
+                  </div>
+                )}
+
+                {intentSheet !== 'choice' && (
+                  <>
 
                 {/* Scope explainer — honest expectations up front (AI mode only) */}
                 {intentSheet === 'ai' && (
@@ -1474,16 +1502,20 @@ export default function HomePage() {
                   </button>
                 </div>
 
+                  </>
+                )}
               </div>
 
-              <div className="px-5 shrink-0">
-                <button
-                  onClick={handleIntentConfirm}
-                  className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2"
-                >
-                  {intentSheet === 'ai' ? <><Wand2 className="w-5 h-5" /> {COPY.ctas.intentSheetContinue}</> : <><Pencil className="w-5 h-5" /> Start planning</>}
-                </button>
-              </div>
+              {intentSheet !== 'choice' && (
+                <div className="px-5 shrink-0">
+                  <button
+                    onClick={handleIntentConfirm}
+                    className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2"
+                  >
+                    {intentSheet === 'ai' ? <><Wand2 className="w-5 h-5" /> {COPY.ctas.intentSheetContinue}</> : <><Pencil className="w-5 h-5" /> Start planning</>}
+                  </button>
+                </div>
+              )}
             </motion.div>
           </>
         )}
