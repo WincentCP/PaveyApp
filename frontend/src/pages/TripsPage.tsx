@@ -73,8 +73,10 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="absolute inset-0 overflow-y-auto pb-32 no-scrollbar bg-white">
-      <StatusBar />
+    <div className="absolute inset-0 overflow-hidden bg-white">
+      {/* Scrollable page body */}
+      <div className="absolute inset-0 overflow-y-auto pb-32 no-scrollbar">
+        <StatusBar />
       <PageHeader
         icon={CalendarDays}
         title="My Plan"
@@ -281,6 +283,7 @@ export default function TripsPage() {
           </div>
         )}
       </div>
+      </div>
 
       {/* Trip Settings Sheet */}
       <AnimatePresence>
@@ -290,7 +293,7 @@ export default function TripsPage() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-8"
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-8 flex flex-col max-h-[90%] overflow-hidden"
             >
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
               <div className="px-5 pt-3 pb-2 flex items-center justify-between">
@@ -300,7 +303,7 @@ export default function TripsPage() {
                 </button>
               </div>
 
-              <div className="px-5 pt-2 space-y-2">
+              <div className="px-5 pt-2 space-y-2 flex-1 overflow-y-auto no-scrollbar">
                 {/* Edit plan */}
                 <button
                   onClick={() => { setSettingsOpen(false); nav('/generate?edit=1'); }}

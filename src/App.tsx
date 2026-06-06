@@ -77,7 +77,7 @@ function AppShell() {
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           onClick={() => { dismissBuddyIntro(); setBuddyOpen(true); }}
           className="absolute right-4 bottom-[96px] z-20 w-14 h-14 rounded-full bg-brand-500 shadow-glow flex items-center justify-center press cursor-grab active:cursor-grabbing"
-          aria-label="Open Buddy AI"
+          aria-label="Open TinTin"
         >
           {/* buddy.svg: 997 × 1036 px — replace with buddy.png */}
           <img

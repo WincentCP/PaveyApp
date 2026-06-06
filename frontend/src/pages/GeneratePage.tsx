@@ -413,7 +413,7 @@ export default function GeneratePage() {
       const existing = new Set(prev.map((p) => p.id));
       return [...prev, ...itinerary.filter((p) => !existing.has(p.id))];
     });
-    show('AI suggestions imported', 'success');
+    show('TinTin suggestions imported', 'success');
   };
 
   const runReroll = () => {
@@ -777,7 +777,7 @@ export default function GeneratePage() {
                   <div className="text-sm font-bold">{manualStops.length} stops · {formatCost(totals.cost, activeTrip.currency)}</div>
                 </div>
                 <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
-                  <Wand2 className="w-3.5 h-3.5" /> Mix AI
+                  <Wand2 className="w-3.5 h-3.5" /> Mix TinTin
                 </button>
               </div>
             )}
@@ -934,7 +934,7 @@ export default function GeneratePage() {
                   <div className="font-semibold text-ink-700 text-sm">No stops yet</div>
                   <div className="text-xs text-ink-500 mt-1">Search above or pick from recommendations</div>
                   <button onClick={importAi} className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold press">
-                    <Wand2 className="w-3.5 h-3.5" /> Import AI suggestions
+                    <Wand2 className="w-3.5 h-3.5" /> Import TinTin suggestions
                   </button>
                 </div>
               )}

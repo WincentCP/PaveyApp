@@ -287,7 +287,7 @@ export default function MapPage() {
               <div className="px-5 pt-3 pb-2 flex items-center justify-between shrink-0">
                 <div>
                   <div className="font-bold text-ink-900 font-display text-base">
-                    {intentSheet === 'ai' ? 'Plan with AI' : 'Build your plan'}
+                    {intentSheet === 'ai' ? 'Plan with TinTin' : 'Build your plan'}
                   </div>
                   <div className="text-xs text-ink-500 mt-0.5">
                     Fields marked <span className="text-red-400 font-semibold">*</span> are required
@@ -431,7 +431,7 @@ function EmptyDestState({
           onClick={onAiGenerate}
           className="h-12 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2"
         >
-          <Wand2 className="w-4 h-4" /> AI Plan
+          <Wand2 className="w-4 h-4" /> TinTin Plan
         </button>
         <button
           onClick={onManual}

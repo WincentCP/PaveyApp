@@ -54,8 +54,8 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
               <div className="flex items-center gap-3 mt-3">
                 <BuddyAvatar />
                 <div>
-                  <div className="text-ink-900 font-bold leading-tight">Buddy</div>
-                  <div className="text-[11px] text-ink-500 leading-tight">Your AI travel companion</div>
+                  <div className="text-ink-900 font-bold leading-tight">TinTin</div>
+                  <div className="text-[11px] text-ink-500 leading-tight">Your TinTin travel companion</div>
                 </div>
               </div>
               <button onClick={onClose} className="mt-3 w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center text-ink-600 press">
@@ -118,7 +118,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Ask Buddy anything…"
+                placeholder="Ask TinTin anything…"
                 className="flex-1 bg-ink-50 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300"
               />
               <motion.button

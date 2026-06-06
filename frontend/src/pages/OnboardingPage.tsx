@@ -3,7 +3,7 @@ import {
   ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp,
   Eye, EyeOff, Lock,
   Mail, MapPin, Plus, RefreshCw, User, X,
-  Trees, Coffee, Compass, Landmark, Sparkles, Bell,
+  Trees, Coffee, Compass, Landmark, Scale, Bell,
   Wallet, Info, AlertTriangle,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -47,7 +47,7 @@ function getVibeIcon(id: Vibe, className = "w-6 h-6") {
       return <Landmark className={className} />;
     case 'balanced':
     default:
-      return <Sparkles className={className} />;
+      return <Scale className={className} />;
   }
 }
 

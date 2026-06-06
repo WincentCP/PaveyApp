@@ -78,8 +78,9 @@ export default function WalletPage() {
   const fmt = (n: number) => formatCurrencyAmount(n, currency);
 
   return (
-    <div className="absolute inset-0 bg-white overflow-y-auto pb-32 no-scrollbar">
-      <StatusBar />
+    <div className="absolute inset-0 bg-white overflow-hidden flex flex-col">
+      <div className="absolute inset-0 overflow-y-auto pb-32 no-scrollbar">
+        <StatusBar />
 
       {/* Header */}
       <PageHeader
@@ -342,6 +343,7 @@ export default function WalletPage() {
         )}
       </div>
       </>)}
+      </div>
 
       {/* Sheets */}
       <Sheet open={sheet === 'editBudget'} title="Edit Trip Budget" onClose={() => setSheet(null)}>

@@ -86,8 +86,10 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="absolute inset-0 bg-white overflow-y-auto pb-32 no-scrollbar">
-      <StatusBar />
+    <div className="absolute inset-0 bg-white overflow-hidden">
+      {/* Scrollable page body */}
+      <div className="absolute inset-0 overflow-y-auto pb-32 no-scrollbar">
+        <StatusBar />
 
       {/* Header */}
       <PageHeader icon={User} title="Profile" />
@@ -239,6 +241,7 @@ export default function ProfilePage() {
           <span className="flex-1 text-left text-sm font-semibold text-red-600">Log Out</span>
         </button>
       </div>
+      </div>
 
       {/* Logout confirmation */}
       <AnimatePresence>
@@ -248,7 +251,7 @@ export default function ProfilePage() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl p-5 shadow-card"
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl p-5 shadow-card flex flex-col max-h-[90%] overflow-hidden"
             >
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mb-4" />
               <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
@@ -271,7 +274,7 @@ export default function ProfilePage() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card flex flex-col max-h-[80%]"
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card flex flex-col max-h-[90%] overflow-hidden"
             >
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3 shrink-0" />
               <div className="px-5 pt-3 pb-3 flex items-center justify-between shrink-0">
@@ -313,14 +316,14 @@ export default function ProfilePage() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl p-5 shadow-card pb-8"
+              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl p-5 shadow-card pb-8 flex flex-col max-h-[90%] overflow-hidden"
             >
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mb-3" />
               <div className="flex items-center justify-between mb-3">
                 <div className="font-bold text-ink-900 font-display">Stat Detail</div>
                 <button onClick={() => setStatDetail(null)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
               </div>
-              <div className="text-sm text-ink-700 leading-relaxed">
+              <div className="text-sm text-ink-700 leading-relaxed flex-1 overflow-y-auto no-scrollbar pb-4">
                 {{
                   trips: `You've completed ${USER.stats.trips} trips. Your most explored region is Bali (5 trips). Average trip: 4 days.`,
                   places: `You've visited ${totalPlaces} unique places. Cafes are your top category.`,
