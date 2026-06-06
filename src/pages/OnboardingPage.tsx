@@ -549,14 +549,13 @@ export default function OnboardingPage() {
                   {(() => {
                     const COUNTRY_CITIES: Record<string, string[]> = {
                       japan: ['Tokyo', 'Kyoto', 'Osaka', 'Sapporo', 'Hiroshima'],
-                      france: ['Paris', 'Nice', 'Lyon', 'Bordeaux'],
-                      usa: ['New York', 'Los Angeles', 'San Francisco', 'Chicago'],
-                      australia: ['Sydney', 'Melbourne', 'Brisbane', 'Gold Coast'],
                       indonesia: ['Bali', 'Jakarta', 'Yogyakarta', 'Lombok'],
                       bali: ['Ubud', 'Seminyak', 'Canggu', 'Nusa Dua'],
                       singapore: ['Singapore'],
                       thailand: ['Bangkok', 'Chiang Mai', 'Phuket', 'Koh Samui'],
                       korea: ['Seoul', 'Busan', 'Jeju', 'Incheon'],
+                      vietnam: ['Hanoi', 'Ho Chi Minh City', 'Da Nang', 'Hoi An'],
+                      malaysia: ['Kuala Lumpur', 'Penang', 'Langkawi', 'Malacca'],
                     };
                     const lower = destInput.toLowerCase().trim();
                     const match = Object.entries(COUNTRY_CITIES).find(([key]) => lower === key || lower.startsWith(key));
@@ -585,7 +584,7 @@ export default function OnboardingPage() {
                   )}
                   {destList.length === 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {['Paris, France', 'Rome, Italy', 'Bali, Indonesia', 'Tokyo, Japan', 'Barcelona, Spain'].map((d) => (
+                      {['Bali, Indonesia', 'Tokyo, Japan', 'Bangkok, Thailand', 'Seoul, South Korea', 'Singapore'].map((d) => (
                         <button
                           key={d}
                           onClick={() => setDestList((prev) => prev.some((x) => x.name === d) ? prev : [...prev, { name: d, days: 2 }])}

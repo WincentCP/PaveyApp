@@ -68,19 +68,22 @@ function AppShell() {
       {/* Buddy floating button — single entry point, visible on all main pages */}
       {!hideBuddy && !hideNav && (
         <motion.button
+          drag
+          dragMomentum={false}
+          dragConstraints={{ left: -320, right: 10, top: -700, bottom: 10 }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           onClick={() => { dismissBuddyIntro(); setBuddyOpen(true); }}
-          className="absolute right-4 bottom-[96px] z-20 w-12 h-12 rounded-full bg-brand-500 shadow-glow flex items-center justify-center press"
+          className="absolute right-4 bottom-[96px] z-20 w-14 h-14 rounded-full bg-brand-500 shadow-glow flex items-center justify-center press cursor-grab active:cursor-grabbing"
           aria-label="Open Buddy AI"
         >
           {/* buddy.svg: 997 × 1036 px — replace with buddy.png */}
           <img
             src={buddyImg}
             alt="Buddy"
-            className="w-7 h-7 object-contain"
+            className="w-9 h-9 object-contain pointer-events-none"
             style={{ aspectRatio: '997/1036' }}
           />
         </motion.button>

@@ -273,7 +273,6 @@ export default function WalletPage() {
           icon={<Users />}
           label="Split Bill"
           onClick={() => !tripCompleted && setSheet('splitBill')}
-          highlight={!tripCompleted}
           disabled={tripCompleted}
         />
         <QuickBtn icon={<Scan />} label="Scan" onClick={() => !tripCompleted && setSheet('scan')} disabled={tripCompleted} />

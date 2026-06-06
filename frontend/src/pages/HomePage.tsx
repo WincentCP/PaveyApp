@@ -108,7 +108,6 @@ export default function HomePage() {
   const [socialResult, setSocialResult] = useState<typeof SOCIAL_MOCK[string] | null>(null);
   const [socialError, setSocialError] = useState(false);
   const socialInputRef = useRef<HTMLInputElement>(null);
-  const [socialExpanded, setSocialExpanded] = useState(false);
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [addDestSheet, setAddDestSheet] = useState(false);
   const [newDestName, setNewDestName] = useState('');
@@ -1028,118 +1027,105 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Social Media Parser Accordion */}
+      {/* Social Media Parser */}
       <div className="px-5 mt-8">
-        <button
-          onClick={() => setSocialExpanded((v) => !v)}
-          className="w-full flex items-center justify-between py-1 border-b border-ink-100 press"
-        >
+        <div className="w-full flex items-center justify-between py-1 border-b border-ink-100">
           <span className="text-[11px] font-bold tracking-widest text-ink-500 uppercase">Import from Social Media</span>
-          <span className="text-xs font-semibold text-brand-600">{socialExpanded ? 'Hide' : 'Show'}</span>
-        </button>
+        </div>
 
-        <AnimatePresence>
-          {socialExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden mt-3"
-            >
-              <div className="bg-ink-50 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
-                    TikTok
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-                    <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                    Instagram
-                  </div>
-                  <span className="text-xs text-ink-400">links supported</span>
-                </div>
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-ink-100">
-                    <Link2 className="w-4 h-4 text-ink-400 shrink-0" />
-                    <input
-                      ref={socialInputRef}
-                      value={socialUrl}
-                      onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
-                      placeholder="Paste a TikTok or Instagram link…"
-                      className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
-                    />
-                    {socialUrl && <button onClick={() => { setSocialUrl(''); setSocialResult(null); }}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
-                  </div>
-                  <button
-                    onClick={parseSocialLink}
-                    disabled={!socialUrl.trim() || socialParsing}
-                    className="shrink-0 h-10 px-4 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white text-sm font-semibold press"
-                  >
-                    {socialParsing ? '…' : 'Parse'}
-                  </button>
-                </div>
-                {socialError && (
-                  <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
-                  </motion.p>
-                )}
-                <AnimatePresence>
-                  {socialParsing && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                      <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
-                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                          <RefreshCw className="w-3.5 h-3.5" />
-                        </motion.div>
-                        Extracting place information…
-                      </div>
-                      <div className="h-2 rounded shimmer w-3/4" />
-                    </motion.div>
-                  )}
-                  {socialResult && !socialParsing && (
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-white rounded-xl border border-ink-100 overflow-hidden">
-                      <div className="flex items-start gap-3 p-3">
-                        <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full">From {socialResult.platform}</span>
-                          <div className="font-semibold text-ink-900 text-sm truncate mt-1">{socialResult.name}</div>
-                          <div className="text-xs text-ink-600 mt-0.5 line-clamp-2">{socialResult.desc}</div>
-                          <div className="text-xs text-brand-600 font-semibold mt-1">{formatCost(socialResult.cost, activeTrip.currency)}</div>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 px-3 pb-3">
-                        <button
-                          onClick={() => {
-                            const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                            addStop(place);
-                            show(`${socialResult!.name} added to plan`, 'success');
-                            setSocialResult(null);
-                            setSocialUrl('');
-                            nav('/map');
-                          }}
-                          className="h-9 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1 shadow-glow"
-                        >
-                          <MapPin className="w-3.5 h-3.5" /> Add to Plan
-                        </button>
-                        <button
-                          onClick={() => {
-                            const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                            savePlace(place);
-                            show(`${socialResult!.name} saved for later`, 'success');
-                            setSocialResult(null);
-                            setSocialUrl('');
-                          }}
-                          className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1"
-                        >
-                          <Bookmark className="w-3.5 h-3.5" /> Save for Later
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+        <div className="mt-3">
+          <div className="bg-ink-50 rounded-2xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
+                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
+                TikTok
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
+                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                Instagram
+              </div>
+              <span className="text-xs text-ink-400">links supported</span>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-ink-100">
+                <Link2 className="w-4 h-4 text-ink-400 shrink-0" />
+                <input
+                  ref={socialInputRef}
+                  value={socialUrl}
+                  onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
+                  placeholder="Paste a TikTok or Instagram link…"
+                  className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
+                />
+                {socialUrl && <button onClick={() => { setSocialUrl(''); setSocialResult(null); }}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
+              </div>
+              <button
+                onClick={parseSocialLink}
+                disabled={!socialUrl.trim() || socialParsing}
+                className="shrink-0 h-10 px-4 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white text-sm font-semibold press"
+              >
+                {socialParsing ? '…' : 'Parse'}
+              </button>
+            </div>
+            {socialError && (
+              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
+              </motion.p>
+            )}
+            <AnimatePresence>
+              {socialParsing && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
+                  <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    </motion.div>
+                    Extracting place information…
+                  </div>
+                  <div className="h-2 rounded shimmer w-3/4" />
+                </motion.div>
+              )}
+              {socialResult && !socialParsing && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-white rounded-xl border border-ink-100 overflow-hidden">
+                  <div className="flex items-start gap-3 p-3">
+                    <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full">From {socialResult.platform}</span>
+                      <div className="font-semibold text-ink-900 text-sm truncate mt-1">{socialResult.name}</div>
+                      <div className="text-xs text-ink-600 mt-0.5 line-clamp-2">{socialResult.desc}</div>
+                      <div className="text-xs text-brand-600 font-semibold mt-1">{formatCost(socialResult.cost, activeTrip.currency)}</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                    <button
+                      onClick={() => {
+                        const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
+                        addStop(place);
+                        show(`${socialResult!.name} added to plan`, 'success');
+                        setSocialResult(null);
+                        setSocialUrl('');
+                        nav('/map');
+                      }}
+                      className="h-9 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1 shadow-glow"
+                    >
+                      <MapPin className="w-3.5 h-3.5" /> Add to Plan
+                    </button>
+                    <button
+                      onClick={() => {
+                        const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
+                        savePlace(place);
+                        show(`${socialResult!.name} saved for later`, 'success');
+                        setSocialResult(null);
+                        setSocialUrl('');
+                      }}
+                      className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1"
+                    >
+                      <Bookmark className="w-3.5 h-3.5" /> Save for Later
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
 
       {/* ── Pre-Generation Intent Sheet ── */}
@@ -1635,46 +1621,58 @@ export default function HomePage() {
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-10"
             >
-              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
-              <div className="px-5 pt-3 pb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-amber-500" />
-                  <div className="font-bold text-ink-900 font-display">Quick Plan</div>
+              <div className="px-5 pt-3 pb-3 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4.5 h-4.5 text-amber-500" />
+                    <div className="font-bold text-ink-900 font-display text-base">Short Outing</div>
+                  </div>
+                  <div className="text-xs text-ink-500 mt-0.5">Trim your active day plan to fit a shorter window</div>
                 </div>
                 <button onClick={() => setQuickPlanSheet(false)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
               </div>
               <div className="px-5 space-y-4">
-                <div className="text-sm text-ink-600">How long do you have?</div>
                 <div className="flex gap-2">
-                  {QUICK_PLAN_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setQuickPlanHours(opt.hours)}
-                      className={`flex-1 py-3 rounded-xl font-semibold text-sm press transition-colors ${quickPlanHours === opt.hours ? 'bg-amber-500 text-white' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                  {QUICK_PLAN_OPTIONS.map((opt) => {
+                    const stops = Math.round((opt.hours * 60) / 90);
+                    return (
+                      <button
+                        key={opt.label}
+                        onClick={() => setQuickPlanHours(opt.hours)}
+                        className={`flex-1 py-3 px-2 rounded-xl flex flex-col items-center justify-center press transition-all border ${
+                          quickPlanHours === opt.hours
+                            ? 'bg-amber-500 text-white border-amber-600 shadow-sm'
+                            : 'bg-ink-50/50 hover:bg-ink-50 text-ink-700 border-ink-100'
+                        }`}
+                      >
+                        <div className="font-bold text-sm leading-tight">{opt.label}</div>
+                        <div className={`text-[9px] mt-0.5 ${quickPlanHours === opt.hours ? 'text-white/80' : 'text-ink-400'}`}>
+                          Keep {stops} stop{stops !== 1 ? 's' : ''}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
                 {/* Show Preview of Stops */}
                 {(() => {
                   const stopsCount = Math.round((quickPlanHours * 60) / 90);
                   const quickPlanStops = itinerary.slice(0, Math.max(1, stopsCount));
                   return (
-                    <div className="space-y-2">
-                      <div className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">
-                        Stops to Keep ({quickPlanStops.length})
+                    <div className="space-y-2.5">
+                      <div className="text-[10px] font-bold text-ink-400 uppercase tracking-widest">
+                        Preview of Stops to Keep ({quickPlanStops.length})
                       </div>
                       {quickPlanStops.length === 0 ? (
-                        <div className="text-xs text-ink-500 bg-ink-50 rounded-2xl p-4 text-center">
+                        <div className="text-xs text-ink-500 bg-ink-50/50 border border-dashed border-ink-200 rounded-2xl p-6 text-center">
                           No active itinerary found. Go plan a trip with AI first!
                         </div>
                       ) : (
-                        <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar bg-ink-50 border border-ink-100 rounded-2xl p-3">
+                        <div className="space-y-2 max-h-36 overflow-y-auto no-scrollbar bg-ink-50/50 border border-ink-100 rounded-2xl p-3">
                           {quickPlanStops.map((stop, idx) => (
-                            <div key={stop.id || idx} className="flex items-center gap-2 text-xs text-ink-850 font-semibold truncate">
+                            <div key={stop.id || idx} className="flex items-center gap-2.5 text-xs text-ink-850 font-semibold truncate bg-white border border-ink-100/50 rounded-xl p-2 shadow-sm">
                               <span className="w-5 h-5 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-[10px] shrink-0">{idx + 1}</span>
-                              <span className="truncate">{stop.name}</span>
+                              <span className="truncate flex-1">{stop.name}</span>
+                              <span className="text-[10px] text-ink-400 font-medium">{stop.category}</span>
                             </div>
                           ))}
                         </div>

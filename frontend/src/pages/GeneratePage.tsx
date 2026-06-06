@@ -1,7 +1,7 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
-  Clock, Star, Pencil, Search, Wallet,
+  Clock, Star, Pencil, Search, Wallet, Bookmark,
   Plane, Train, Sun, Compass, Trash2, Lightbulb, Car,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -622,7 +622,23 @@ export default function GeneratePage() {
                       );
                     })()}
 
-                    <div className="space-y-3">
+                    <Reorder.Group
+                      axis="y"
+                      values={displayItinerary}
+                      onReorder={(newOrder) => {
+                        setUserEdited(true);
+                        if (isMultiDay) {
+                          const newDays = perDayItineraries.map((day, d) => {
+                            if (d !== activeDay) return day;
+                            return newOrder;
+                          });
+                          setPerDayItineraries(newDays);
+                        } else {
+                          setItinerary(newOrder);
+                        }
+                      }}
+                      className="space-y-3"
+                    >
                       <AnimatePresence>
                         {(() => {
                           return displayItinerary.map((p, i) => {
@@ -630,7 +646,7 @@ export default function GeneratePage() {
                             const timeStr = getTime(p.id, i);
                             const conflict = hasConflict(p, timeStr);
                             return (
-                              <div key={p.id} className="mb-4">
+                              <Reorder.Item key={p.id} value={p} drag={editAffordances ? "y" : false} className="mb-4 list-none">
                                 <StopCard
                                   index={i} total={displayItinerary.length} place={p}
                                   scheduledTime={timeStr}
@@ -654,12 +670,12 @@ export default function GeneratePage() {
                                     durationMin={p.durationMin}
                                   />
                                 )}
-                              </div>
+                              </Reorder.Item>
                             );
                           });
                         })()}
                       </AnimatePresence>
-                    </div>
+                    </Reorder.Group>
 
 
 
@@ -775,12 +791,17 @@ export default function GeneratePage() {
                     <span className="text-[11px] font-bold tracking-widest text-ink-500">ITINERARY · {manualStops.length} STOPS</span>
                     <span className="text-[11px] text-ink-400">← swipe to remove</span>
                   </div>
-                  <div className="space-y-0 mb-4">
+                  <Reorder.Group
+                    axis="y"
+                    values={manualStops}
+                    onReorder={setManualStops}
+                    className="space-y-0 mb-4"
+                  >
                     <AnimatePresence>
                       {manualStops.map((p, i) => {
                         const intel = getCulturalIntel(p.id, p.category);
                         return (
-                          <div key={p.id}>
+                          <Reorder.Item key={p.id} value={p} className="list-none">
                             <StopCard
                               index={i} total={manualStops.length} place={p}
                               scheduledTime={getTime(p.id, i)}
@@ -808,11 +829,11 @@ export default function GeneratePage() {
                             {i < manualStops.length - 1 && (
                               <StopConnector distanceKm={manualStops[i + 1].distanceKm} fromTime={getTime(p.id, i)} durationMin={p.durationMin} />
                             )}
-                          </div>
+                          </Reorder.Item>
                         );
                       })}
                     </AnimatePresence>
-                  </div>
+                  </Reorder.Group>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-ink-100" />
                     <span className="text-[11px] text-ink-400 font-semibold shrink-0">ADD MORE STOPS</span>
@@ -1604,9 +1625,21 @@ function StopCard({
   onFixTime?: (newTime: string) => void;
   onTipClick?: () => void;
 }) {
-  const { activeTrip } = useApp();
+  const { activeTrip, isSaved, savePlace, removeSavedPlace } = useApp();
+  const { show } = useToast();
   const [dragX, setDragX] = useState(0);
   const canSwap = editable && !isManual;
+  const saved = isSaved(place.id);
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (saved) {
+      removeSavedPlace(place.id);
+      show('Removed from saved places', 'info');
+    } else {
+      savePlace(place);
+      show('Saved to saved places', 'success');
+    }
+  };
 
   return (
     <motion.div
@@ -1715,26 +1748,37 @@ function StopCard({
           </div>
         </div>
 
-        {editable && (
-          <div className="shrink-0 flex items-center gap-1.5">
-            {canSwap && (
+        <div className="shrink-0 flex items-center gap-1.5">
+          <button
+            onClick={handleSave}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors press ${
+              saved ? 'bg-brand-50 text-brand-600 border border-brand-200' : 'bg-ink-50 hover:bg-ink-100 text-ink-600'
+            }`}
+            title={saved ? 'Remove from Saved' : 'Save place'}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${saved ? 'fill-brand-500 text-brand-500' : ''}`} />
+          </button>
+          {editable && (
+            <>
+              {canSwap && (
+                <button
+                  onClick={onReplace}
+                  className="w-8 h-8 rounded-full bg-violet-50 hover:bg-violet-100 flex items-center justify-center text-violet-600 transition-colors press"
+                  title="Swap stop"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              )}
               <button
-                onClick={onReplace}
-                className="w-8 h-8 rounded-full bg-violet-50 hover:bg-violet-100 flex items-center justify-center text-violet-600 transition-colors press"
-                title="Swap stop"
+                onClick={onRemove}
+                className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors press"
+                title="Remove stop"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
-            )}
-            <button
-              onClick={onRemove}
-              className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors press"
-              title="Remove stop"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </motion.div>
     </motion.div>
   );
