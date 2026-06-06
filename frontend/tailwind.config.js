@@ -3,6 +3,9 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      spacing: {
+        4.5: '1.125rem', // 18px
+      },
       fontFamily: {
         display: ['Satoshi', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         sans: ['"Plus Jakarta Sans"', 'Satoshi', 'system-ui', 'sans-serif'],

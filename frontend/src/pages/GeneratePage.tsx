@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import {
-  ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
+  ArrowLeft, ArrowDown, Check, Plus, RefreshCw, X,
   Clock, Star, Pencil, Search, Wallet, Bookmark,
   Plane, Train, Sun, Compass, Trash2, Lightbulb, Car,
 } from 'lucide-react';
@@ -474,7 +474,7 @@ export default function GeneratePage() {
                   <div className="mx-5 mt-2 p-4 rounded-2xl bg-brand-600 text-white shrink-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
-                        <Wand2 className="w-4 h-4" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
+                        <img src="/smile.svg" alt="TinTin" className="w-5 h-5 object-contain" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
                       </div>
                       <button
                         onClick={() => nav('/?openIntent=1')}
@@ -690,7 +690,7 @@ export default function GeneratePage() {
                           }}
                           className="flex items-center gap-2 text-xs font-semibold text-brand-600 px-4 py-2 rounded-full bg-brand-50 press"
                         >
-                          <Wand2 className="w-3.5 h-3.5" /> Swipe review
+                          <img src="/smile.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Swipe review
                         </button>
                         <button
                           onClick={() => {
@@ -777,7 +777,7 @@ export default function GeneratePage() {
                   <div className="text-sm font-bold">{manualStops.length} stops · {formatCost(totals.cost, activeTrip.currency)}</div>
                 </div>
                 <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
-                  <Wand2 className="w-3.5 h-3.5" /> Mix TinTin
+                  <img src="/smile.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Mix TinTin
                 </button>
               </div>
             )}
@@ -934,7 +934,7 @@ export default function GeneratePage() {
                   <div className="font-semibold text-ink-700 text-sm">No stops yet</div>
                   <div className="text-xs text-ink-500 mt-1">Search above or pick from recommendations</div>
                   <button onClick={importAi} className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold press">
-                    <Wand2 className="w-3.5 h-3.5" /> Import TinTin suggestions
+                    <img src="/smile.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Import TinTin suggestions
                   </button>
                 </div>
               )}
@@ -966,7 +966,7 @@ export default function GeneratePage() {
             {/* Header */}
             <div className="px-5 py-4 flex items-center justify-between shrink-0 border-b border-ink-50">
               <div className="flex items-center gap-2">
-                <Wand2 className="w-5 h-5 text-brand-500 animate-pulse" />
+                <img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain animate-pulse" />
                 <div className="font-bold text-ink-900 font-display">Review Your Places</div>
               </div>
               <div className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">

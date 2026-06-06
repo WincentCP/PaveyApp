@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CalendarDays, MapPin, Clock, Star, Navigation, Pencil, Wand2, ChevronRight, Trash2, Settings2, X,
+  CalendarDays, MapPin, Clock, Star, Navigation, Pencil, ChevronRight, Trash2, Settings2, X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -201,7 +201,7 @@ export default function TripsPage() {
               onClick={() => nav('/?newPlan=1')}
               className="h-12 px-8 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2 mx-auto"
             >
-              <Wand2 className="w-4 h-4" /> Plan My Trip
+              <img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain" /> Plan My Trip
             </button>
           </motion.div>
         )}

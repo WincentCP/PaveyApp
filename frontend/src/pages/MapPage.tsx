@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, Crosshair, Navigation, X, MapPin,
   Clock, Star, DollarSign, Bookmark,
-  ChevronUp, Map, Pencil, Wand2, AlertTriangle,
+  ChevronUp, Map, Pencil, AlertTriangle,
 } from 'lucide-react';
 import { PaveyLogoMark } from '../components/PaveyLogo';
 import MiniCalendar from '../components/MiniCalendar';
@@ -404,7 +404,7 @@ export default function MapPage() {
               <div className="px-5 pt-3 shrink-0 border-t border-ink-100">
                 <button onClick={handleIntentConfirm}
                   className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2">
-                  {intentSheet === 'ai' ? <><Wand2 className="w-5 h-5" /> Generate my plan</> : <><Pencil className="w-5 h-5" /> Start planning</>}
+                  {intentSheet === 'ai' ? <><img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain" /> Generate my plan</> : <><Pencil className="w-5 h-5" /> Start planning</>}
                 </button>
               </div>
             </motion.div>
@@ -431,7 +431,7 @@ function EmptyDestState({
           onClick={onAiGenerate}
           className="h-12 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2"
         >
-          <Wand2 className="w-4 h-4" /> TinTin Plan
+          <img src="/smile.svg" alt="TinTin" className="w-5 h-5 object-contain" /> TinTin Plan
         </button>
         <button
           onClick={onManual}

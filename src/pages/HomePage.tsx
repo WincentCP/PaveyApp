@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Search, SlidersHorizontal, Wand2, CloudSun, Bookmark,
+  Search, SlidersHorizontal, CloudSun, Bookmark,
   X, Star, MapPin, Clock, Pencil,
   ChevronRight, DollarSign, Plus, Navigation, RefreshCw,
   ArrowRight, Compass, Zap, Link2, AlertTriangle,
@@ -1149,7 +1149,7 @@ export default function HomePage() {
                       className="w-full text-left p-4 rounded-2xl bg-brand-50 border border-brand-200 hover:border-brand-500 transition-all flex items-start gap-4 press"
                     >
                       <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 flex items-center justify-center shrink-0">
-                        <Wand2 className="w-5 h-5 text-brand-500" />
+                        <img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -1515,7 +1515,7 @@ export default function HomePage() {
                     onClick={handleIntentConfirm}
                     className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2"
                   >
-                    {intentSheet === 'ai' ? <><Wand2 className="w-5 h-5" /> {COPY.ctas.intentSheetContinue}</> : <><Pencil className="w-5 h-5" /> Start planning</>}
+                    {intentSheet === 'ai' ? <><img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain" /> {COPY.ctas.intentSheetContinue}</> : <><Pencil className="w-5 h-5" /> Start planning</>}
                   </button>
                 </div>
               )}
@@ -1783,7 +1783,7 @@ export default function HomePage() {
                   onClick={() => { setVibeSheet(false); nav('/generate'); }}
                   className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
                 >
-                  <Wand2 className="w-4 h-4" /> Regenerate Plan
+                  <img src="/smile.svg" alt="TinTin" className="w-5 h-5 object-contain" /> Regenerate Plan
                 </button>
               </div>
             </motion.div>

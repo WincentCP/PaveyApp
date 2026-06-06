@@ -9,7 +9,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { Wallet, Wand2 } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 
 interface Props {
   onCreatePlan: () => void;
@@ -37,7 +37,7 @@ export default function WalletOnboardingEmpty({ onCreatePlan, onLogQuickExpense 
         onClick={onCreatePlan}
         className="mt-5 inline-flex items-center justify-center gap-2 h-12 px-5 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow"
       >
-        <Wand2 className="w-4 h-4" />
+        <img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain" />
         Create a trip plan
       </button>
 
