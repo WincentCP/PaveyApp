@@ -349,7 +349,7 @@ export default function OnboardingPage() {
               </div>
               <div className="flex items-center gap-3 mb-3">
                 {/* welcome.svg → replace with welcome.png (990 × 1037 px) */}
-                <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 bg-brand-50">
+                <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 bg-brand-50">
                   <img
                     src={welcomeImg}
                     alt=""

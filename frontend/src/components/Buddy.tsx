@@ -138,7 +138,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
 
 function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const [failed, setFailed] = useState(false);
-  const cls = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
+  const cls = size === 'sm' ? 'w-7 h-7' : 'w-9 h-9';
   if (failed) {
     return (
       <div className={`${cls} rounded-full bg-brand-500 flex items-center justify-center text-white shrink-0`}>

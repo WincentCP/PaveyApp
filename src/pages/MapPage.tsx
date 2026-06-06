@@ -16,6 +16,7 @@ import type { Currency } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import type { Place, Vibe } from '../data/places';
 import { getCulturalIntel } from '../data/cultural';
+import { tripDurationDays, isPastDate } from '../lib/dateUtils';
 
 
 
@@ -286,7 +287,7 @@ export default function MapPage() {
               <div className="px-5 pt-3 pb-2 flex items-center justify-between shrink-0">
                 <div>
                   <div className="font-bold text-ink-900 font-display text-base">
-                    {intentSheet === 'ai' ? '✨ Plan with AI' : '🗺️ Build your plan'}
+                    {intentSheet === 'ai' ? 'Plan with AI' : 'Build your plan'}
                   </div>
                   <div className="text-xs text-ink-500 mt-0.5">
                     Fields marked <span className="text-red-400 font-semibold">*</span> are required
@@ -331,22 +332,37 @@ export default function MapPage() {
                 {/* WHEN */}
                 <div>
                   <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">WHEN</div>
-                  <button
+                  <div
                     onClick={() => setIntentDateOpen((v) => !v)}
-                    className={`w-full rounded-xl px-3 py-3 text-sm border flex items-center justify-between press ${intentErrors.date ? 'border-red-400 bg-red-50 text-red-700' : 'bg-ink-50 text-ink-700 border-ink-200'}`}
+                    className={`w-full flex items-center gap-2 mb-2 press rounded-xl p-1 border transition-colors ${intentErrors.date ? 'border-red-400 bg-red-50' : 'border-transparent bg-ink-50/50'}`}
                   >
-                    <span className="font-semibold">
-                      {intentDate ? (() => {
-                        const s = new Date(intentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                        const e = intentEndDate ? new Date(intentEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null;
-                        return e ? `${s} → ${e}` : s;
-                      })() : 'Pick dates'}
-                    </span>
-                    <span className="text-[11px] text-ink-400">{intentDateOpen ? 'Done' : 'Edit'}</span>
-                  </button>
+                    <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border transition-colors ${intentDateOpen && !intentEndDate ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-transparent bg-white text-ink-600 shadow-sm'}`}>
+                      <div className="text-[9px] text-ink-400 mb-0.5 font-bold tracking-wider">DEPART</div>
+                      {intentDate ? new Date(intentDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Select'}
+                    </div>
+                    <span className="text-ink-300 font-bold">→</span>
+                    <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border transition-colors ${intentDateOpen && intentDate && !intentEndDate ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-transparent bg-white text-ink-600 shadow-sm'}`}>
+                      <div className="text-[9px] text-ink-400 mb-0.5 font-bold tracking-wider">RETURN</div>
+                      {intentEndDate ? new Date(intentEndDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Select'}
+                    </div>
+                    {intentDate && intentEndDate && (() => {
+                      const d = tripDurationDays(intentDate, intentEndDate);
+                      return d >= 1 ? (
+                        <div className="bg-brand-50 border border-brand-100 rounded-xl px-3 py-2 text-center shrink-0">
+                          <div className="text-[9px] text-brand-500 mb-0.5 font-bold tracking-wider">DAYS</div>
+                          <div className="text-sm font-bold text-brand-700">{d}</div>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
                   {intentErrors.date && (
                     <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
                       <AlertTriangle className="w-3 h-3 shrink-0" /> {intentErrors.date}
+                    </div>
+                  )}
+                  {intentDate && !intentErrors.date && isPastDate(intentDate) && (
+                    <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
+                      <AlertTriangle className="w-3 h-3 shrink-0" /> Start date is in the past
                     </div>
                   )}
                   {intentDateOpen && (

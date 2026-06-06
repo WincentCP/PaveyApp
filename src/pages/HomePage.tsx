@@ -817,13 +817,10 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setShowFlightTimes(false); setShowOverlapWarning(null); setOverlapAcknowledged(false); setIntentPace(pace); setIntentSheet('ai'); }}
-              className="w-full bg-brand-500 text-white rounded-2xl p-5 text-left press shadow-glow flex items-center gap-4"
+              className="w-full bg-brand-500 text-white rounded-2xl p-5 text-left press shadow-glow flex items-center justify-between"
             >
-              <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-                <Wand2 className="w-6 h-6 text-white" />
-              </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-white text-base font-display">Plan your trip ✨</div>
+                <div className="font-bold text-white text-base font-display">Plan your trip</div>
                 <div className="text-xs text-white/80 mt-0.5">
                   {activeDest ? `Tap to start a ${activeDest.name.split(',')[0]} itinerary` : 'Tap to start your first itinerary'}
                 </div>
@@ -948,13 +945,10 @@ export default function HomePage() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => { setIntentVibe(vibe); setIntentBudget(budget); setIntentDest(activeDest?.name.split(',')[0] ?? ''); setIntentDate(''); setIntentEndDate(''); setIntentStartTime('09:00'); setIntentEndTimeSet(false); setIntentErrors({}); setShowFlightTimes(false); setShowOverlapWarning(null); setOverlapAcknowledged(false); setIntentPace(pace); setIntentSheet('ai'); }}
-            className="relative w-full rounded-2xl p-4 text-left flex items-center gap-3 press bg-brand-500 shadow-glow"
+            className="relative w-full rounded-2xl p-4 text-left flex items-center justify-between press bg-brand-500 shadow-glow"
           >
-            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-              <MascotIcon src="/icon-ai-generate.svg" fallback={<Wand2 className="w-5 h-5 text-white" />} />
-            </div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-sm font-display leading-tight">Add another with AI ✨</div>
+              <div className="font-bold text-white text-sm font-display leading-tight">Add another with AI</div>
               <div className="text-[11px] text-white/75 mt-0.5 leading-tight">Let Buddy plan it for you</div>
             </div>
             <span className="absolute top-2 right-2 text-[9px] font-bold text-brand-600 bg-white px-1.5 py-0.5 rounded-full uppercase tracking-wider">Recommended</span>
@@ -1162,7 +1156,7 @@ export default function HomePage() {
               <div className="px-5 pt-3 pb-4 flex items-center justify-between shrink-0">
                 <div>
                   <div className="font-bold text-ink-900 font-display text-base">
-                    {intentSheet === 'ai' ? '✨ Plan with AI' : '🗺️ Build your plan'}
+                    {intentSheet === 'ai' ? 'Plan with AI' : 'Build your plan'}
                   </div>
                   <div className="text-xs text-ink-500 mt-0.5">
                     {intentSheet === 'ai' ? 'Tell us where & when — we handle the rest' : 'Pick a destination to get started'}
@@ -1309,20 +1303,29 @@ export default function HomePage() {
                 {/* WHEN — one canonical calendar, collapsed by default */}
                 <div>
                   <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">WHEN</div>
-                  <button
-                    ref={endDateInputRef as never}
+                  <div
                     onClick={() => setIntentDateOpen((v) => !v)}
-                    className={`w-full rounded-xl px-3 py-3 text-sm border flex items-center justify-between press ${intentErrors.date ? 'border-red-400 bg-red-50 text-red-700' : 'bg-ink-50 text-ink-700 border-ink-200'}`}
+                    className={`w-full flex items-center gap-2 mb-2 press rounded-xl p-1 border transition-colors ${intentErrors.date ? 'border-red-400 bg-red-50' : 'border-transparent bg-ink-50/50'}`}
                   >
-                    <span className="font-semibold">
-                      {intentDate ? (() => {
-                        const s = new Date(intentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                        const e = intentEndDate ? new Date(intentEndDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : null;
-                        return e ? `${s} → ${e}` : s;
-                      })() : 'Pick your dates'}
-                    </span>
-                    <span className="text-[11px] text-ink-400">{intentDateOpen ? 'Done' : 'Edit'}</span>
-                  </button>
+                    <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border transition-colors ${intentDateOpen && !intentEndDate ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-transparent bg-white text-ink-600 shadow-sm'}`}>
+                      <div className="text-[9px] text-ink-400 mb-0.5 font-bold tracking-wider">DEPART</div>
+                      {intentDate ? new Date(intentDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Select'}
+                    </div>
+                    <span className="text-ink-300 font-bold">→</span>
+                    <div className={`flex-1 py-2 px-3 rounded-xl text-center text-xs font-semibold border transition-colors ${intentDateOpen && intentDate && !intentEndDate ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-transparent bg-white text-ink-600 shadow-sm'}`}>
+                      <div className="text-[9px] text-ink-400 mb-0.5 font-bold tracking-wider">RETURN</div>
+                      {intentEndDate ? new Date(intentEndDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : 'Select'}
+                    </div>
+                    {intentDate && intentEndDate && (() => {
+                      const d = tripDurationDays(intentDate, intentEndDate);
+                      return d >= 1 ? (
+                        <div className="bg-brand-50 border border-brand-100 rounded-xl px-3 py-2 text-center shrink-0">
+                          <div className="text-[9px] text-brand-500 mb-0.5 font-bold tracking-wider">DAYS</div>
+                          <div className="text-sm font-bold text-brand-700">{d}</div>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
                   {intentErrors.date && (
                     <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
                       <AlertTriangle className="w-3 h-3 shrink-0" /> {intentErrors.date}
@@ -1361,16 +1364,6 @@ export default function HomePage() {
                       </div>
                     </div>
                   )}
-
-                  {/* Trip duration badge */}
-                  {intentDate && intentEndDate && (() => {
-                    const d = tripDurationDays(intentDate, intentEndDate);
-                    return d >= 1 ? (
-                      <div className="mt-2">
-                        <span className="inline-block bg-brand-50 text-brand-600 text-xs font-bold rounded-full px-3 py-1">✈️ {d}-day trip</span>
-                      </div>
-                    ) : null;
-                  })()}
 
                   {/* Inline single-day hint — no dialog, no confirmation. */}
                   {intentSheet === 'ai' && intentDate && !intentEndDate && (
@@ -1661,14 +1654,40 @@ export default function HomePage() {
                     </button>
                   ))}
                 </div>
-                <div className="text-xs text-ink-500 bg-ink-50 rounded-xl p-3">
-                  <span className="font-semibold text-ink-700">{Math.round((quickPlanHours * 60) / 90)} stop{Math.round((quickPlanHours * 60) / 90) !== 1 ? 's' : ''}</span> from your current vibe + budget itinerary
-                </div>
+
+                {/* Show Preview of Stops */}
+                {(() => {
+                  const stopsCount = Math.round((quickPlanHours * 60) / 90);
+                  const quickPlanStops = itinerary.slice(0, Math.max(1, stopsCount));
+                  return (
+                    <div className="space-y-2">
+                      <div className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">
+                        Stops to Keep ({quickPlanStops.length})
+                      </div>
+                      {quickPlanStops.length === 0 ? (
+                        <div className="text-xs text-ink-500 bg-ink-50 rounded-2xl p-4 text-center">
+                          No active itinerary found. Go plan a trip with AI first!
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar bg-ink-50 border border-ink-100 rounded-2xl p-3">
+                          {quickPlanStops.map((stop, idx) => (
+                            <div key={stop.id || idx} className="flex items-center gap-2 text-xs text-ink-850 font-semibold truncate">
+                              <span className="w-5 h-5 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-[10px] shrink-0">{idx + 1}</span>
+                              <span className="truncate">{stop.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <button
+                  disabled={itinerary.length === 0}
                   onClick={handleQuickPlan}
-                  className="w-full h-12 rounded-2xl bg-amber-500 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
+                  className="w-full h-12 rounded-2xl bg-amber-500 disabled:bg-ink-300 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
                 >
-                  <Zap className="w-4 h-4" /> Generate & Go
+                  <Zap className="w-4 h-4" /> Trim Plan & View Map
                 </button>
               </div>
             </motion.div>
@@ -1971,7 +1990,7 @@ export default function HomePage() {
 
 
 /* Renders your custom mascot SVG, falls back to the given element if file isn't added yet */
-function MascotIcon({ src, fallback }: { src: string; fallback: React.ReactNode }) {
+export function MascotIcon({ src, fallback }: { src: string; fallback: React.ReactNode }) {
   const [failed, setFailed] = useState(false);
   if (failed) return <>{fallback}</>;
   return <img src={src} alt="" className="w-5 h-5 object-contain" onError={() => setFailed(true)} />;

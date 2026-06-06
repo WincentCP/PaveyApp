@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
-  Clock, Star, Pencil, Search, ChevronUp, ChevronDown, Wallet,
+  Clock, Star, Pencil, Search, Wallet,
   Plane, Train, Sun, Compass, Trash2, Lightbulb, Car,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -1594,7 +1594,7 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
 
 /* ── Stop Card ── */
 function StopCard({
-  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual, editable = true, onFixTime, onTipClick,
+  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, onTipClick,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
@@ -1647,21 +1647,7 @@ function StopCard({
         style={{ x: dragX }}
       >
         {/* Reorder arrows — editable mode only. */}
-        {editable && (
-          <div className="flex flex-col items-center bg-violet-50/70 border border-violet-100 rounded-xl p-0.5 shrink-0">
-            <button onClick={onMoveUp} disabled={index === 0} className="p-0.5 text-violet-400 hover:text-violet-600 disabled:opacity-20 transition-colors press">
-              <ChevronUp className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-[10px] font-bold text-violet-600 px-1.5 my-0.5">{index + 1}</span>
-            <button onClick={onMoveDown} disabled={index === total - 1} className="p-0.5 text-violet-400 hover:text-violet-600 disabled:opacity-20 transition-colors press">
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-        {/* Number badge alone in read-only mode so the user still sees order. */}
-        {!editable && (
-          <div className="w-6 h-6 rounded-xl bg-violet-50 text-violet-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
-        )}
+        <div className="w-6 h-6 rounded-xl bg-violet-50 text-violet-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
 
         <div className="relative shrink-0">
           <img src={place.image} alt={place.name} className="w-14 h-14 rounded-2xl object-cover shadow-sm border border-ink-100/50" />
