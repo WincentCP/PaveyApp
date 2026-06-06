@@ -349,11 +349,11 @@ export default function OnboardingPage() {
               </div>
               <div className="flex items-center gap-3 mb-3">
                 {/* welcome.svg → replace with welcome.png (990 × 1037 px) */}
-                <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 bg-brand-50">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 flex items-center justify-center shrink-0">
                   <img
                     src={welcomeImg}
                     alt=""
-                    className="w-full h-full object-cover"
+                    className="w-7 h-7 object-contain"
                     style={{ aspectRatio: '990/1037' }}
                   />
                 </div>

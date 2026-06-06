@@ -138,21 +138,22 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
 
 function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
   const [failed, setFailed] = useState(false);
-  const cls = size === 'sm' ? 'w-7 h-7' : 'w-9 h-9';
+  const containerCls = size === 'sm' ? 'w-9 h-9' : 'w-11 h-11';
+  const imgCls = size === 'sm' ? 'w-5.5 h-5.5' : 'w-7 h-7';
   if (failed) {
     return (
-      <div className={`${cls} rounded-full bg-brand-500 flex items-center justify-center text-white shrink-0`}>
-        <Star className="w-5 h-5" />
+      <div className={`${containerCls} rounded-full bg-brand-500 flex items-center justify-center text-white shrink-0`}>
+        <Star className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
       </div>
     );
   }
   return (
-    <div className={`${cls} rounded-full bg-brand-500 overflow-hidden shrink-0`}>
+    <div className={`${containerCls} rounded-full bg-brand-500 flex items-center justify-center shrink-0`}>
       {/* buddy.svg: 997 × 1036 px — aspect ratio ~0.962:1 */}
       <img
         src={buddyImg}
         alt="Buddy"
-        className="w-full h-full object-cover"
+        className={`${imgCls} object-contain`}
         style={{ aspectRatio: '997/1036' }}
         onError={() => setFailed(true)}
       />
