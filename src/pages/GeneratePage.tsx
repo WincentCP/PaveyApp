@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, Wand2, X,
   Clock, Star, Pencil, Search, ChevronUp, ChevronDown, Wallet,
-  Plane, Train, Sun, Compass, Trash2,
+  Plane, Train, Sun, Compass, Trash2, Lightbulb, Car,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -622,7 +622,7 @@ export default function GeneratePage() {
                       );
                     })()}
 
-                    <div className="space-y-0">
+                    <div className="space-y-3">
                       <AnimatePresence>
                         {(() => {
                           return displayItinerary.map((p, i) => {
@@ -630,7 +630,7 @@ export default function GeneratePage() {
                             const timeStr = getTime(p.id, i);
                             const conflict = hasConflict(p, timeStr);
                             return (
-                              <div key={p.id}>
+                              <div key={p.id} className="mb-4">
                                 <StopCard
                                   index={i} total={displayItinerary.length} place={p}
                                   scheduledTime={timeStr}
@@ -645,17 +645,8 @@ export default function GeneratePage() {
                                     setUserEdited(true);
                                     setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
                                   }}
+                                  onTipClick={intel ? () => setActiveCulturalIntel(intel) : undefined}
                                 />
-                                {intel && (
-                                  <div className="mt-1.5 flex items-center justify-end px-1.5">
-                                    <button
-                                      onClick={() => setActiveCulturalIntel(intel)}
-                                      className="flex items-center gap-1 bg-violet-50 text-violet-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full hover:bg-violet-100 transition-colors press"
-                                    >
-                                      💡 Tip: {intel.prompt}
-                                    </button>
-                                  </div>
-                                )}
                                 {i < displayItinerary.length - 1 && (
                                   <StopConnector
                                     distanceKm={displayItinerary[i + 1].distanceKm}
@@ -1583,23 +1574,17 @@ function LoadingState({ stepIdx, steps }: { stepIdx: number; steps: string[] }) 
 }
 
 /* ── Visual connector between stops ── */
-function StopConnector({ distanceKm, fromTime, durationMin }: { distanceKm: number; fromTime: string; durationMin: number }) {
+function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; durationMin?: number }) {
   const driveMin = Math.round(distanceKm * 3);
-  const [h, m] = fromTime.split(':').map(Number);
-  const arriveMin = h * 60 + m + durationMin + driveMin;
-  const nextH = Math.floor(arriveMin / 60) % 24;
-  const nextM = arriveMin % 60;
-  const nextTime = `${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`;
 
   return (
-    <div className="flex items-center gap-3 ml-5 my-0.5">
-      <div className="flex flex-col items-center w-4 shrink-0">
-        <div className="w-px bg-ink-100" style={{ height: 20 }} />
+    <div className="flex items-center gap-3 ml-6 my-1.5 opacity-60">
+      <div className="flex flex-col items-center w-6 shrink-0">
+        <div className="w-0.5 bg-ink-200 border-dashed border-l h-5" />
       </div>
-      <div className="flex items-center gap-1.5 text-[10px] text-ink-400 font-medium py-0.5">
-        <span>{driveMin}m drive ({distanceKm} km)</span>
-        <span>•</span>
-        <span>Arrive {nextTime}</span>
+      <div className="flex items-center gap-1 bg-ink-50 px-2 py-0.5 rounded-full text-[10px] text-ink-400 font-medium">
+        <Car className="w-3 h-3 text-ink-400 shrink-0" />
+        <span>{driveMin} min ({distanceKm} km)</span>
       </div>
     </div>
   );
@@ -1609,16 +1594,15 @@ function StopConnector({ distanceKm, fromTime, durationMin }: { distanceKm: numb
 
 /* ── Stop Card ── */
 function StopCard({
-  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual, editable = true, onFixTime,
+  index, total, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, onMoveUp, onMoveDown, isManual, editable = true, onFixTime, onTipClick,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
   onRemove: () => void; onReplace: () => void; onMoveUp: () => void; onMoveDown: () => void;
   isManual?: boolean;
-  /** When false, all edit affordances are hidden (read-only mode). Time edit
-   * remains tappable so users can tweak schedule without entering full edit. */
   editable?: boolean;
   onFixTime?: (newTime: string) => void;
+  onTipClick?: () => void;
 }) {
   const { activeTrip } = useApp();
   const [dragX, setDragX] = useState(0);
@@ -1729,6 +1713,18 @@ function StopCard({
                   </button>
                 )}
               </div>
+            )}
+            {onTipClick && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTipClick();
+                }}
+                className="flex items-center gap-1 bg-violet-50 hover:bg-violet-100 text-violet-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-violet-100 transition-colors press shrink-0"
+              >
+                <Lightbulb className="w-3 h-3 text-violet-500" />
+                <span>Tip</span>
+              </button>
             )}
           </div>
         </div>
@@ -1978,9 +1974,9 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
           setDragX(0);
         }
       }}
-      className="absolute w-full max-w-sm aspect-[3/4.2] bg-white rounded-3xl border border-ink-100 shadow-xl overflow-hidden flex flex-col transition-shadow duration-300"
+      className="absolute w-full max-w-[300px] aspect-[3/3.7] bg-white rounded-3xl border border-ink-100 shadow-xl overflow-hidden flex flex-col transition-shadow duration-300"
     >
-      <div className="relative h-[58%] w-full bg-ink-100">
+      <div className="relative h-[50%] w-full bg-ink-100">
         <img
           src={place.image}
           alt={place.name}
@@ -2031,7 +2027,7 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
 
       <div className="flex-1 p-4 flex flex-col justify-between bg-white text-ink-800">
         <div className="space-y-2">
-          <p className="text-xs text-ink-500 leading-relaxed line-clamp-3">
+          <p className="text-xs text-ink-500 leading-relaxed line-clamp-2">
             {place.description || 'Enjoy this wonderful spot carefully selected for your journey.'}
           </p>
           <div className="flex items-center gap-3 text-[11px] font-semibold text-ink-500">

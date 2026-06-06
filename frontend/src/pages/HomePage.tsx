@@ -540,7 +540,6 @@ export default function HomePage() {
               </button>
               <button className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white press">
                 <img src={USER.avatar} alt="me" className="w-full h-full object-cover" />
-                <span className="absolute bottom-0 right-0 w-3 h-3 bg-brand-500 rounded-full ring-2 ring-white" />
               </button>
             </div>
           </div>
