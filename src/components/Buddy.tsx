@@ -152,7 +152,7 @@ function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
       {/* buddy.svg: 997 × 1036 px — aspect ratio ~0.962:1 */}
       <img
         src={buddyImg}
-        alt="Buddy"
+        alt="TinTin"
         className={`${imgCls} object-contain`}
         style={{ aspectRatio: '997/1036' }}
         onError={() => setFailed(true)}

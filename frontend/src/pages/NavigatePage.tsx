@@ -544,7 +544,7 @@ export default function NavigatePage() {
               <div className="grid grid-cols-3 gap-2 mb-2.5">
                 <ActionBtn icon={<CheckCircle2 className="w-4 h-4" />} label="Visited" onClick={onMarkVisited} />
                 <ActionBtn icon={<SkipForward className="w-4 h-4" />} label="Skip" onClick={onSkip} />
-                <ActionBtn icon={<PaveyLogoMark size={16} color="#1E293B" />} label="Buddy" onClick={() => setBuddyOpen(true)} />
+                <ActionBtn icon={<PaveyLogoMark size={16} color="#1E293B" />} label="TinTin" onClick={() => setBuddyOpen(true)} />
               </div>
 
               <button

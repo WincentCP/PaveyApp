@@ -755,7 +755,7 @@ function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSa
             </button>
           </div>
           <button onClick={onBuddy} className="mt-2.5 w-full h-10 rounded-2xl bg-brand-50 text-brand-700 font-semibold inline-flex items-center justify-center gap-2 press">
-            <PaveyLogoMark size={16} color="#3B5BFF" /> Ask Buddy about this
+            <PaveyLogoMark size={16} color="#3B5BFF" /> Ask TinTin about this
           </button>
         </div>
       </motion.div>

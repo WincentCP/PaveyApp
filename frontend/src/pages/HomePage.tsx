@@ -826,7 +826,7 @@ export default function HomePage() {
             <div className="flex-1 min-w-0">
               <div className="font-bold text-white text-base font-display">Plan your trip</div>
               <div className="text-xs text-white/80 mt-0.5">
-                Build with Buddy TinTin or stop-by-stop manually
+                Build with TinTin or stop-by-stop manually
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
@@ -946,7 +946,7 @@ export default function HomePage() {
           >
             <div className="flex-1 min-w-0">
               <div className="font-bold text-white text-sm font-display leading-tight">Add another plan</div>
-              <div className="text-[11px] text-white/75 mt-0.5 leading-tight">Build with Buddy TinTin or stop-by-stop manually</div>
+              <div className="text-[11px] text-white/75 mt-0.5 leading-tight">Build with TinTin or stop-by-stop manually</div>
             </div>
             <ChevronRight className="w-4 h-4 text-white/80 shrink-0" />
           </motion.button>
@@ -1157,7 +1157,7 @@ export default function HomePage() {
                           <span className="text-[9px] font-bold text-brand-600 bg-white border border-brand-200 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Recommended</span>
                         </div>
                         <p className="text-xs text-ink-600 mt-1 leading-normal">
-                          Tell us your destination and dates — Buddy will automatically generate a complete, optimized daily itinerary for you.
+                          Tell us your destination and dates — TinTin will automatically generate a complete, optimized daily itinerary for you.
                         </p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-ink-400 mt-3 shrink-0" />

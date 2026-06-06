@@ -82,7 +82,7 @@ function AppShell() {
           {/* buddy.svg: 997 × 1036 px — replace with buddy.png */}
           <img
             src={buddyImg}
-            alt="Buddy"
+            alt="TinTin"
             className="w-9 h-9 object-contain pointer-events-none"
             style={{ aspectRatio: '997/1036' }}
           />
@@ -106,7 +106,7 @@ function AppShell() {
             >
               <X className="w-3 h-3" />
             </button>
-            <div className="text-[11px] font-bold text-brand-600 mb-0.5">Meet Buddy</div>
+            <div className="text-[11px] font-bold text-brand-600 mb-0.5">Meet TinTin</div>
             <div className="text-xs text-ink-700 leading-snug">{COPY.hints.buddyIntro}</div>
             <div className="absolute -bottom-1.5 right-5 w-3 h-3 bg-white border-r border-b border-ink-100 rotate-45" />
           </motion.div>
