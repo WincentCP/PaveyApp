@@ -73,14 +73,14 @@ function AppShell() {
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           onClick={() => { dismissBuddyIntro(); setBuddyOpen(true); }}
-          className="absolute right-4 bottom-[96px] z-20 w-10 h-10 rounded-full bg-brand-500 shadow-glow overflow-hidden press"
+          className="absolute right-4 bottom-[96px] z-20 w-12 h-12 rounded-full bg-brand-500 shadow-glow flex items-center justify-center press"
           aria-label="Open Buddy AI"
         >
           {/* buddy.svg: 997 × 1036 px — replace with buddy.png */}
           <img
             src={buddyImg}
             alt="Buddy"
-            className="w-full h-full object-cover"
+            className="w-7 h-7 object-contain"
             style={{ aspectRatio: '997/1036' }}
           />
         </motion.button>
