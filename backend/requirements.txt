@@ -9,3 +9,6 @@ Pillow
 apscheduler
 groq
 python-multipart
+# paddlepaddle
+# paddleocr
+beautifulsoup4
