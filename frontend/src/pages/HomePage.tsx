@@ -4,7 +4,7 @@ import {
   X, Star, MapPin, Pencil,
   ChevronRight, Plus, Navigation, RefreshCw,
   ArrowRight, Compass, Zap, Link2, AlertTriangle,
-  Trees, Coffee, Landmark, Scale,
+  Trees, Coffee, Landmark, Scale, ArrowLeft, Clock
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -652,65 +652,160 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Search — expands from header icon, collapsed by default */}
+      {/* Search — full screen dedicated search view */}
       <AnimatePresence>
         {search !== null && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="px-5 mt-3 overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-50 bg-white flex flex-col pointer-events-auto"
           >
-            <div className="bg-ink-50 rounded-2xl px-4 py-3 flex items-center gap-3">
-              <Search className="w-5 h-5 text-ink-400 shrink-0" />
-              <input
-                value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search places, vibes, activities…"
-                className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
-                autoFocus
-              />
+            {/* Search Header */}
+            <div className="px-5 pt-12 pb-4 border-b border-ink-100 flex items-center gap-3 shrink-0">
               <button
-                className={`relative press w-9 h-9 rounded-xl flex items-center justify-center shadow-soft transition-colors ${activeFilters > 0 ? 'bg-brand-500' : 'bg-white'}`}
+                onClick={() => setSearch(null as unknown as string)}
+                className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center text-ink-700 press hover:bg-ink-50"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              
+              <div className="flex-1 bg-ink-50 rounded-2xl px-4 py-2.5 flex items-center gap-2 border border-transparent focus-within:border-brand-300 transition-colors">
+                <Search className="w-4 h-4 text-ink-400 shrink-0" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search places, vibes, activities…"
+                  className="flex-1 bg-transparent outline-none text-sm text-ink-900 placeholder:text-ink-400"
+                  autoFocus
+                />
+                {search && (
+                  <button onClick={() => setSearch('')} className="p-1 hover:bg-ink-150 rounded-full press text-ink-400 flex items-center justify-center">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              
+              <button
+                className={`relative press w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${activeFilters > 0 ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700'}`}
                 onClick={() => setFilterOpen(true)}
               >
-                <SlidersHorizontal className={`w-4 h-4 ${activeFilters > 0 ? 'text-white' : 'text-ink-700'}`} />
+                <SlidersHorizontal className="w-4 h-4" />
                 {activeFilters > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{activeFilters}</span>
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                    {activeFilters}
+                  </span>
                 )}
               </button>
-              <button onClick={() => setSearch('')} className="press text-ink-400"><X className="w-4 h-4" /></button>
             </div>
-            <AnimatePresence>
-              {search.trim() && searchResults.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  className="mt-2 bg-white rounded-2xl border border-ink-100 shadow-card px-4 py-5 text-center"
-                >
-                  <div className="text-2xl mb-1">🔍</div>
-                  <div className="text-sm font-semibold text-ink-700">No places found</div>
-                  <div className="text-xs text-ink-400 mt-0.5">Try a different name, category, or tag</div>
-                </motion.div>
-              )}
-              {searchResults.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  className="mt-2 bg-white rounded-2xl border border-ink-100 shadow-card overflow-hidden"
-                >
-                  {searchResults.slice(0, 5).map((p, i) => (
-                    <button
-                      key={p.id}
-                      onClick={() => { setSearch(''); setDetailPlace(p); }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 press hover:bg-ink-50 text-left ${i > 0 ? 'border-t border-ink-50' : ''}`}
-                    >
-                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
-                        <div className="text-xs text-ink-500">{p.category} · ⭐ {p.rating}</div>
+
+            {/* Search Content */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6 no-scrollbar">
+              {!search.trim() ? (
+                <>
+                  {/* Recent Searches */}
+                  <div>
+                    <div className="text-[10px] font-bold tracking-widest text-ink-400 mb-2.5 uppercase">Recent Searches</div>
+                    <div className="flex flex-wrap gap-2">
+                      {['Ubud rice terraces', 'Seminyak beach clubs', 'Cultural temples'].map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => setSearch(q)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-ink-50 hover:bg-ink-100 text-ink-700 text-xs font-semibold press transition-colors"
+                        >
+                          <Clock className="w-3 h-3 text-ink-400" />
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Suggested Destinations */}
+                  <div>
+                    <div className="text-[10px] font-bold tracking-widest text-ink-400 mb-2.5 uppercase">Suggested Destinations</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {['Seminyak', 'Ubud', 'Canggu', 'Uluwatu'].map((dest) => (
+                        <button
+                          key={dest}
+                          onClick={() => setSearch(dest)}
+                          className="flex items-center gap-2.5 p-3 rounded-2xl border border-ink-100 hover:border-brand-200 hover:bg-brand-50/20 text-left press transition-all"
+                        >
+                          <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center text-sm shrink-0">
+                            📍
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-ink-900 truncate">{dest}</div>
+                            <div className="text-[10px] text-ink-400 truncate">Popular area</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Search Recommendations */}
+                  <div>
+                    <div className="text-[10px] font-bold tracking-widest text-ink-400 mb-2.5 uppercase">Search Recommendations</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: '🏖️ Beaches', query: 'beach' },
+                        { label: '☕ Cafes & Dining', query: 'cafe' },
+                        { label: '🏛️ Cultural Sites', query: 'temple' },
+                        { label: '🌳 Nature & Parks', query: 'park' },
+                      ].map((rec) => (
+                        <button
+                          key={rec.label}
+                          onClick={() => setSearch(rec.query)}
+                          className="flex items-center justify-between p-3.5 rounded-2xl bg-ink-50 hover:bg-ink-100 text-left press transition-colors"
+                        >
+                          <span className="text-xs font-bold text-ink-800">{rec.label}</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-ink-400" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Search Results */
+                <div className="space-y-3">
+                  {searchResults.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <div className="text-3xl mb-2">🔍</div>
+                      <div className="text-sm font-bold text-ink-900">No places found</div>
+                      <div className="text-xs text-ink-500 mt-1">Try searching for a different word, category, or tag</div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-[10px] font-bold tracking-widest text-ink-400 mb-2.5 uppercase">Results ({searchResults.length})</div>
+                      <div className="space-y-2.5">
+                        {searchResults.slice(0, 8).map((p) => (
+                          <button
+                            key={p.id}
+                            onClick={() => { setSearch(null as unknown as string); setDetailPlace(p); }}
+                            className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-white border border-ink-100 hover:border-brand-200 press text-left transition-all"
+                          >
+                            <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0 border border-ink-50 shadow-sm" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-ink-900 text-sm truncate">{p.name}</div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] text-ink-500">{p.category}</span>
+                                <span className="flex items-center gap-0.5 text-[10px] text-amber-500 font-bold">
+                                  ⭐ {p.rating}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-xs font-bold text-brand-600">{formatCost(p.cost, activeTrip.currency)}</div>
+                              <div className="text-[9px] text-ink-400 mt-0.5">{p.durationMin}m visit</div>
+                            </div>
+                          </button>
+                        ))}
                       </div>
-                      <div className="text-xs font-semibold text-brand-600 shrink-0">{formatCost(p.cost, activeTrip.currency)}</div>
-                    </button>
-                  ))}
-                </motion.div>
+                    </>
+                  )}
+                </div>
               )}
-            </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1019,104 +1114,143 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* Social Media Parser */}
-      <div className="px-5 mt-8">
-        <div className="w-full flex items-center justify-between py-1 border-b border-ink-100">
-          <span className="text-[11px] font-bold tracking-widest text-ink-500 uppercase">Import from Social Media</span>
-        </div>
-
-        <div className="mt-3">
-          <div className="bg-ink-50 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
-                TikTok
+      <div className="px-5 mt-8 pb-8">
+        <motion.div
+          whileHover={{ y: -2 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-purple-50 border border-brand-100 rounded-3xl p-5 shadow-card"
+        >
+          {/* Decorative floating shapes */}
+          <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-500/5 blur-xl pointer-events-none" />
+          <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-purple-500/5 blur-xl pointer-events-none" />
+          
+          <div className="flex justify-between items-start gap-4 mb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs text-brand-600 font-bold tracking-wide">
+                <span>✨</span> INSTANT IMPORT
               </div>
-              <div className="flex items-center gap-1.5 bg-white rounded-xl px-2.5 py-1.5 text-xs font-semibold text-ink-700 border border-ink-100">
-                <svg className="w-3 h-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                Instagram
-              </div>
-              <span className="text-xs text-ink-400">links supported</span>
+              <h3 className="text-lg font-bold text-ink-900 font-display">Import Your Social Finds</h3>
+              <p className="text-xs text-ink-500 leading-relaxed max-w-[85%]">
+                Spotted an amazing place on TikTok or Instagram? Paste the link below and let TinTin import it directly into your itinerary!
+              </p>
             </div>
-            <div className="flex gap-2">
-              <div className="flex-1 bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-ink-100">
-                <Link2 className="w-4 h-4 text-ink-400 shrink-0" />
-                <input
-                  ref={socialInputRef}
-                  value={socialUrl}
-                  onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
-                  placeholder="Paste a TikTok or Instagram link…"
-                  className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
-                />
-                {socialUrl && <button onClick={() => { setSocialUrl(''); setSocialResult(null); }}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
-              </div>
-              <button
-                onClick={parseSocialLink}
-                disabled={!socialUrl.trim() || socialParsing}
-                className="shrink-0 h-10 px-4 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white text-sm font-semibold press"
-              >
-                {socialParsing ? '…' : 'Parse'}
-              </button>
-            </div>
-            {socialError && (
-              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2 flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
-              </motion.p>
-            )}
-            <AnimatePresence>
-              {socialParsing && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-3 overflow-hidden">
-                  <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    </motion.div>
-                    Extracting place information…
-                  </div>
-                  <div className="h-2 rounded shimmer w-3/4" />
-                </motion.div>
-              )}
-              {socialResult && !socialParsing && (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 bg-white rounded-xl border border-ink-100 overflow-hidden">
-                  <div className="flex items-start gap-3 p-3">
-                    <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-brand-500 bg-brand-50 px-1.5 py-0.5 rounded-full">From {socialResult.platform}</span>
-                      <div className="font-semibold text-ink-900 text-sm truncate mt-1">{socialResult.name}</div>
-                      <div className="text-xs text-ink-600 mt-0.5 line-clamp-2">{socialResult.desc}</div>
-                      <div className="text-xs text-brand-600 font-semibold mt-1">{formatCost(socialResult.cost, activeTrip.currency)}</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 px-3 pb-3">
-                    <button
-                      onClick={() => {
-                        const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                        addStop(place);
-                        show(`${socialResult!.name} added to plan`, 'success');
-                        setSocialResult(null);
-                        setSocialUrl('');
-                        nav('/map');
-                      }}
-                      className="h-9 rounded-xl bg-brand-500 text-white text-xs font-semibold press flex items-center justify-center gap-1 shadow-glow"
-                    >
-                      <MapPin className="w-3.5 h-3.5" /> Add to Plan
-                    </button>
-                    <button
-                      onClick={() => {
-                        const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                        savePlace(place);
-                        show(`${socialResult!.name} saved for later`, 'success');
-                        setSocialResult(null);
-                        setSocialUrl('');
-                      }}
-                      className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1"
-                    >
-                      <Bookmark className="w-3.5 h-3.5" /> Save for Later
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            
+            {/* Playful graphic element */}
+            <motion.div
+              animate={{ y: [-4, 4, -4] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
+              className="text-3xl select-none"
+            >
+              📸
+            </motion.div>
           </div>
-        </div>
+
+          {/* Social Platform Badges */}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-1 bg-[#FE2C55]/10 text-[#FE2C55] rounded-xl px-2.5 py-1 text-[11px] font-bold">
+              <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
+              TikTok
+            </div>
+            <div className="flex items-center gap-1 bg-[#E1306C]/10 text-[#E1306C] rounded-xl px-2.5 py-1 text-[11px] font-bold">
+              <svg className="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              Instagram
+            </div>
+            <span className="text-[10px] text-ink-400 font-medium">links supported</span>
+          </div>
+
+          {/* Input field and parser button */}
+          <div className="flex gap-2">
+            <div className="flex-1 bg-white rounded-2xl px-3.5 py-3 flex items-center gap-2 border border-brand-100/60 shadow-sm focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/10 transition-all">
+              <Link2 className="w-4 h-4 text-brand-500 shrink-0" />
+              <input
+                ref={socialInputRef}
+                value={socialUrl}
+                onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
+                placeholder="Paste TikTok or Instagram link here…"
+                className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
+              />
+              {socialUrl && (
+                <button onClick={() => { setSocialUrl(''); setSocialResult(null); }} className="press p-1 hover:bg-ink-50 rounded-full">
+                  <X className="w-3.5 h-3.5 text-ink-400" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={parseSocialLink}
+              disabled={!socialUrl.trim() || socialParsing}
+              className="shrink-0 h-12 px-5 rounded-2xl bg-brand-500 disabled:bg-ink-200 disabled:text-ink-400 text-white text-sm font-bold press shadow-glow hover:bg-brand-600 transition-colors"
+            >
+              {socialParsing ? (
+                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
+                  <RefreshCw className="w-4 h-4" />
+                </motion.div>
+              ) : (
+                'Import'
+              )}
+            </button>
+          </div>
+
+          {socialError && (
+            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2.5 flex items-center gap-1 font-medium">
+              <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
+            </motion.p>
+          )}
+
+          <AnimatePresence>
+            {socialParsing && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 overflow-hidden">
+                <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
+                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </motion.div>
+                  Extracting place details…
+                </div>
+                <div className="h-2 rounded shimmer w-3/4" />
+              </motion.div>
+            )}
+            
+            {socialResult && !socialParsing && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden pointer-events-auto">
+                <div className="flex items-start gap-3.5 p-4">
+                  <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-ink-100 shadow-sm" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] font-extrabold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full uppercase tracking-wider">From {socialResult.platform}</span>
+                    <div className="font-bold text-ink-900 text-sm truncate mt-1.5">{socialResult.name}</div>
+                    <div className="text-xs text-ink-600 mt-0.5 line-clamp-2 leading-relaxed">{socialResult.desc}</div>
+                    <div className="text-xs text-brand-600 font-bold mt-1.5">{formatCost(socialResult.cost, activeTrip.currency)}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+                  <button
+                    onClick={() => {
+                      const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
+                      addStop(place);
+                      show(`${socialResult!.name} added to plan`, 'success');
+                      setSocialResult(null);
+                      setSocialUrl('');
+                      nav('/map');
+                    }}
+                    className="h-10 rounded-xl bg-brand-500 text-white text-xs font-bold press flex items-center justify-center gap-1.5 shadow-glow"
+                  >
+                    <MapPin className="w-3.5 h-3.5" /> Add to Plan
+                  </button>
+                  <button
+                    onClick={() => {
+                      const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
+                      savePlace(place);
+                      show(`${socialResult!.name} saved for later`, 'success');
+                      setSocialResult(null);
+                      setSocialUrl('');
+                    }}
+                    className="h-10 rounded-xl bg-ink-50 text-ink-850 text-xs font-semibold press flex items-center justify-center gap-1.5 hover:bg-ink-100 transition-colors"
+                  >
+                    <Bookmark className="w-3.5 h-3.5" /> Save for Later
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
       </div>
 

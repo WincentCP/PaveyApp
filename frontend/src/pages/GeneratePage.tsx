@@ -2,7 +2,7 @@ import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, X,
   Clock, Star, Pencil, Search, Wallet, Bookmark,
-  Plane, Train, Sun, Compass, Trash2, Lightbulb, Car,
+  Plane, Train, Sun, Compass, Trash2, Lightbulb, Car, AlertTriangle,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -95,6 +95,50 @@ export default function GeneratePage() {
   const [walletPromptOpen, setWalletPromptOpen] = useState(false);
   const walletPromptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [hasConfirmedTrip, setHasConfirmedTrip] = useState(false);
+  const hasConfirmedTripRef = useRef(false);
+
+  useEffect(() => {
+    hasConfirmedTripRef.current = hasConfirmedTrip;
+  }, [hasConfirmedTrip]);
+
+  useEffect(() => {
+    if (isEditMode || hasConfirmedTrip) return;
+
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      if (!hasConfirmedTripRef.current) {
+        setExitModalOpen(true);
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!hasConfirmedTripRef.current) {
+        e.preventDefault();
+        e.returnValue = 'Your trip has not been created yet.';
+        return 'Your trip has not been created yet.';
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasConfirmedTrip, isEditMode]);
+
+  const handleConfirmExit = () => {
+    setExitModalOpen(false);
+    hasConfirmedTripRef.current = true;
+    setHasConfirmedTrip(true);
+    nav('/', { replace: true });
+  };
+
   const handleWalletConfirm = () => {
     if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
     setWalletPromptOpen(false);
@@ -120,7 +164,7 @@ export default function GeneratePage() {
       show('Trip created and wallet linked!', 'success');
     }
     
-    nav('/map', { replace: true });
+    nav('/wallet', { replace: true });
   };
 
   const handleWalletLater = () => {
@@ -422,6 +466,7 @@ export default function GeneratePage() {
     setUndoItem(null);
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
+    setHasConfirmedTrip(true);
     show(isPostOnboarding ? 'Your trip is ready' : 'Journey confirmed', 'success');
     if (isPostOnboarding) {
       setTimeout(() => nav('/', { replace: true }), 700);
@@ -464,7 +509,16 @@ export default function GeneratePage() {
     <div className="absolute inset-0 bg-white overflow-hidden flex flex-col">
       <StatusBar />
       <div className="px-5 py-2 flex items-center justify-between shrink-0">
-        <button onClick={() => nav(-1)} className="w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press">
+        <button
+          onClick={() => {
+            if (!hasConfirmedTrip && !isEditMode) {
+              setExitModalOpen(true);
+            } else {
+              nav(-1);
+            }
+          }}
+          className="w-10 h-10 -ml-2 flex items-center justify-center text-ink-700 press"
+        >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="font-bold text-ink-900 font-display">
@@ -1377,6 +1431,54 @@ export default function GeneratePage() {
                     className="h-11 rounded-2xl bg-brand-500 text-white text-xs font-bold press shadow-glow hover:bg-brand-600 transition-colors"
                   >
                     Open Wallet
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Exit confirmation modal */}
+      <AnimatePresence>
+        {exitModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setExitModalOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm pointer-events-auto"
+            />
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-5 pointer-events-none">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                className="w-full max-w-sm bg-white rounded-3xl shadow-card p-6 pointer-events-auto flex flex-col items-center text-center"
+              >
+                <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4 shrink-0">
+                  <AlertTriangle className="w-7 h-7 text-red-500" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-ink-900 font-display">Are you sure you want to leave?</h3>
+                <p className="text-xs text-ink-500 mt-2 leading-relaxed">
+                  Your trip has not been created yet.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3 w-full mt-6">
+                  <button
+                    onClick={() => setExitModalOpen(false)}
+                    className="h-11 rounded-2xl bg-ink-50 text-ink-700 text-xs font-semibold press hover:bg-ink-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmExit}
+                    className="h-11 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold press transition-colors"
+                  >
+                    Leave
                   </button>
                 </div>
               </motion.div>

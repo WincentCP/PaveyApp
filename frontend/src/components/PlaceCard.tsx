@@ -5,7 +5,6 @@ import type { Place } from '../data/places';
 import type { Currency } from '../data/wallet';
 import { formatCost } from '../lib/format';
 import { getCulturalIntel } from '../data/cultural';
-import PaveyLogoMark from './PaveyLogo';
 
 function nineColon(i: number, addMin = 0) {
   const start = 10 * 60 + 30 + i * 150 + addMin;
@@ -147,7 +146,7 @@ export default function PlaceCard({ place, index, prevPlace, onClose, onNavigate
             </button>
           </div>
           <button onClick={onBuddy} className="mt-2.5 w-full h-10 rounded-2xl bg-brand-50 text-brand-700 font-semibold inline-flex items-center justify-center gap-2 press">
-            <PaveyLogoMark size={16} color="#3B5BFF" /> Ask TinTin about this
+            <img src="/curious.svg" className="w-5 h-5 object-contain" alt="" /> Ask TinTin about this
           </button>
         </div>
       </motion.div>
