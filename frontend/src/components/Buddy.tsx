@@ -1,14 +1,14 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X, Cloud, Coffee, MapPinned } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Msg { from: 'buddy' | 'me'; text: string }
 
-const QUICK = [
+const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[] = [
   { icon: Cloud, label: 'Indoor cafes nearby' },
   { icon: Coffee, label: 'Best coffee in Ubud' },
   { icon: MapPinned, label: 'Less walking route' },
-  { icon: Star, label: 'Hidden gems' },
+  { icon: null, imgSrc: '/smile.svg', label: 'Hidden gems' },
 ];
 
 const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
@@ -98,13 +98,15 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
             </div>
 
             <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
-              {QUICK.map(({ icon: Icon, label }) => (
+              {QUICK.map(({ icon: Icon, imgSrc, label }) => (
                 <button
                   key={label}
                   onClick={() => send(label)}
                   className="press shrink-0 flex items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full"
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  {imgSrc
+                    ? <img src={imgSrc} alt="" className="w-3.5 h-3.5 object-contain" />
+                    : Icon && <Icon className="w-3.5 h-3.5" />}
                   {label}
                 </button>
               ))}
