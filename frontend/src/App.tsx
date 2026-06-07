@@ -6,7 +6,6 @@ import { AppProvider, useApp } from './context/AppContext';
 import { ToastProvider } from './components/Toast';
 import Buddy from './components/Buddy';
 import { AnimatePresence, motion } from 'framer-motion';
-import { buddyImg } from './assets/images';
 import { COPY } from './lib/copy';
 import { X } from 'lucide-react';
 
