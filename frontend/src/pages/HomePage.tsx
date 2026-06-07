@@ -1124,25 +1124,13 @@ export default function HomePage() {
           <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-500/5 blur-xl pointer-events-none" />
           <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-purple-500/5 blur-xl pointer-events-none" />
           
-          <div className="flex justify-between items-start gap-4 mb-4">
+          <div className="mb-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-brand-600 font-bold tracking-wide">
-                <span>✨</span> INSTANT IMPORT
-              </div>
               <h3 className="text-lg font-bold text-ink-900 font-display">Import Your Social Finds</h3>
               <p className="text-xs text-ink-500 leading-relaxed max-w-[85%]">
                 Spotted an amazing place on TikTok or Instagram? Paste the link below and let TinTin import it directly into your itinerary!
               </p>
             </div>
-            
-            {/* Playful graphic element */}
-            <motion.div
-              animate={{ y: [-4, 4, -4] }}
-              transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-              className="text-3xl select-none"
-            >
-              📸
-            </motion.div>
           </div>
 
           {/* Social Platform Badges */}
