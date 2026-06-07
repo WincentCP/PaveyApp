@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Send, X, Cloud, Coffee, MapPinned, Star } from 'lucide-react';
+import { Send, X, Cloud, Coffee, MapPinned } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { buddyImg } from '../assets/images';
 
 interface Msg { from: 'buddy' | 'me'; text: string }
 
@@ -137,25 +136,15 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
 }
 
 function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  const [failed, setFailed] = useState(false);
   const containerCls = size === 'sm' ? 'w-9 h-9' : 'w-11 h-11';
-  const imgCls = size === 'sm' ? 'w-5.5 h-5.5' : 'w-7 h-7';
-  if (failed) {
-    return (
-      <div className={`${containerCls} rounded-full bg-brand-500 flex items-center justify-center text-white shrink-0`}>
-        <Star className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
-      </div>
-    );
-  }
+  const imgCls = size === 'sm' ? 'w-5 h-5' : 'w-7 h-7';
   return (
-    <div className={`${containerCls} rounded-full bg-brand-500 flex items-center justify-center shrink-0`}>
-      {/* buddy.svg: 997 × 1036 px — aspect ratio ~0.962:1 */}
+    <div className={`${containerCls} rounded-full bg-white border border-brand-500 shadow-sm flex items-center justify-center shrink-0`}>
       <img
-        src={buddyImg}
+        src="/smile.svg"
         alt="TinTin"
         className={`${imgCls} object-contain`}
         style={{ aspectRatio: '997/1036' }}
-        onError={() => setFailed(true)}
       />
     </div>
   );

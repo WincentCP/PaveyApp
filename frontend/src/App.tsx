@@ -76,7 +76,7 @@ function AppShell() {
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 22 }}
           onClick={() => { dismissBuddyIntro(); setBuddyOpen(true); }}
-          className="absolute right-4 bottom-[96px] z-20 w-14 h-14 rounded-full bg-white border-2 border-brand-500 shadow-card flex items-center justify-center press cursor-grab active:cursor-grabbing"
+          className="absolute right-4 bottom-[96px] z-20 w-14 h-14 rounded-full bg-white border border-brand-500 shadow-card flex items-center justify-center press cursor-grab active:cursor-grabbing"
           aria-label="Open TinTin"
         >
           <img
