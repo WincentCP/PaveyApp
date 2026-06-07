@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, Crosshair, Navigation, X, MapPin,
-  Clock, Star, DollarSign, Bookmark,
+  Clock, Star,
   ChevronUp, Map, Pencil, AlertTriangle,
+  Trees, Coffee, Landmark, Scale, Compass
 } from 'lucide-react';
-import { PaveyLogoMark } from '../components/PaveyLogo';
+import PlaceCard from '../components/PlaceCard';
 import MiniCalendar from '../components/MiniCalendar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +16,6 @@ import { formatCost } from '../lib/format';
 import type { Currency } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import type { Place, Vibe } from '../data/places';
-import { getCulturalIntel } from '../data/cultural';
 import { tripDurationDays, isPastDate } from '../lib/dateUtils';
 
 
@@ -28,13 +28,29 @@ const MAP_VIBES: { id: Vibe; label: string; tint: string }[] = [
   { id: 'balanced', label: 'Balanced', tint: '#6B7280' },
 ];
 
+function getVibeIcon(id: Vibe, className = "w-6 h-6") {
+  switch (id) {
+    case 'nature':
+      return <Trees className={className} />;
+    case 'cafe':
+      return <Coffee className={className} />;
+    case 'activities':
+      return <Compass className={className} />;
+    case 'cultural':
+      return <Landmark className={className} />;
+    case 'balanced':
+    default:
+      return <Scale className={className} />;
+  }
+}
+
 export default function MapPage() {
   const nav = useNavigate();
   const {
     itinerary, setIsNavigating, setNavIndex, removeStop, addStop, isNavigating,
     savePlace, removeSavedPlace, isSaved,
     destinations, activeDestIdx, setActiveDestIdx, activeTrip,
-    setVibe, budget, setBudget, setBuddyOpen,
+    vibe, setVibe, budget, setBudget, setBuddyOpen,
     perDayItineraries, journeyStart,
   } = useApp();
   const { show } = useToast();
@@ -235,7 +251,15 @@ export default function MapPage() {
             </button>
           </div>
 
-          <ItineraryBottomSheet itinerary={activeItinerary} totals={totals} onStart={startNavigation} onRemove={handleRemoveStop} onEdit={() => nav('/generate?edit=1')} currency={activeTrip.currency} />
+          <ItineraryBottomSheet
+            itinerary={activeItinerary}
+            totals={totals}
+            onStart={startNavigation}
+            onRemove={handleRemoveStop}
+            onEdit={() => nav('/generate?edit=1')}
+            currency={activeTrip.currency}
+            onSelectPlace={setSelected}
+          />
         </div>
       )}
 
@@ -394,10 +418,43 @@ export default function MapPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 bg-ink-50 rounded-xl px-3 py-2.5">
-                  <span className="text-xs text-ink-600 flex-1">
-                    <span className="font-semibold">{MAP_VIBES.find((v) => v.id === (intentVibe ?? 'balanced'))?.label ?? 'Balanced'}</span> vibe · {formatCost(intentBudget ?? budget, activeTrip.currency)}/day
-                  </span>
+                {/* Vibe selection grid directly inline */}
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">VIBE</div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {MAP_VIBES.map((v) => {
+                      const active = v.id === (intentVibe || vibe);
+                      return (
+                        <motion.button
+                          key={v.id}
+                          type="button"
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => setIntentVibe(v.id)}
+                          animate={{ scale: active ? 1.04 : 1 }}
+                          className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-colors ${active ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
+                        >
+                          <span className="text-brand-500 mb-1">{getVibeIcon(v.id, "w-5 h-5")}</span>
+                          <span className={`text-[9px] font-semibold leading-tight text-center ${active ? 'text-brand-600' : 'text-ink-700'}`}>{v.label}</span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Budget selection slider directly inline */}
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per day)</span></div>
+                  <input
+                    type="range" min={50_000} max={1_000_000} step={10_000}
+                    value={intentBudget ?? budget} onChange={(e) => setIntentBudget(Number(e.target.value))}
+                    className="vibe-slider mb-1"
+                    style={{ ['--val' as string]: `${Math.max(0, Math.min(100, (((intentBudget ?? budget) - 50_000) / (1_000_000 - 50_000)) * 100))}%` } as React.CSSProperties}
+                  />
+                  <div className="flex justify-between text-xs text-ink-500">
+                    <span>{formatCost(50_000, activeTrip.currency)}</span>
+                    <span className="text-brand-600 font-semibold">{formatCost(intentBudget ?? budget, activeTrip.currency)}</span>
+                    <span>{formatCost(1_000_000, activeTrip.currency)}+</span>
+                  </div>
                 </div>
               </div>
 
@@ -528,27 +585,34 @@ function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) 
 
 /* --------------- BOTTOM SHEET (collapsible) --------------- */
 
-function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit, currency }: {
-  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (p: Place) => void; onEdit: () => void; currency: Currency;
+function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit, currency, onSelectPlace }: {
+  itinerary: Place[]; totals: { cost: number; time: number; dist: number }; onStart: () => void; onRemove: (p: Place) => void; onEdit: () => void; currency: Currency; onSelectPlace: (p: Place) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
     <motion.div
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={0.2}
+      onDragEnd={(_, info) => {
+        if (info.offset.y < -30) {
+          setExpanded(true);
+        } else if (info.offset.y > 30) {
+          setExpanded(false);
+        }
+      }}
       initial={{ y: 120 }} animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-      className="absolute inset-x-0 bottom-0 z-30 bg-white rounded-t-3xl shadow-card pb-28"
+      className="absolute inset-x-0 bottom-0 z-30 bg-white rounded-t-3xl shadow-card pb-28 cursor-grab active:cursor-grabbing"
     >
-      <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex flex-col items-center pt-3 pb-2 press"
-      >
+      <div className="w-full flex flex-col items-center pt-3 pb-2 select-none">
         <div className="w-12 h-1.5 bg-ink-200 rounded-full" />
         <div className="flex items-center gap-1 text-[10px] text-ink-400 font-medium mt-1">
           {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-          {expanded ? 'Hide stops' : `${itinerary.length} stops · tap to expand`}
+          {expanded ? 'Hide stops · drag down to collapse' : `${itinerary.length} stops · drag up to expand`}
         </div>
-      </button>
+      </div>
 
       <div className="px-5 grid grid-cols-3 text-center mb-3">
         <Block label="Est. Time" value={`${Math.floor(totals.time / 60)}h ${totals.time % 60}m`} />
@@ -566,9 +630,13 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit, cu
             transition={{ duration: 0.22, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="px-5 max-h-[32vh] overflow-y-auto no-scrollbar space-y-2 mb-3">
+            <div className="px-5 max-h-[32vh] overflow-y-auto no-scrollbar space-y-2 mb-3 cursor-default">
               {itinerary.map((p, i) => (
-                <div key={p.id} className="flex items-center gap-3 bg-white rounded-2xl p-2.5 border border-ink-100">
+                <div
+                  key={p.id}
+                  onClick={() => onSelectPlace(p)}
+                  className="flex items-center gap-3 bg-white rounded-2xl p-2.5 border border-ink-100 cursor-pointer press hover:border-brand-300 transition-colors"
+                >
                   <div className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</div>
                   <img src={p.image} alt={p.name} className="w-11 h-11 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -587,7 +655,7 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onRemove, onEdit, cu
                     )}
                   </div>
                   <button
-                    onClick={() => onRemove(p)}
+                    onClick={(e) => { e.stopPropagation(); onRemove(p); }}
                     className="w-7 h-7 rounded-full bg-ink-50 hover:bg-red-50 flex items-center justify-center press shrink-0 transition-colors"
                     aria-label="Remove stop"
                   >
@@ -629,146 +697,3 @@ function nineColon(i: number, addMin = 0) {
 }
 
 
-
-/* ----------------- PLACE CARD (slides from bottom) ----------------- */
-
-function PlaceCard({ place, index, prevPlace, onClose, onNavigate, isSaved, onSave, currency, onBuddy }: {
-  place: Place; index: number; prevPlace?: Place; onClose: () => void; onNavigate: () => void;
-  isSaved: boolean; onSave: () => void; currency: Currency; onBuddy: () => void;
-}) {
-  const [culturalExpanded, setCulturalExpanded] = useState(false);
-  const intel = getCulturalIntel(place.id, place.category);
-
-  return (
-    <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={onClose} className="absolute inset-0 z-30 bg-ink-900/30" />
-      <motion.div
-        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="absolute inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-card overflow-y-auto max-h-[80%]"
-      >
-        <div className="w-12 h-1.5 bg-ink-200 rounded-full mx-auto mt-3" />
-
-        <div className="relative h-40 mt-2">
-          <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center press">
-            <X className="w-4 h-4 text-white" />
-          </button>
-          {index >= 0 && (
-            <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-brand-500 text-white text-sm font-bold flex items-center justify-center ring-2 ring-white">
-              {index + 1}
-            </div>
-          )}
-          <div className="absolute bottom-3 left-4 right-4">
-            <div className="font-bold text-white text-lg font-display leading-tight">{place.name}</div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-white/80 text-xs">{place.category}</span>
-              <span className="flex items-center gap-1 bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5 text-xs text-white">
-                <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {place.rating}
-              </span>
-              {index >= 0 && (
-                <span className="flex items-center gap-1 bg-brand-500/80 rounded-full px-2 py-0.5 text-xs text-white font-semibold">
-                  <Clock className="w-3 h-3" /> {nineColon(index)}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <InfoBlock icon={<Clock className="w-3.5 h-3.5 text-brand-500" />} label="Hours" value={place.openingHours} />
-            <InfoBlock
-              icon={<DollarSign className="w-3.5 h-3.5 text-emerald-500" />} label="Price"
-              value={place.priceRange.min === place.priceRange.max ? formatCost(place.priceRange.min, currency) : `${formatCost(place.priceRange.min, currency)}+`}
-            />
-            <InfoBlock
-              icon={<MapPin className="w-3.5 h-3.5 text-orange-500" />}
-              label={prevPlace ? 'From prev' : 'Distance'}
-              value={`${place.distanceKm} km`}
-              sub={prevPlace ? `from ${prevPlace.name.split(' ')[0]}` : undefined}
-            />
-          </div>
-
-          <p className="text-sm text-ink-600 mb-3 leading-relaxed">{place.description}</p>
-
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {place.tags.map((tag) => (
-              <span key={tag} className="px-2.5 py-1 rounded-full bg-ink-50 text-ink-600 text-xs font-medium">{tag}</span>
-            ))}
-            <span className="px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-medium">{place.durationMin} min visit</span>
-          </div>
-
-          {intel && (
-            <div className="mb-3 rounded-xl border overflow-hidden" style={{ borderColor: intel.accentColor + '40' }}>
-              <button
-                onClick={() => setCulturalExpanded((v) => !v)}
-                className="w-full flex items-center justify-between px-3 py-2.5 text-left"
-                style={{ background: intel.accentColor + '12' }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{intel.tips[0].icon}</span>
-                  <div>
-                    <div className="text-xs font-bold" style={{ color: intel.accentColor }}>{intel.prompt}</div>
-                    <div className="text-[10px] text-ink-500">{intel.tips.length} tip{intel.tips.length > 1 ? 's' : ''}</div>
-                  </div>
-                </div>
-                <motion.div animate={{ rotate: culturalExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="w-4 h-4 text-ink-400" />
-                </motion.div>
-              </button>
-              <AnimatePresence>
-                {culturalExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-3 pb-3 pt-2 space-y-2">
-                      {intel.tips.map((tip, i) => (
-                        <div key={i} className="flex gap-2.5">
-                          <span className="text-base shrink-0 leading-none mt-0.5">{tip.icon}</span>
-                          <div>
-                            <div className="text-xs font-semibold text-ink-900">{tip.title}</div>
-                            <div className="text-[11px] text-ink-500 leading-snug mt-0.5">{tip.body}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={onSave}
-              className={`h-11 rounded-2xl font-semibold press inline-flex items-center justify-center gap-2 transition-colors ${isSaved ? 'bg-brand-50 text-brand-600 border border-brand-200' : 'bg-ink-50 text-ink-800'}`}
-            >
-              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-brand-500 text-brand-500' : ''}`} />
-              {isSaved ? 'Saved' : 'Save'}
-            </button>
-            <button onClick={onNavigate} className="h-11 rounded-2xl bg-brand-500 text-white font-semibold shadow-glow press inline-flex items-center justify-center gap-2">
-              <Navigation className="w-4 h-4" /> Navigate
-            </button>
-          </div>
-          <button onClick={onBuddy} className="mt-2.5 w-full h-10 rounded-2xl bg-brand-50 text-brand-700 font-semibold inline-flex items-center justify-center gap-2 press">
-            <PaveyLogoMark size={16} color="#3B5BFF" /> Ask TinTin about this
-          </button>
-        </div>
-      </motion.div>
-    </>
-  );
-}
-
-function InfoBlock({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
-  return (
-    <div className="bg-ink-50 rounded-xl p-2.5">
-      <div className="flex items-center gap-1 mb-1">{icon}<span className="text-[10px] text-ink-500 font-medium">{label}</span></div>
-      <div className="text-xs font-bold text-ink-900 leading-snug">{value}</div>
-      {sub && <div className="text-[10px] text-ink-400 mt-0.5">{sub}</div>}
-    </div>
-  );
-}

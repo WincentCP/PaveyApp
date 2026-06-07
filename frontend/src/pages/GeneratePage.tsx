@@ -45,7 +45,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations, authUser, signIn } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations, authUser, signIn, createTrip, budget } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -94,6 +94,41 @@ export default function GeneratePage() {
   const [rerollConfirmOpen, setRerollConfirmOpen] = useState(false);
   const [walletPromptOpen, setWalletPromptOpen] = useState(false);
   const walletPromptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleWalletConfirm = () => {
+    if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
+    setWalletPromptOpen(false);
+    
+    if (activeTrip.id === 'default-trip') {
+      const tripName = destinations.length === 1
+        ? `${destinations[0].name} Trip`
+        : destinations.length > 0
+          ? `${destinations[0].name} + ${destinations.length - 1} more`
+          : 'New Trip';
+      const tripDest = destinations.map((d) => d.name).join(' → ') || 'Custom Destination';
+      const tripCurrency = destinations[0]?.currency ?? 'IDR';
+      const tripDays = journeyStart.days || daysParam || 1;
+      
+      createTrip({
+        name: tripName,
+        destination: tripDest,
+        currency: tripCurrency,
+        budget: budget * Math.max(1, tripDays),
+        daysTotal: tripDays,
+        daysRemaining: tripDays,
+      });
+      show('Trip created and wallet linked!', 'success');
+    }
+    
+    nav('/map', { replace: true });
+  };
+
+  const handleWalletLater = () => {
+    if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
+    setWalletPromptOpen(false);
+    nav('/map', { replace: true });
+  };
+
   const dismissDensity = () => {
     setDensityDismissed(true);
     try { localStorage.setItem('pavey_density_hint_dismissed', '1'); } catch { /* ignore */ }
@@ -391,12 +426,8 @@ export default function GeneratePage() {
     if (isPostOnboarding) {
       setTimeout(() => nav('/', { replace: true }), 700);
     } else {
-      // Prompt user to link a wallet, auto-proceed after 5s
+      // Prompt user to link a wallet modal
       setWalletPromptOpen(true);
-      walletPromptTimer.current = setTimeout(() => {
-        setWalletPromptOpen(false);
-        nav('/map', { replace: true });
-      }, 5000);
     }
   };
 
@@ -1306,46 +1337,51 @@ export default function GeneratePage() {
         )}
       </AnimatePresence>
 
-      {/* Wallet link prompt — slides up after plan confirmation */}
+      {/* Wallet link prompt — centered modal */}
       <AnimatePresence>
         {walletPromptOpen && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 360, damping: 30 }}
-            className="absolute inset-x-0 bottom-0 z-50 bg-white border-t border-ink-100 shadow-card px-5 py-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center shrink-0">
-                <Wallet className="w-5 h-5 text-brand-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-ink-900 text-sm">Track your spending?</div>
-                <div className="text-xs text-ink-500 mt-0.5">Connect this plan to your wallet for budget tracking.</div>
-              </div>
-              <button
-                onClick={() => {
-                  if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
-                  setWalletPromptOpen(false);
-                  nav('/wallet', { replace: true });
-                }}
-                className="shrink-0 h-9 px-3 rounded-xl bg-brand-500 text-white text-xs font-bold press shadow-glow"
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleWalletLater}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm pointer-events-auto"
+            />
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-5 pointer-events-none">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                className="w-full max-w-sm bg-white rounded-3xl shadow-card p-6 pointer-events-auto flex flex-col items-center text-center"
               >
-                Open Wallet
-              </button>
-              <button
-                onClick={() => {
-                  if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
-                  setWalletPromptOpen(false);
-                  nav('/map', { replace: true });
-                }}
-                className="shrink-0 h-9 px-3 rounded-xl bg-ink-50 text-ink-700 text-xs font-semibold press"
-              >
-                Later
-              </button>
+                <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mb-4 shrink-0">
+                  <Wallet className="w-7 h-7 text-brand-500" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-ink-900 font-display">Track your spending?</h3>
+                <p className="text-xs text-ink-500 mt-2 leading-relaxed">
+                  Connect this plan to your wallet for budget tracking.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3 w-full mt-6">
+                  <button
+                    onClick={handleWalletLater}
+                    className="h-11 rounded-2xl bg-ink-50 text-ink-700 text-xs font-semibold press hover:bg-ink-100 transition-colors"
+                  >
+                    Later
+                  </button>
+                  <button
+                    onClick={handleWalletConfirm}
+                    className="h-11 rounded-2xl bg-brand-500 text-white text-xs font-bold press shadow-glow hover:bg-brand-600 transition-colors"
+                  >
+                    Open Wallet
+                  </button>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -1567,29 +1603,55 @@ function SummStat({ label, value }: { label: string; value: string }) {
 
 function LoadingState({ stepIdx, steps }: { stepIdx: number; steps: string[] }) {
   return (
-    <motion.div key="loading" initial={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }} className="flex-1 px-5 pt-4 flex flex-col">
-      <div className="text-ink-900 font-bold text-lg font-display mb-1">{COPY.ctas.loadingHeadline}</div>
-      <div className="flex items-center gap-2 text-brand-600 font-semibold">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}>
-          <RefreshCw className="w-5 h-5" />
-        </motion.div>
+    <motion.div
+      key="loading"
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="flex-1 flex flex-col items-center justify-center px-6 text-center bg-white"
+    >
+      <div className="relative w-32 h-32 flex items-center justify-center mb-8">
+        <motion.div
+          animate={{ scale: [1, 1.4, 1], opacity: [0.15, 0.4, 0.15] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          className="absolute inset-0 rounded-full bg-brand-500/10"
+        />
+        <motion.div
+          animate={{ scale: [1.1, 1.6, 1.1], opacity: [0.1, 0.3, 0.1] }}
+          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.4 }}
+          className="absolute inset-0 rounded-full bg-brand-500/5"
+        />
+        
+        <div className="relative w-24 h-24 rounded-full bg-white border border-brand-100 flex items-center justify-center shadow-sm z-10">
+          <motion.img
+            src="/smile.svg"
+            alt="TinTin"
+            className="w-12 h-12"
+            animate={{ y: [-6, 6, -6] }}
+            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+          />
+        </div>
+      </div>
+
+      <h3 className="text-ink-900 font-bold text-lg font-display mb-2">
+        {COPY.ctas.loadingHeadline}
+      </h3>
+      
+      <div className="min-h-[24px] flex items-center justify-center text-brand-600 font-semibold text-sm mb-1.5">
         <AnimatePresence mode="wait">
-          <motion.span key={stepIdx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="text-[15px]">
+          <motion.span
+            key={stepIdx}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
+            className="text-[15px]"
+          >
             {steps[stepIdx]}
           </motion.span>
         </AnimatePresence>
       </div>
-      <p className="text-xs text-ink-400 mt-1 mb-3">Just a moment…</p>
-      <div className="mt-4 space-y-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="rounded-2xl border border-ink-100 p-3 flex gap-3 items-center">
-            <div className="w-16 h-16 rounded-xl shimmer" />
-            <div className="flex-1 space-y-2">
-              <div className="h-3 w-2/3 rounded shimmer" /><div className="h-3 w-1/3 rounded shimmer" /><div className="h-3 w-1/4 rounded shimmer" />
-            </div>
-          </div>
-        ))}
-      </div>
+      
+      <p className="text-xs text-ink-400">Just a moment…</p>
     </motion.div>
   );
 }

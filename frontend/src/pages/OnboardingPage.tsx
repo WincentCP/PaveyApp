@@ -12,7 +12,7 @@ import { useApp } from '../context/AppContext';
 import type { Vibe } from '../data/places';
 import { pickItinerary } from '../data/places';
 import { suggestCurrency, CURRENCY_SYMBOLS, CURRENCY_RATES_TO_IDR } from '../data/wallet';
-import { splashImg, welcomeImg, buddyImg } from '../assets/images';
+import { splashImg, welcomeImg } from '../assets/images';
 import MiniCalendar from '../components/MiniCalendar';
 
 type AuthMode = 'signup' | 'login';
@@ -849,56 +849,61 @@ export default function OnboardingPage() {
         {step === 'generating' && (
           <motion.div
             key="generating"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col bg-white"
+            className="flex-1 flex flex-col items-center justify-center px-6 text-center bg-white"
           >
-            {/* Brand header */}
-            <div className="bg-brand-500 px-5 pt-14 pb-5">
-              <div className="flex items-center gap-3 mb-1">
-                {/* buddy.svg → replace with buddy.png (997 × 1036 px) */}
-                <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 brightness-0 invert">
-                  <img src={buddyImg} alt="" className="w-full h-full object-cover" style={{ aspectRatio: '997/1036' }} />
-                </div>
-                <div className="text-white font-extrabold text-lg font-display leading-tight">
-                  {destList.length > 0 ? `${destList[0].name.split(',')[0]} awaits` : 'Your trip awaits'}
-                </div>
-              </div>
-              <div className="text-white/70 text-xs mt-1">
-                {VIBES.find((v) => v.id === selectedVibe)?.label ?? selectedVibe} vibes · {totalDays} day{totalDays !== 1 ? 's' : ''}
-              </div>
-            </div>
-            {/* Loading body — same pattern as GeneratePage */}
-            <div className="flex-1 px-5 pt-5 flex flex-col">
-              <div className="flex items-center gap-2 text-brand-600 font-semibold mb-4">
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.6, ease: 'linear' }}>
-                  <RefreshCw className="w-5 h-5" />
-                </motion.div>
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={genPhase}
-                    initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25 }}
-                    className="text-[15px]"
-                  >
-                    {GEN_STEPS[genPhase % GEN_STEPS.length]}
-                  </motion.span>
-                </AnimatePresence>
-              </div>
-              {/* Shimmer skeleton cards — identical to GeneratePage */}
-              <div className="space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="rounded-2xl border border-ink-100 p-3 flex gap-3 items-center">
-                    <div className="w-16 h-16 rounded-xl shimmer" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-2/3 rounded shimmer" />
-                      <div className="h-3 w-1/3 rounded shimmer" />
-                      <div className="h-3 w-1/4 rounded shimmer" />
-                    </div>
-                  </div>
-                ))}
+            {/* Bobbing & Pulsing mascot container */}
+            <div className="relative w-32 h-32 flex items-center justify-center mb-8">
+              {/* Pulsing ring 1 */}
+              <motion.div
+                animate={{ scale: [1, 1.4, 1], opacity: [0.15, 0.4, 0.15] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                className="absolute inset-0 rounded-full bg-brand-500/10 animate-pulse"
+              />
+              {/* Pulsing ring 2 */}
+              <motion.div
+                animate={{ scale: [1.1, 1.6, 1.1], opacity: [0.1, 0.3, 0.1] }}
+                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut", delay: 0.4 }}
+                className="absolute inset-0 rounded-full bg-brand-500/5"
+              />
+              
+              {/* White inner container */}
+              <div className="relative w-24 h-24 rounded-full bg-white border border-brand-100 flex items-center justify-center shadow-sm z-10">
+                {/* Bobbing TinTin */}
+                <motion.img
+                  src="/smile.svg"
+                  alt="TinTin"
+                  className="w-12 h-12"
+                  animate={{ y: [-6, 6, -6] }}
+                  transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                />
               </div>
             </div>
+
+            {/* Texts */}
+            <h3 className="text-ink-900 font-bold text-lg font-display mb-2">
+              Planning your adventure
+            </h3>
+            
+            <div className="min-h-[24px] flex items-center justify-center text-brand-600 font-semibold text-sm mb-1.5">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={genPhase}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25 }}
+                  className="text-[15px]"
+                >
+                  {GEN_STEPS[genPhase % GEN_STEPS.length]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+            
+            <p className="text-xs text-ink-400">Just a moment…</p>
           </motion.div>
         )}
 
