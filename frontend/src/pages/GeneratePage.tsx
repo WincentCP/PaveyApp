@@ -99,6 +99,7 @@ export default function GeneratePage() {
 
   const [exitModalOpen, setExitModalOpen] = useState(false);
   const [confirmStartTripOpen, setConfirmStartTripOpen] = useState(false);
+  const [confirmSaveEditsOpen, setConfirmSaveEditsOpen] = useState(false);
   const [hasConfirmedTrip, setHasConfirmedTrip] = useState(false);
   const hasConfirmedTripRef = useRef(false);
 
@@ -472,7 +473,7 @@ export default function GeneratePage() {
       return;
     }
     if (isEditMode) {
-      proceedConfirm();
+      setConfirmSaveEditsOpen(true);
     } else {
       setConfirmStartTripOpen(true);
     }
@@ -1492,6 +1493,57 @@ export default function GeneratePage() {
                     className="h-11 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold press transition-colors"
                   >
                     Leave
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Save Edits confirmation modal */}
+      <AnimatePresence>
+        {confirmSaveEditsOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmSaveEditsOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm pointer-events-auto"
+            />
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-5 pointer-events-none">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                className="w-full max-w-sm bg-white rounded-3xl shadow-card p-6 pointer-events-auto flex flex-col items-center text-center"
+              >
+                <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mb-4 shrink-0">
+                  <Pencil className="w-7 h-7 text-brand-500" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-ink-900 font-display">Save changes to your trip?</h3>
+                <p className="text-xs text-ink-500 mt-2 leading-relaxed">
+                  Your current itinerary will be updated with the modifications you have made.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3 w-full mt-6">
+                  <button
+                    onClick={() => setConfirmSaveEditsOpen(false)}
+                    className="h-11 rounded-2xl bg-ink-50 text-ink-700 text-xs font-semibold press hover:bg-ink-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmSaveEditsOpen(false);
+                      proceedConfirm();
+                    }}
+                    className="h-11 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold press transition-colors shadow-glow"
+                  >
+                    Save Changes
                   </button>
                 </div>
               </motion.div>
