@@ -27,7 +27,7 @@ function dayTabDate(startISO: string, dayIndex: number): string {
 
 const VIBES: { id: string; label: string }[] = [
   { id: 'nature', label: 'Nature' },
-  { id: 'cafe', label: 'Café Hopping' },
+  { id: 'cafe', label: 'Café' },
   { id: 'activities', label: 'Activities' },
   { id: 'cultural', label: 'Cultural' },
   { id: 'balanced', label: 'Balanced' },
@@ -38,10 +38,10 @@ export default function TripsPage() {
   const {
     destinations, activeDestIdx, setActiveDestIdx,
     itinerary, setItinerary, vibe, activeTrip, isNavigating, navIndex,
-    journeyStart, perDayItineraries, setPerDayItineraries,
+    journeyStart, setJourneyStart, perDayItineraries, setPerDayItineraries,
     pace, setPace,
     savePlace, removeSavedPlace, isSaved, setBuddyOpen,
-    trips, setActiveTripId, activeTripId,
+    trips, setActiveTripId, activeTripId, setTripName,
   } = useApp();
   const { show } = useToast();
 
@@ -49,6 +49,9 @@ export default function TripsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
+  const [editTripDetailsOpen, setEditTripDetailsOpen] = useState(false);
+  const [editTripName, setEditTripName] = useState('');
+  const [editTripDate, setEditTripDate] = useState('');
 
   const activeDest = destinations[activeDestIdx];
   const hasMultiDest = destinations.length > 1;
@@ -282,7 +285,12 @@ export default function TripsPage() {
                             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
                             <span>{p.rating}</span>
                           </div>
-                          <div className="text-[10px] text-ink-400 mt-0.5">{p.category} · {p.durationMin} min</div>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-[10px] text-ink-500 font-medium">{p.category}</span>
+                            <span className="bg-brand-50 text-brand-700 font-bold px-2 py-0.5 rounded-lg border border-brand-100 text-[9px] flex items-center gap-1">
+                              ⏱️ {p.durationMin} min visit
+                            </span>
+                          </div>
                         </div>
                         <div className="text-right shrink-0">
                           <div className="text-xs font-bold text-brand-600">{formatCost(p.cost, activeTrip.currency)}</div>
@@ -337,6 +345,24 @@ export default function TripsPage() {
                     </div>
                   </button>
                 )}
+
+                {/* Edit Name & Dates */}
+                <button
+                  onClick={() => {
+                    setSettingsOpen(false);
+                    setEditTripName(activeTrip.name !== 'My Trip' ? activeTrip.name : (activeDest ? activeDest.name.split(',')[0] : 'My Trip'));
+                    setEditTripDate(journeyStart.date === 'today' ? new Date().toISOString().split('T')[0] : journeyStart.date);
+                    setEditTripDetailsOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-ink-50 hover:bg-ink-100 transition-colors press text-left"
+                >
+                  <Settings2 className="w-4 h-4 text-brand-600 shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-ink-900">Edit name &amp; dates</div>
+                    <div className="text-[11px] text-ink-500">Change your trip's title and start date</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-ink-400" />
+                </button>
 
                 {/* Edit plan */}
                 <button
@@ -403,6 +429,79 @@ export default function TripsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      </AnimatePresence>
+
+      {/* ── Edit Trip Details Modal ── */}
+      <AnimatePresence>
+        {editTripDetailsOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditTripDetailsOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
+            />
+            {/* Center aligned Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-3xl p-6 shadow-xl border border-ink-100 flex flex-col"
+            >
+              <h3 className="font-bold text-ink-900 text-lg mb-4 font-display">Edit Trip Details</h3>
+              
+              <div className="space-y-4 mb-6 font-sans">
+                <div>
+                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase">Trip Name</label>
+                  <input
+                    type="text"
+                    value={editTripName}
+                    onChange={(e) => setEditTripName(e.target.value)}
+                    placeholder="e.g. Summer Vacation"
+                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase font-sans">Start Date</label>
+                  <input
+                    type="date"
+                    value={editTripDate}
+                    onChange={(e) => setEditTripDate(e.target.value)}
+                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditTripDetailsOpen(false)}
+                  className="flex-1 h-12 rounded-2xl bg-ink-50 hover:bg-ink-100 text-ink-700 font-semibold press flex items-center justify-center text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setTripName(editTripName.trim() || activeTrip.name);
+                    setJourneyStart({
+                      ...journeyStart,
+                      date: editTripDate || journeyStart.date,
+                    });
+                    setEditTripDetailsOpen(false);
+                    show('Trip details updated', 'success');
+                  }}
+                  className="flex-1 h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center text-sm"
+                >
+                  Save Changes
+                </button>
               </div>
             </motion.div>
           </>

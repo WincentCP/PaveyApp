@@ -20,7 +20,7 @@ import type { Place, Vibe } from '../data/places';
 
 const MAP_VIBES: { id: Vibe; label: string; tint: string }[] = [
   { id: 'nature', label: 'Nature', tint: '#10B981' },
-  { id: 'cafe', label: 'Café Hopping', tint: '#F97316' },
+  { id: 'cafe', label: 'Café', tint: '#F97316' },
   { id: 'activities', label: 'Activities', tint: '#3B5BFF' },
   { id: 'cultural', label: 'Cultural', tint: '#A855F7' },
   { id: 'balanced', label: 'Balanced', tint: '#6B7280' },

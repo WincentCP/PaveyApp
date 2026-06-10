@@ -3,7 +3,7 @@ import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, X,
   Clock, Star, Pencil, Search, Wallet, Bookmark,
   Plane, Train, Sun, Compass, Trash2, Lightbulb, Car, AlertTriangle,
-  GripVertical,
+  GripVertical, Hand,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -707,15 +707,7 @@ export default function GeneratePage() {
                       )}
                     </div>
 
-                    {/* Gesture hint */}
-                    {editAffordances && !dragHintDismissed && (
-                      <div className="mb-2.5 bg-violet-50/50 border border-violet-100 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-[10px] text-violet-600 font-medium">
-                        <span className="flex-1">Hold &amp; drag a card to reorder stops</span>
-                        <button onClick={dismissDragHint} className="text-violet-400 hover:text-violet-600 press">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
+
 
                     {/* Density warning — soft, dismissible */}
                     {!densityDismissed && (() => {
@@ -824,7 +816,7 @@ export default function GeneratePage() {
                           }}
                           className="flex items-center gap-2 text-xs font-semibold text-brand-600 px-4 py-2 rounded-full bg-brand-50 press"
                         >
-                          <img src="/mascot.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Swipe review
+                          <Hand className="w-3.5 h-3.5" /> Swipe review
                         </button>
                         <button
                           onClick={() => {

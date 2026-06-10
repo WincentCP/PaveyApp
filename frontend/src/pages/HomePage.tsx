@@ -36,7 +36,7 @@ const MAX_DESTINATIONS = 6;
 
 const VIBES: { id: Vibe; label: string; tint: string }[] = [
   { id: 'nature', label: 'Nature', tint: '#10B981' },
-  { id: 'cafe', label: 'Café Hopping', tint: '#F97316' },
+  { id: 'cafe', label: 'Café', tint: '#F97316' },
   { id: 'activities', label: 'Activities', tint: '#3B5BFF' },
   { id: 'cultural', label: 'Cultural', tint: '#A855F7' },
   { id: 'balanced', label: 'Balanced', tint: '#6B7280' },
@@ -96,7 +96,7 @@ export default function HomePage() {
     isNavigating, setIsNavigating, activeTrip, totalSpent, tripBudget, tripDaysRemaining, dailyAllowance,
     currency, setCurrency, journeyStart, setJourneyStart, perDayItineraries,
     pace, setPace,
-    trips, createTrip, setActiveTripId,
+    trips, createTrip, setActiveTripId, setTripName,
     intentDraft, setIntentDraft, destAutoAdvanced, clearDestAutoAdvanced,
     setNavIndex, setBuddyOpen,
   } = useApp();
@@ -140,6 +140,9 @@ export default function HomePage() {
   const [showOverlapWarning, setShowOverlapWarning] = useState<string | null>(null);
   const [overlapAcknowledged, setOverlapAcknowledged] = useState(false);
   const [scopeTipOpen, setScopeTipOpen] = useState(false);
+  const [editTripDetailsOpen, setEditTripDetailsOpen] = useState(false);
+  const [editTripName, setEditTripName] = useState('');
+  const [editTripDate, setEditTripDate] = useState('');
   // Review-step modal: shown after validation passes, before /generate nav.
   // Strict 30-day cap modal.
   const [tooLongOpen, setTooLongOpen] = useState(false);
@@ -570,8 +573,19 @@ export default function HomePage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <span className="text-[10px] font-bold tracking-widest text-brand-600 uppercase">ACTIVE TRIP</span>
-                  <h2 className="text-xl font-bold text-ink-900 font-display mt-0.5 leading-snug truncate">
-                    {activeTrip.name || `${dayHeaderInfo.cityName} Trip`}
+                  <h2 className="text-xl font-bold text-ink-900 font-display mt-0.5 leading-snug truncate flex items-center gap-1.5">
+                    <span className="truncate">{activeTrip.name || `${dayHeaderInfo.cityName} Trip`}</span>
+                    <button
+                      onClick={() => {
+                        setEditTripName(activeTrip.name || `${dayHeaderInfo.cityName} Trip`);
+                        setEditTripDate(journeyStart.date === 'today' ? new Date().toISOString().split('T')[0] : journeyStart.date);
+                        setEditTripDetailsOpen(true);
+                      }}
+                      className="p-1 rounded-full text-ink-400 hover:text-brand-500 hover:bg-brand-50 press shrink-0 transition-colors"
+                      aria-label="Edit trip details"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
                   </h2>
                   <p className="text-xs text-ink-500 mt-1 flex items-center gap-1.5 font-medium">
                     <span>Day {dayHeaderInfo.dayNum} of {activeTrip.daysTotal || destinations.length}</span>
@@ -1544,28 +1558,7 @@ export default function HomePage() {
                   }}
                 />
 
-                {/* Overlapping trip warning */}
-                {showOverlapWarning && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-                    <div className="text-xs font-semibold text-amber-800 mb-1.5">
-                      These dates overlap with "{showOverlapWarning}". Plan anyway?
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setShowOverlapWarning(null); setTimeout(() => endDateInputRef.current?.focus(), 50); }}
-                        className="flex-1 h-8 rounded-lg bg-amber-500 text-white text-xs font-bold press"
-                      >
-                        Pick different dates
-                      </button>
-                      <button
-                        onClick={() => { setShowOverlapWarning(null); setOverlapAcknowledged(true); proceedIntent(); }}
-                        className="flex-1 h-8 rounded-lg bg-white border border-amber-300 text-amber-700 text-xs font-semibold press"
-                      >
-                        Plan anyway
-                      </button>
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Vibe selection grid directly inline */}
                 <div>
@@ -2086,6 +2079,129 @@ export default function HomePage() {
                     Apply{activeFilters > 0 ? ` (${activeFilters})` : ''}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Date Overlap Popup Card Modal ── */}
+      <AnimatePresence>
+        {showOverlapWarning && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowOverlapWarning(null)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
+            />
+            {/* Center aligned Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-3xl p-6 shadow-xl border border-ink-100 flex flex-col text-center"
+            >
+              <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-500">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <h3 className="font-bold text-ink-900 text-lg mb-2 font-display">Date Overlap Warning</h3>
+              <p className="text-sm text-ink-600 leading-relaxed mb-6">
+                Your planned dates overlap with the existing trip <strong className="text-ink-900 font-semibold">"{showOverlapWarning}"</strong>. Would you like to proceed anyway?
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setShowOverlapWarning(null);
+                    setOverlapAcknowledged(true);
+                    setTimeout(() => proceedIntent(), 50);
+                  }}
+                  className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center"
+                >
+                  Plan anyway
+                </button>
+                <button
+                  onClick={() => {
+                    setShowOverlapWarning(null);
+                    setTimeout(() => endDateInputRef.current?.focus(), 50);
+                  }}
+                  className="w-full h-12 rounded-2xl bg-ink-50 hover:bg-ink-100 text-ink-700 font-semibold press flex items-center justify-center"
+                >
+                  Change Dates
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Edit Trip Details Modal ── */}
+      <AnimatePresence>
+        {editTripDetailsOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditTripDetailsOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
+            />
+            {/* Center aligned Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-3xl p-6 shadow-xl border border-ink-100 flex flex-col"
+            >
+              <h3 className="font-bold text-ink-900 text-lg mb-4 font-display">Edit Trip Details</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase">Trip Name</label>
+                  <input
+                    type="text"
+                    value={editTripName}
+                    onChange={(e) => setEditTripName(e.target.value)}
+                    placeholder="e.g. Summer Vacation"
+                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase">Start Date</label>
+                  <input
+                    type="date"
+                    value={editTripDate}
+                    onChange={(e) => setEditTripDate(e.target.value)}
+                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditTripDetailsOpen(false)}
+                  className="flex-1 h-12 rounded-2xl bg-ink-50 hover:bg-ink-100 text-ink-700 font-semibold press flex items-center justify-center text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setTripName(editTripName.trim() || activeTrip.name);
+                    setJourneyStart({
+                      ...journeyStart,
+                      date: editTripDate || journeyStart.date,
+                    });
+                    setEditTripDetailsOpen(false);
+                    show('Trip details updated', 'success');
+                  }}
+                  className="flex-1 h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center text-sm"
+                >
+                  Save Changes
+                </button>
               </div>
             </motion.div>
           </>

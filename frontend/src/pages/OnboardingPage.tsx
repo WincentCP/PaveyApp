@@ -29,7 +29,7 @@ type Step =
 
 const VIBES: { id: Vibe; label: string; desc: string }[] = [
   { id: 'nature', label: 'Nature', desc: 'Outdoors, parks & scenic spots' },
-  { id: 'cafe', label: 'Café Hopping', desc: 'Coffee shops, food & cozy hangouts' },
+  { id: 'cafe', label: 'Café', desc: 'Coffee shops, food & cozy hangouts' },
   { id: 'activities', label: 'Activities', desc: 'Fun, adventure & active experiences' },
   { id: 'cultural', label: 'Cultural', desc: 'History, museums & local traditions' },
   { id: 'balanced', label: 'Balanced', desc: 'A bit of everything — no strong preference' },
