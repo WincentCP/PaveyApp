@@ -45,7 +45,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations, authUser, signIn, createTrip, budget } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, trips, budget } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -67,12 +67,12 @@ export default function GeneratePage() {
   const [stopTimes, setStopTimes] = useState<Record<string, string>>({});
   const [editingTimeFor, setEditingTimeFor] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(0);
-  const [swipeHintDismissed, setSwipeHintDismissed] = useState(() => {
-    try { return localStorage.getItem('pavey_hint_swipe_dismissed') === '1'; } catch { return false; }
+  const [dragHintDismissed, setDragHintDismissed] = useState(() => {
+    try { return localStorage.getItem('pavey_hint_drag_dismissed') === '1'; } catch { return false; }
   });
-  const dismissSwipeHint = () => {
-    setSwipeHintDismissed(true);
-    try { localStorage.setItem('pavey_hint_swipe_dismissed', '1'); } catch { /* ignore */ }
+  const dismissDragHint = () => {
+    setDragHintDismissed(true);
+    try { localStorage.setItem('pavey_hint_drag_dismissed', '1'); } catch { /* ignore */ }
   };
 
   // Undo support for stop removal
@@ -94,6 +94,7 @@ export default function GeneratePage() {
   const [rerollConfirmOpen, setRerollConfirmOpen] = useState(false);
   const [walletPromptOpen, setWalletPromptOpen] = useState(false);
   const walletPromptTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [successOverlay, setSuccessOverlay] = useState(false);
 
   const [exitModalOpen, setExitModalOpen] = useState(false);
   const [hasConfirmedTrip, setHasConfirmedTrip] = useState(false);
@@ -153,7 +154,7 @@ export default function GeneratePage() {
       const tripCurrency = destinations[0]?.currency ?? 'IDR';
       const tripDays = journeyStart.days || daysParam || 1;
       
-      createTrip({
+      const newTripId = createTrip({
         name: tripName,
         destination: tripDest,
         currency: tripCurrency,
@@ -161,16 +162,20 @@ export default function GeneratePage() {
         daysTotal: tripDays,
         daysRemaining: tripDays,
       });
-      show('Trip created and wallet linked!', 'success');
+      // Auto-set as active if no real trip is active yet
+      const hasActiveTrip = trips.some((t) => t.id !== 'default-trip');
+      if (!hasActiveTrip) {
+        setActiveTripId(newTripId);
+      }
     }
-    
+    // Navigate to wallet to create/link it
     nav('/wallet', { replace: true });
   };
 
   const handleWalletLater = () => {
     if (walletPromptTimer.current) clearTimeout(walletPromptTimer.current);
     setWalletPromptOpen(false);
-    nav('/map', { replace: true });
+    // Stay on map page — no redirect
   };
 
   const dismissDensity = () => {
@@ -467,12 +472,18 @@ export default function GeneratePage() {
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
     setHasConfirmedTrip(true);
-    show(isPostOnboarding ? 'Your trip is ready' : 'Journey confirmed', 'success');
     if (isPostOnboarding) {
+      show('Your trip is ready', 'success');
       setTimeout(() => nav('/', { replace: true }), 700);
     } else {
-      // Prompt user to link a wallet modal
-      setWalletPromptOpen(true);
+      // Show success overlay, then navigate to map, then show wallet popup
+      setSuccessOverlay(true);
+      setTimeout(() => {
+        setSuccessOverlay(false);
+        // Set sessionStorage flag so MapPage shows the wallet popup
+        try { sessionStorage.setItem('pavey_show_wallet_prompt', '1'); } catch { /* ignore */ }
+        nav('/map', { replace: true });
+      }, 1400);
     }
   };
 
@@ -524,18 +535,19 @@ export default function GeneratePage() {
         <div className="font-bold text-ink-900 font-display">
           {isManualMode ? 'Build Your Journey' : COPY.sections.reviewHeader}
         </div>
-        {/* Edit toggle — read-only by default so users see the plan before
-            the controls. Hidden in manual mode (always editable). */}
+        {/* Edit toggle — hidden during loading phase */}
         {!isManualMode ? (
-          <button
-            onClick={() => setEditAffordances((v) => !v)}
-            className={`text-xs font-semibold press px-2.5 py-1 rounded-full transition-colors ${
-              editAffordances ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
-            }`}
-            aria-pressed={editAffordances}
-          >
-            {editAffordances ? 'Done' : 'Edit'}
-          </button>
+          phase === 'reveal' ? (
+            <button
+              onClick={() => setEditAffordances((v) => !v)}
+              className={`text-xs font-semibold press px-2.5 py-1 rounded-full transition-colors ${
+                editAffordances ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
+              }`}
+              aria-pressed={editAffordances}
+            >
+              {editAffordances ? 'Done' : 'Edit'}
+            </button>
+          ) : <div className="w-10" />
         ) : (
           <div className="text-xs text-brand-600 font-semibold capitalize bg-brand-50 px-2 py-1 rounded-full">Manual</div>
         )}
@@ -555,27 +567,22 @@ export default function GeneratePage() {
                   transition={{ type: 'spring', stiffness: 280, damping: 28 }}
                   className="flex-1 flex flex-col overflow-hidden"
                 >
-                  {/* Summary card */}
-                  <div className="mx-5 mt-2 p-4 rounded-2xl bg-brand-600 text-white shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm font-semibold opacity-90">
-                        <img src="/smile.svg" alt="TinTin" className="w-5 h-5 object-contain" /> {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `Crafted for your ${vibe} day`}
+                  {/* Summary card — compact */}
+                  <div className="mx-5 mt-2 p-3 rounded-2xl bg-brand-600 text-white shrink-0">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
+                        <img src="/smile.svg" alt="TinTin" className="w-4 h-4 object-contain" />
+                        {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
                       </div>
-                      <button
-                        onClick={() => nav('/?openIntent=1')}
-                        className="text-[11px] font-semibold opacity-80 hover:opacity-100 press flex items-center gap-1"
-                      >
+                      <button onClick={() => nav('/?openIntent=1')} className="text-[11px] font-semibold opacity-75 hover:opacity-100 press flex items-center gap-1">
                         <Pencil className="w-3 h-3" /> Edit trip
                       </button>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 mt-3">
+                    <div className="grid grid-cols-4 gap-1">
                       <SummStat label="Stops" value={String(displayItinerary.length)} />
-                      <SummStat label="Distance" value={`${totals.dist.toFixed(1)} km`} />
-                      <SummStat label="Est. Time" value={`${Math.round(totals.time / 60)}h ${totals.time % 60}m`} />
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
-                      <span className="text-xs opacity-80">Total Budget</span>
-                      <span className="font-bold">{formatCost(totals.cost, activeTrip.currency)}</span>
+                      <SummStat label="Distance" value={`${totals.dist.toFixed(1)}km`} />
+                      <SummStat label="Time" value={`${Math.round(totals.time / 60)}h ${totals.time % 60}m`} />
+                      <SummStat label="Budget" value={formatCost(totals.cost, activeTrip.currency)} />
                     </div>
                   </div>
 
@@ -657,10 +664,10 @@ export default function GeneratePage() {
                     </div>
 
                     {/* Gesture hint */}
-                    {editAffordances && !swipeHintDismissed && (
+                    {editAffordances && !dragHintDismissed && (
                       <div className="mb-2.5 bg-violet-50/50 border border-violet-100 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2 text-[10px] text-violet-600 font-medium">
-                        <span className="flex-1">Swipe left to swap · Swipe right to remove</span>
-                        <button onClick={dismissSwipeHint} className="text-violet-400 hover:text-violet-600 press">
+                        <span className="flex-1">Hold &amp; drag a card to reorder stops</span>
+                        <button onClick={dismissDragHint} className="text-violet-400 hover:text-violet-600 press">
                           <X className="w-3 h-3" />
                         </button>
                       </div>
@@ -722,7 +729,7 @@ export default function GeneratePage() {
                           setItinerary(newOrder);
                         }
                       }}
-                      className="space-y-3"
+                      className="space-y-1"
                     >
                       <AnimatePresence>
                         {(() => {
@@ -731,7 +738,7 @@ export default function GeneratePage() {
                             const timeStr = getTime(p.id, i);
                             const conflict = hasConflict(p, timeStr);
                             return (
-                              <Reorder.Item key={p.id} value={p} drag={editAffordances ? "y" : false} className="mb-4 list-none">
+                              <Reorder.Item key={p.id} value={p} drag={editAffordances ? "y" : false} className="mb-2 list-none">
                                 <StopCard
                                   index={i} total={displayItinerary.length} place={p}
                                   scheduledTime={timeStr}
@@ -828,17 +835,17 @@ export default function GeneratePage() {
                     </>)}
                   </div>
 
-                  {/* Sticky CTA — above bottom nav */}
-                  <div className="absolute inset-x-0 bottom-0 px-5 pt-4 pb-24 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
+                  {/* Sticky CTA — compact, above bottom nav */}
+                  <div className="absolute inset-x-0 bottom-0 px-5 pt-3 pb-20 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
                     <motion.button
                       whileTap={{ scale: 0.97 }}
-                      animate={confirmingPulse ? { boxShadow: ['0 0 0 0 rgba(59,91,255,0.4)', '0 0 0 20px rgba(59,91,255,0)'] } : {}}
+                      animate={confirmingPulse ? { boxShadow: ['0 0 0 0 rgba(59,91,255,0.4)', '0 0 0 16px rgba(59,91,255,0)'] } : {}}
                       transition={{ duration: 0.7 }}
                       onClick={onConfirm}
                       disabled={itinerary.length === 0 && displayItinerary.length === 0}
-                      className="w-full h-14 rounded-2xl bg-brand-500 disabled:bg-ink-300 text-white font-bold text-base flex items-center justify-center gap-2 pointer-events-auto"
+                      className="w-full h-11 rounded-2xl bg-brand-500 disabled:bg-ink-300 text-white font-bold text-sm flex items-center justify-center gap-2 pointer-events-auto shadow-glow"
                     >
-                      <Check className="w-5 h-5" />
+                      <Check className="w-4 h-4" />
                       {isEditMode ? 'Save Changes' : COPY.ctas.reviewStart}
                     </motion.button>
                     {isPostOnboarding && (
@@ -874,7 +881,6 @@ export default function GeneratePage() {
                 <>
                   <div className="flex items-center justify-between mb-2 mt-1">
                     <span className="text-[11px] font-bold tracking-widest text-ink-500">ITINERARY · {manualStops.length} STOPS</span>
-                    <span className="text-[11px] text-ink-400">← swipe to remove</span>
                   </div>
                   <Reorder.Group
                     axis="y"
@@ -1391,51 +1397,33 @@ export default function GeneratePage() {
         )}
       </AnimatePresence>
 
-      {/* Wallet link prompt — centered modal */}
+      {/* Success overlay — shows briefly after trip confirmation */}
       <AnimatePresence>
-        {walletPromptOpen && (
-          <>
+        {successOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-brand-600 flex flex-col items-center justify-center gap-4"
+          >
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={handleWalletLater}
-              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm pointer-events-auto"
-            />
-            <div className="absolute inset-0 z-50 flex items-center justify-center p-5 pointer-events-none">
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                className="w-full max-w-sm bg-white rounded-3xl shadow-card p-6 pointer-events-auto flex flex-col items-center text-center"
-              >
-                <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mb-4 shrink-0">
-                  <Wallet className="w-7 h-7 text-brand-500" />
-                </div>
-                
-                <h3 className="text-lg font-bold text-ink-900 font-display">Track your spending?</h3>
-                <p className="text-xs text-ink-500 mt-2 leading-relaxed">
-                  Connect this plan to your wallet for budget tracking.
-                </p>
-                
-                <div className="grid grid-cols-2 gap-3 w-full mt-6">
-                  <button
-                    onClick={handleWalletLater}
-                    className="h-11 rounded-2xl bg-ink-50 text-ink-700 text-xs font-semibold press hover:bg-ink-100 transition-colors"
-                  >
-                    Later
-                  </button>
-                  <button
-                    onClick={handleWalletConfirm}
-                    className="h-11 rounded-2xl bg-brand-500 text-white text-xs font-bold press shadow-glow hover:bg-brand-600 transition-colors"
-                  >
-                    Open Wallet
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+              className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center"
+            >
+              <Check className="w-10 h-10 text-white stroke-[2.5px]" />
+            </motion.div>
+            <motion.div
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.15 }}
+              className="text-center"
+            >
+              <div className="text-xl font-bold text-white font-display">Trip confirmed!</div>
+              <div className="text-sm text-white/70 mt-1">Opening your map…</div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -1763,7 +1751,7 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
   const driveMin = Math.round(distanceKm * 3);
 
   return (
-    <div className="flex items-center gap-3 ml-6 my-1.5 opacity-60">
+    <div className="flex items-center gap-3 ml-6 my-0.5 opacity-60">
       <div className="flex flex-col items-center w-6 shrink-0">
         <div className="w-0.5 bg-ink-200 border-dashed border-l h-5" />
       </div>
@@ -1791,7 +1779,6 @@ function StopCard({
 }) {
   const { activeTrip, isSaved, savePlace, removeSavedPlace } = useApp();
   const { show } = useToast();
-  const [dragX, setDragX] = useState(0);
   const canSwap = editable && !isManual;
   const saved = isSaved(place.id);
   const handleSave = (e: React.MouseEvent) => {
@@ -1813,41 +1800,14 @@ function StopCard({
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
       className="relative mb-2"
     >
-      {/* Swipe reveal backgrounds */}
-      {editable && dragX < 0 && canSwap && (
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500 to-indigo-600 rounded-3xl flex items-center justify-end pr-6">
-          <RefreshCw className="w-5 h-5 text-white animate-pulse" />
-        </div>
-      )}
-      {editable && dragX > 0 && (
-        <div className="absolute inset-0 bg-red-500 rounded-3xl flex items-center justify-start pl-6">
-          <Trash2 className="w-5 h-5 text-white animate-pulse" />
-        </div>
-      )}
-
-      <motion.div
-        drag={editable ? 'x' : false}
-        dragConstraints={canSwap ? { left: -90, right: 90 } : { left: 0, right: 90 }}
-        dragElastic={{ left: canSwap ? 0.15 : 0, right: 0.15 }}
-        onDrag={(_, info) => setDragX(info.offset.x)}
-        onDragEnd={(_, info) => {
-          if (info.offset.x > 55) {
-            onRemove();
-          } else if (info.offset.x < -55 && canSwap) {
-            onReplace();
-          }
-          setDragX(0);
-        }}
-        className={`relative bg-white rounded-3xl border border-ink-100/60 p-3 flex items-center gap-3.5 shadow-sm hover:shadow transition-shadow duration-300 ${
-          editable ? 'cursor-grab active:cursor-grabbing' : ''
-        }`}
-        style={{ x: dragX }}
+      <div
+        className="relative bg-white rounded-3xl border border-ink-100/60 p-3 flex items-center gap-3.5 shadow-sm hover:shadow transition-shadow duration-300"
       >
         {/* Reorder arrows — editable mode only. */}
         <div className="w-6 h-6 rounded-xl bg-violet-50 text-violet-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
 
         <div className="relative shrink-0">
-          <img src={place.image} alt={place.name} className="w-14 h-14 rounded-2xl object-cover shadow-sm border border-ink-100/50" />
+          <img src={place.image} alt={place.name} className="w-12 h-12 rounded-2xl object-cover shadow-sm border border-ink-100/50" />
           {isManual && (
             <div className="absolute -bottom-1 -right-1 bg-ink-905 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">✎</div>
           )}
@@ -1943,7 +1903,7 @@ function StopCard({
             </>
           )}
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

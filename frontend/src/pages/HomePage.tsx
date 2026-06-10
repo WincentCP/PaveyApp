@@ -95,7 +95,7 @@ export default function HomePage() {
     isNavigating, setIsNavigating, activeTrip, totalSpent, tripBudget, tripDaysRemaining, dailyAllowance,
     currency, setCurrency, journeyStart, setJourneyStart, perDayItineraries,
     pace, setPace,
-    trips, createTrip,
+    trips, createTrip, setActiveTripId,
     intentDraft, setIntentDraft, destAutoAdvanced, clearDestAutoAdvanced,
     setNavIndex, setBuddyOpen,
   } = useApp();
@@ -648,6 +648,54 @@ export default function HomePage() {
                 Six is plenty
               </span>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Multiple Trips Row — shown when user has > 1 trip ── */}
+      {trips.filter((t) => t.id !== 'default-trip').length > 1 && (
+        <div className="px-5 mt-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold tracking-widest text-ink-500">MY TRIPS</span>
+            <button onClick={() => nav('/trips')} className="text-xs text-brand-600 font-semibold press">See all</button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+            {trips.filter((t) => t.id !== 'default-trip').map((trip) => (
+              <motion.button
+                key={trip.id}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { setActiveTripId(trip.id); nav('/trips'); }}
+                className={`shrink-0 w-52 rounded-2xl p-3.5 text-left press transition-all ${
+                  activeTrip.id === trip.id
+                    ? 'bg-brand-600 text-white shadow-glow'
+                    : 'bg-ink-50 border border-ink-100 text-ink-900'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className={`text-[10px] font-bold tracking-wider ${
+                    activeTrip.id === trip.id ? 'text-white/70' : 'text-ink-400'
+                  }`}>
+                    {activeTrip.id === trip.id ? 'CURRENT' : 'TRIP'}
+                  </div>
+                  {activeTrip.id === trip.id && (
+                    <span className="bg-white/25 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">Active</span>
+                  )}
+                </div>
+                <div className={`font-bold text-sm truncate font-display ${
+                  activeTrip.id === trip.id ? 'text-white' : 'text-ink-900'
+                }`}>{trip.name}</div>
+                <div className={`text-xs truncate mt-0.5 ${
+                  activeTrip.id === trip.id ? 'text-white/70' : 'text-ink-500'
+                }`}>{trip.destination}</div>
+                <div className={`flex items-center gap-2 mt-2 text-[10px] font-medium ${
+                  activeTrip.id === trip.id ? 'text-white/70' : 'text-ink-400'
+                }`}>
+                  <span>{trip.daysTotal}d</span>
+                  <span>·</span>
+                  <span>{trip.currency}</span>
+                </div>
+              </motion.button>
+            ))}
           </div>
         </div>
       )}

@@ -1,14 +1,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CalendarDays, MapPin, Clock, Star, Navigation, Pencil, ChevronRight, Trash2, Settings2, X,
+  CalendarDays, MapPin, Clock, Star, Navigation, Pencil, ChevronRight, Trash2, Settings2, X, CheckCircle2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import PageHeader from '../components/PageHeader';
+import PlaceCard from '../components/PlaceCard';
 import { useApp } from '../context/AppContext';
 import type { TripPace } from '../context/AppContext';
 import { formatCost } from '../lib/format';
 import { useToast } from '../components/Toast';
+import type { Place } from '../data/places';
 import { useMemo, useState } from 'react';
 
 function formatDateRange(startISO: string, days: number): string {
@@ -38,12 +40,15 @@ export default function TripsPage() {
     itinerary, setItinerary, vibe, activeTrip, isNavigating, navIndex,
     journeyStart, perDayItineraries, setPerDayItineraries,
     pace, setPace,
+    savePlace, removeSavedPlace, isSaved, setBuddyOpen,
+    trips, setActiveTripId, activeTripId,
   } = useApp();
   const { show } = useToast();
 
   const [activeDay, setActiveDay] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   const activeDest = destinations[activeDestIdx];
   const hasMultiDest = destinations.length > 1;
@@ -93,7 +98,7 @@ export default function TripsPage() {
         }
       />
 
-      {/* Destination tabs */}
+      {/* Destination tabs — show full names */}
       {hasMultiDest && (
         <div className="px-5 pb-3">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -108,7 +113,7 @@ export default function TripsPage() {
                     : 'bg-ink-50 text-ink-700 border border-ink-100'
                 }`}
               >
-                {d.name.split(',')[0]}
+                {d.name}
                 <span className={`ml-1.5 text-[10px] ${i === activeDestIdx ? 'text-white/70' : 'text-ink-400'}`}>{d.days}d</span>
               </motion.button>
             ))}
@@ -118,50 +123,70 @@ export default function TripsPage() {
 
       <div className="px-5 space-y-4">
 
-        {/* Trip summary card */}
+        {/* Trip summary card — redesigned */}
         {hasPlan && (
           <motion.div
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-brand-50 border border-brand-100 rounded-2xl p-4"
+            className="bg-gradient-to-br from-brand-600 to-brand-700 rounded-2xl p-4 text-white"
           >
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <div className="text-xs font-bold tracking-widest text-brand-500">ACTIVE TRIP</div>
-                <div className="font-bold text-ink-900 font-display mt-0.5">
-                  {vibeInfo.label} vibe · {allStops.length} stops{dayCount > 1 ? ` · ${dayCount} days` : ''}
+            {/* Top row: trip name + status chip + manage button */}
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  {activeTripId !== 'default-trip' && (
+                    <span className="bg-white/25 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0">Active</span>
+                  )}
+                </div>
+                <div className="font-bold text-white text-lg font-display leading-tight truncate">
+                  {activeTrip.name !== 'My Trip' ? activeTrip.name : (activeDest ? activeDest.name.split(',')[0] : 'My Trip')}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <MapPin className="w-3 h-3 text-white/70 shrink-0" />
+                  <span className="text-xs text-white/80 truncate">{activeDest ? activeDest.name : 'Your destination'}</span>
                 </div>
                 {dayCount > 1 && journeyStart.date && journeyStart.date !== 'today' && (
-                  <div className="text-xs text-ink-400 mt-0.5">{formatDateRange(journeyStart.date, dayCount)}</div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <CalendarDays className="w-3 h-3 text-white/70 shrink-0" />
+                    <span className="text-xs text-white/80">{formatDateRange(journeyStart.date, dayCount)}</span>
+                  </div>
                 )}
               </div>
               <button
                 onClick={() => { setConfirmDelete(false); setSettingsOpen(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-brand-200 text-brand-600 text-xs font-semibold press"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold press shrink-0 transition-colors"
               >
-                <Settings2 className="w-3.5 h-3.5" /> Trip settings
+                <Settings2 className="w-3.5 h-3.5" /> Manage
               </button>
             </div>
-            <div className="grid grid-cols-3 text-center bg-white rounded-xl py-2.5">
-              <div>
-                <div className="text-sm font-bold text-ink-900 font-display">
-                  {Math.floor(totalTime / 60)}h {totalTime % 60}m
-                </div>
-                <div className="text-[10px] text-ink-500">Est. Time</div>
+
+            {/* Stats row */}
+            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-3 py-2 mt-1">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 text-white/70" />
+                <span className="text-xs font-semibold text-white">{allStops.length} stops</span>
               </div>
-              <div className="border-x border-ink-100">
-                <div className="text-sm font-bold text-ink-900 font-display">{allStops.length}</div>
-                <div className="text-[10px] text-ink-500">Stops</div>
+              <div className="w-px h-3 bg-white/20" />
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3 h-3 text-white/70" />
+                <span className="text-xs font-semibold text-white">{Math.floor(totalTime / 60)}h {totalTime % 60}m</span>
               </div>
-              <div>
-                <div className="text-sm font-bold text-brand-600 font-display">{formatCost(totalCost, activeTrip.currency)}</div>
-                <div className="text-[10px] text-ink-500">Est. Cost</div>
-              </div>
+              {dayCount > 1 && (
+                <>
+                  <div className="w-px h-3 bg-white/20" />
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays className="w-3 h-3 text-white/70" />
+                    <span className="text-xs font-semibold text-white">{dayCount} days</span>
+                  </div>
+                </>
+              )}
+              <div className="flex-1" />
+              <span className="text-xs font-bold text-white">{formatCost(totalCost, activeTrip.currency)}</span>
             </div>
 
             {isNavigating && (
               <button
                 onClick={() => nav('/navigate')}
-                className="mt-3 w-full flex items-center gap-2 bg-brand-500 rounded-xl px-4 py-2.5 press shadow-glow"
+                className="mt-2.5 w-full flex items-center gap-2 bg-white/15 rounded-xl px-4 py-2.5 press"
               >
                 <motion.span
                   animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0.3, 0.8] }}
@@ -178,7 +203,7 @@ export default function TripsPage() {
             {!isNavigating && (
               <button
                 onClick={() => nav('/map')}
-                className="mt-3 w-full h-11 bg-brand-500 text-white font-semibold rounded-xl press shadow-glow flex items-center justify-center gap-2"
+                className="mt-2.5 w-full h-10 bg-white/15 hover:bg-white/25 text-white font-semibold text-sm rounded-xl press flex items-center justify-center gap-2 transition-colors"
               >
                 <Navigation className="w-4 h-4" /> Start Navigation
               </button>
@@ -256,7 +281,7 @@ export default function TripsPage() {
                         <span className="text-[8px] text-white font-bold">{i + 1}</span>
                       </span>
                       <button
-                        onClick={() => nav('/map')}
+                        onClick={() => setSelectedPlace(p)}
                         className="w-full flex items-center gap-3 bg-white border border-ink-100 rounded-2xl p-3 press hover:border-brand-200 transition-colors text-left"
                       >
                         <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
@@ -297,13 +322,34 @@ export default function TripsPage() {
             >
               <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3" />
               <div className="px-5 pt-3 pb-2 flex items-center justify-between">
-                <div className="font-bold text-ink-900 font-display">Trip settings</div>
+                <div className="font-bold text-ink-900 font-display">Manage trip</div>
                 <button onClick={() => { setSettingsOpen(false); setConfirmDelete(false); }} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="px-5 pt-2 space-y-2 flex-1 overflow-y-auto no-scrollbar">
+                {/* Set as Current Trip */}
+                {activeTripId === 'default-trip' && trips.filter((t) => t.id !== 'default-trip').length > 0 && (
+                  <button
+                    onClick={() => {
+                      const realTrip = trips.find((t) => t.id !== 'default-trip');
+                      if (realTrip) {
+                        setActiveTripId(realTrip.id);
+                        show(`"${realTrip.name}" is now your current trip`, 'success');
+                        setSettingsOpen(false);
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-brand-50 hover:bg-brand-100 transition-colors press text-left"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-brand-700">Set as Current Trip</div>
+                      <div className="text-[11px] text-brand-500">Make this your active trip for tracking</div>
+                    </div>
+                  </button>
+                )}
+
                 {/* Edit plan */}
                 <button
                   onClick={() => { setSettingsOpen(false); nav('/generate?edit=1'); }}
@@ -372,6 +418,22 @@ export default function TripsPage() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Place detail card overlay */}
+      <AnimatePresence>
+        {selectedPlace && (
+          <PlaceCard
+            place={selectedPlace}
+            index={(dayCount > 1 ? stopsForDay : itinerary).findIndex((p) => p.id === selectedPlace.id)}
+            onClose={() => setSelectedPlace(null)}
+            onNavigate={() => { setSelectedPlace(null); nav('/map'); }}
+            isSaved={isSaved(selectedPlace.id)}
+            onSave={() => isSaved(selectedPlace.id) ? removeSavedPlace(selectedPlace.id) : savePlace(selectedPlace)}
+            currency={activeTrip.currency}
+            onBuddy={() => { setSelectedPlace(null); setBuddyOpen(true); }}
+          />
         )}
       </AnimatePresence>
     </div>
