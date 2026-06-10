@@ -603,7 +603,7 @@ export default function GeneratePage() {
                   className="flex-1 flex flex-col overflow-hidden"
                 >
                   {/* Summary card — compact */}
-                  <div className="mx-5 mt-2 p-4.5 rounded-2xl bg-brand-600 text-white shrink-0">
+                  <div className="mx-5 mt-3 mb-2.5 p-4.5 rounded-2xl bg-brand-600 text-white shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
                         <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain brightness-0 invert" />
@@ -632,7 +632,7 @@ export default function GeneratePage() {
 
                   {/* Day tabs */}
                   {isMultiDay && (
-                    <div className="px-5 pt-3 pb-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+                    <div className="px-5 pt-2 pb-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
                       {perDayItineraries.map((_, i) => {
                         let dateStr = '';
                         let isToday = false;
@@ -650,7 +650,7 @@ export default function GeneratePage() {
                             key={i}
                             onClick={() => setActiveDay(i)}
                             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors flex items-center gap-1 ${
-                              activeDay === i ? 'bg-brand-500 text-white shadow-glow' : 'bg-ink-50 text-ink-700 border border-ink-100'
+                              activeDay === i ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
                             }`}
                           >
                             {isToday && (
@@ -665,7 +665,7 @@ export default function GeneratePage() {
                   )}
 
                   {/* Stop list */}
-                  <div className="flex-1 overflow-y-auto no-scrollbar mt-3 px-5 pb-20">
+                  <div className="flex-1 overflow-y-auto no-scrollbar mt-4 px-5 pb-20">
                     {/* Issue 8: Error state when generation yields empty itinerary */}
                     {generationError && displayItinerary.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4 py-12">
