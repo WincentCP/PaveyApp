@@ -1866,57 +1866,74 @@ function StopCard({
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -80, height: 0 }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className="relative mb-2"
+      className="relative mb-2.5"
     >
       <div
-        className="relative bg-white rounded-3xl border border-ink-100/60 p-3 flex items-center gap-3.5 shadow-sm hover:shadow transition-shadow duration-300"
+        className="relative bg-white rounded-[24px] border border-ink-200/80 p-4 flex flex-col shadow-soft hover:shadow-card transition-all duration-300"
       >
-        {/* Drag handle */}
-        {editable && dragControls && (
-          <div
-            onPointerDown={(e) => dragControls.start(e)}
-            className="cursor-grab active:cursor-grabbing text-ink-300 hover:text-brand-600 p-1 mr-0.5 shrink-0 select-none touch-none"
-            aria-label="Drag to reorder"
+        {/* Header Row: Time window, index badge, and drag controls */}
+        <div className="flex items-center justify-between pb-3 border-b border-ink-100 mb-3 shrink-0">
+          <button
+            onClick={onTimeEdit}
+            className="flex items-center gap-2 bg-brand-50 hover:bg-brand-100 rounded-xl px-2.5 py-1 border border-brand-100/60 transition-colors press text-left"
           >
-            <GripVertical className="w-4 h-4" />
-          </div>
-        )}
+            <span className="bg-brand-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0">
+              {index + 1}
+            </span>
+            <span className="text-xs font-bold text-brand-700">
+              {scheduledTime}–{(() => {
+                const [h, m] = scheduledTime.split(':').map(Number);
+                const end = h * 60 + m + place.durationMin;
+                return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+              })()}
+            </span>
+            <span className="text-[10px] text-brand-400 font-semibold ml-0.5">Edit</span>
+          </button>
 
-        <div className="w-6 h-6 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
-
-        <div className="relative shrink-0">
-          <img src={place.image} alt={place.name} className="w-12 h-12 rounded-2xl object-cover shadow-sm border border-ink-100/50" />
-          {isManual && (
-            <div className="absolute -bottom-1 -right-1 bg-ink-905 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">✎</div>
+          {editable && dragControls && (
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="cursor-grab active:cursor-grabbing text-ink-300 hover:text-brand-600 p-1.5 rounded-lg hover:bg-ink-50 shrink-0 select-none touch-none transition-colors"
+              aria-label="Drag to reorder"
+            >
+              <GripVertical className="w-4.5 h-4.5" />
+            </div>
           )}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="font-semibold text-ink-900 text-sm truncate leading-tight">{place.name}</div>
-          <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
-            <span>{place.rating}</span>
-            <span className="text-ink-300">·</span>
-            <span className="truncate">{place.category}</span>
-            <span className="text-ink-300">·</span>
-            <span className="text-brand-600 font-semibold shrink-0">
-              {formatCost(place.priceRange.min, activeTrip.currency)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
-            </span>
+        {/* Body Row: Place image, core description, rating/stats */}
+        <div className="flex items-start gap-4">
+          <div className="relative shrink-0">
+            <img src={place.image} alt={place.name} className="w-14 h-14 rounded-2xl object-cover shadow-sm border border-ink-150" />
+            {isManual && (
+              <div className="absolute -bottom-1 -right-1 bg-ink-900 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">✎</div>
+            )}
           </div>
-          
-          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <button onClick={onTimeEdit} className="flex items-center gap-1.5 bg-brand-50 hover:bg-brand-100 rounded-full px-2.5 py-0.5 border border-brand-100 transition-colors press shrink-0">
-              <span className="text-[10px] font-bold text-brand-600">
-                {scheduledTime}–{(() => {
-                  const [h, m] = scheduledTime.split(':').map(Number);
-                  const end = h * 60 + m + place.durationMin;
-                  return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
-                })()}
-              </span>
-              <span className="text-[9px] text-brand-400 font-medium">Edit</span>
-            </button>
 
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <div className="font-bold text-ink-900 text-sm sm:text-base leading-tight truncate">{place.name}</div>
+            <div className="flex items-center gap-2 text-xs text-ink-500 mt-1 flex-wrap">
+              <span className="flex items-center gap-0.5 font-medium text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                <span>{place.rating}</span>
+              </span>
+              <span className="text-ink-300">·</span>
+              <span className="truncate">{place.category}</span>
+              <span className="text-ink-300">·</span>
+              <span className="text-brand-600 font-bold shrink-0">
+                {formatCost(place.priceRange.min, activeTrip.currency)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
+              </span>
+              <span className="text-ink-300">·</span>
+              <span className="text-ink-400 font-medium shrink-0">{place.durationMin}m visit</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Row: Inline alerts (e.g. closes early) / Tip icon on left, actions on right */}
+        <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-ink-50">
+          <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0 mr-2">
             {hasConflict && (
-              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
+              <div className="flex items-center gap-1 bg-red-50 border border-red-150 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
                 <span>Closes early</span>
                 {editable && onFixTime && (
                   <button
@@ -1928,7 +1945,7 @@ function StopCard({
                       const newTime = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
                       onFixTime(newTime);
                     }}
-                    className="underline ml-0.5 hover:text-amber-900 press"
+                    className="underline ml-0.5 hover:text-red-900 press"
                   >
                     Fix
                   </button>
@@ -1941,45 +1958,45 @@ function StopCard({
                   e.stopPropagation();
                   onTipClick();
                 }}
-                className="flex items-center gap-1 bg-brand-50 hover:bg-brand-100 text-brand-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-brand-100 transition-colors press shrink-0"
+                className="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-100 transition-colors press shrink-0"
               >
-                <Lightbulb className="w-3 h-3 text-brand-500" />
+                <Lightbulb className="w-3 h-3 text-amber-500" />
                 <span>Tip</span>
               </button>
             )}
           </div>
-        </div>
 
-        <div className="shrink-0 flex items-center gap-1.5">
-          <button
-            onClick={handleSave}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors press ${
-              saved ? 'bg-brand-50 text-brand-600 border border-brand-200' : 'bg-ink-50 hover:bg-ink-100 text-ink-600'
-            }`}
-            title={saved ? 'Remove from Saved' : 'Save place'}
-          >
-            <Bookmark className={`w-3.5 h-3.5 ${saved ? 'fill-brand-500 text-brand-500' : ''}`} />
-          </button>
-          {editable && (
-            <>
-              {canSwap && (
+          <div className="shrink-0 flex items-center gap-2">
+            <button
+              onClick={handleSave}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all press border ${
+                saved ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' : 'bg-ink-50 hover:bg-ink-100 text-ink-600 border-transparent'
+              }`}
+              title={saved ? 'Remove from Saved' : 'Save place'}
+            >
+              <Bookmark className={`w-4 h-4 ${saved ? 'fill-brand-500 text-brand-500' : ''}`} />
+            </button>
+            {editable && (
+              <>
+                {canSwap && (
+                  <button
+                    onClick={onReplace}
+                    className="w-9 h-9 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-100/30 flex items-center justify-center text-brand-600 transition-all press"
+                    title="Swap stop"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                )}
                 <button
-                  onClick={onReplace}
-                  className="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center text-brand-600 transition-colors press"
-                  title="Swap stop"
+                  onClick={onRemove}
+                  className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 border border-red-100/30 flex items-center justify-center text-red-500 transition-all press"
+                  title="Remove stop"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
-              )}
-              <button
-                onClick={onRemove}
-                className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-500 transition-colors press"
-                title="Remove stop"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

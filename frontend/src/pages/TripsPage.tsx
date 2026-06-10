@@ -127,87 +127,112 @@ export default function TripsPage() {
         {hasPlan && (
           <motion.div
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-brand-600 to-brand-700 rounded-2xl p-4 text-white"
+            className="bg-brand-600 rounded-[28px] p-6 text-white shadow-glow relative overflow-hidden"
           >
-            {/* Top row: trip name + status chip + manage button */}
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  {activeTripId !== 'default-trip' && (
-                    <span className="bg-white/25 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0">Active</span>
-                  )}
-                </div>
-                <div className="font-bold text-white text-lg font-display leading-tight truncate">
-                  {activeTrip.name !== 'My Trip' ? activeTrip.name : (activeDest ? activeDest.name.split(',')[0] : 'My Trip')}
-                </div>
-                <div className="flex items-center gap-1.5 mt-1">
-                  <MapPin className="w-3 h-3 text-white/70 shrink-0" />
-                  <span className="text-xs text-white/80 truncate">{activeDest ? activeDest.name : 'Your destination'}</span>
-                </div>
-                {dayCount > 1 && journeyStart.date && journeyStart.date !== 'today' && (
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <CalendarDays className="w-3 h-3 text-white/70 shrink-0" />
-                    <span className="text-xs text-white/80">{formatDateRange(journeyStart.date, dayCount)}</span>
-                  </div>
+            {/* Pulsing visual glow effect inside the card */}
+            <div className="absolute -right-20 -top-20 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -left-20 -bottom-20 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Top row: Active chip (with pulsing dot) + Sleek Settings button */}
+            <div className="relative z-10 flex items-center justify-between gap-2 mb-4">
+              <div>
+                {activeTripId !== 'default-trip' ? (
+                  <span className="bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md inline-flex items-center gap-1.5 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulseDot" />
+                    Active Trip
+                  </span>
+                ) : (
+                  <span className="bg-white/15 text-white/80 text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md inline-flex items-center shrink-0">
+                    Draft
+                  </span>
                 )}
               </div>
               <button
                 onClick={() => { setConfirmDelete(false); setSettingsOpen(true); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold press shrink-0 transition-colors"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center press shrink-0 transition-colors"
+                title="Manage Trip"
               >
-                <Settings2 className="w-3.5 h-3.5" /> Manage
+                <Settings2 className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Stats row */}
-            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-3 py-2 mt-1">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3 h-3 text-white/70" />
-                <span className="text-xs font-semibold text-white">{allStops.length} stops</span>
-              </div>
-              <div className="w-px h-3 bg-white/20" />
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3 h-3 text-white/70" />
-                <span className="text-xs font-semibold text-white">{Math.floor(totalTime / 60)}h {totalTime % 60}m</span>
-              </div>
-              {dayCount > 1 && (
-                <>
-                  <div className="w-px h-3 bg-white/20" />
-                  <div className="flex items-center gap-1.5">
-                    <CalendarDays className="w-3 h-3 text-white/70" />
-                    <span className="text-xs font-semibold text-white">{dayCount} days</span>
-                  </div>
-                </>
-              )}
-              <div className="flex-1" />
-              <span className="text-xs font-bold text-white">{formatCost(totalCost, activeTrip.currency)}</span>
-            </div>
-
-            {isNavigating && (
-              <button
-                onClick={() => nav('/navigate')}
-                className="mt-2.5 w-full flex items-center gap-2 bg-white/15 rounded-xl px-4 py-2.5 press"
-              >
-                <motion.span
-                  animate={{ scale: [1, 1.3, 1], opacity: [0.8, 0.3, 0.8] }}
-                  transition={{ repeat: Infinity, duration: 1.6 }}
-                  className="block w-2 h-2 rounded-full bg-white shrink-0"
-                />
-                <span className="text-white font-semibold text-sm flex-1 text-left">
-                  Navigating to {itinerary[navIndex]?.name ?? 'stop'}
+            {/* Title & Secondary Trip Details */}
+            <div className="relative z-10 mb-6">
+              <h2 className="font-extrabold text-white text-2xl font-display leading-tight tracking-tight">
+                {activeTrip.name !== 'My Trip' ? activeTrip.name : (activeDest ? activeDest.name.split(',')[0] : 'My Trip')}
+              </h2>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-brand-100 font-medium">
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-brand-200 shrink-0" />
+                  <span>{activeDest ? activeDest.name : 'Your destination'}</span>
                 </span>
-                <ChevronRight className="w-4 h-4 text-white/70" />
-              </button>
-            )}
+                {dayCount > 1 && journeyStart.date && journeyStart.date !== 'today' && (
+                  <>
+                    <span className="text-brand-300/60">·</span>
+                    <span className="flex items-center gap-1">
+                      <CalendarDays className="w-3.5 h-3.5 text-brand-200 shrink-0" />
+                      <span>{formatDateRange(journeyStart.date, dayCount)}</span>
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
 
-            {!isNavigating && (
-              <button
-                onClick={() => nav('/map')}
-                className="mt-2.5 w-full h-10 bg-white/15 hover:bg-white/25 text-white font-semibold text-sm rounded-xl press flex items-center justify-center gap-2 transition-colors"
-              >
-                <Navigation className="w-4 h-4" /> Start Navigation
-              </button>
-            )}
+            {/* 3-Column Stats Grid */}
+            <div className="relative z-10 grid grid-cols-3 gap-2 bg-white/10 rounded-2xl p-4 mb-4">
+              <div className="text-center flex flex-col justify-center">
+                <div className="text-lg font-extrabold text-white font-display leading-none">
+                  {allStops.length}
+                </div>
+                <div className="text-[9px] font-bold tracking-wider text-brand-200 uppercase mt-1">
+                  Stops
+                </div>
+              </div>
+              <div className="w-px h-6 bg-white/15 self-center mx-auto" />
+              <div className="text-center flex flex-col justify-center">
+                <div className="text-lg font-extrabold text-white font-display leading-none">
+                  {Math.floor(totalTime / 60)}h {totalTime % 60}m
+                </div>
+                <div className="text-[9px] font-bold tracking-wider text-brand-200 uppercase mt-1">
+                  Duration
+                </div>
+              </div>
+              <div className="w-px h-6 bg-white/15 self-center mx-auto" />
+              <div className="text-center flex flex-col justify-center">
+                <div className="text-lg font-extrabold text-white font-display leading-none">
+                  {formatCost(totalCost, activeTrip.currency)}
+                </div>
+                <div className="text-[9px] font-bold tracking-wider text-brand-200 uppercase mt-1">
+                  Budget
+                </div>
+              </div>
+            </div>
+
+            {/* Call to Action Button */}
+            <div className="relative z-10">
+              {isNavigating ? (
+                <button
+                  onClick={() => nav('/navigate')}
+                  className="w-full flex items-center gap-2.5 bg-white/10 hover:bg-white/15 border border-white/20 rounded-xl px-4 py-3 press transition-colors"
+                >
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-white font-semibold text-sm flex-1 text-left truncate">
+                    Resume navigation to {itinerary[navIndex]?.name ?? 'stop'}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-white/70" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => nav('/map')}
+                  className="w-full h-11 bg-white hover:bg-brand-50 text-brand-600 font-bold text-sm rounded-xl press flex items-center justify-center gap-2 shadow-sm transition-all"
+                >
+                  <Navigation className="w-4 h-4 fill-brand-600" /> Start Navigation
+                </button>
+              )}
+            </div>
           </motion.div>
         )}
 

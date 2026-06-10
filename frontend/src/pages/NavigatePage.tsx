@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, CheckCircle2, SkipForward, ListTree, X,
-  Navigation, AlertTriangle, Clock,
+  Navigation, AlertTriangle, Clock, Play, Pause,
 } from 'lucide-react';
 import { PaveyLogoMark } from '../components/PaveyLogo';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -216,9 +216,10 @@ export default function NavigatePage() {
 
         <button
           onClick={() => setPaused((p) => !p)}
-          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center press shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-50 flex items-center justify-center press shrink-0 text-ink-800"
+          aria-label={paused ? 'Resume navigation' : 'Pause navigation'}
         >
-          <span className="text-ink-800 font-bold text-sm">{paused ? '▶' : '⏸'}</span>
+          {paused ? <Play className="w-4 h-4 fill-current" /> : <Pause className="w-4 h-4 fill-current" />}
         </button>
       </div>
 
@@ -253,10 +254,12 @@ export default function NavigatePage() {
               className="absolute inset-0 bg-black/30 z-10 flex items-center justify-center"
             >
               <div className="bg-white rounded-2xl px-5 py-3 shadow-card flex items-center gap-3">
-                <span className="text-2xl">⏸</span>
+                <Pause className="w-6 h-6 text-brand-500 fill-brand-500 shrink-0" />
                 <div>
                   <div className="font-bold text-ink-900">Navigation paused</div>
-                  <div className="text-xs text-ink-500">Tap ▶ to resume</div>
+                  <div className="text-xs text-ink-500 flex items-center gap-1">
+                    Tap <Play className="w-3 h-3 fill-ink-500 inline-block" /> to resume
+                  </div>
                 </div>
               </div>
             </motion.div>
