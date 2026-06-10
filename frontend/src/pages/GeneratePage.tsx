@@ -19,6 +19,20 @@ import { formatCost } from '../lib/format';
 import { useToast } from '../components/Toast';
 import { getCulturalIntel, type CulturalIntel } from '../data/cultural';
 import TimePicker from '../components/TimePicker';
+import { tripDurationDays, todayISO } from '../lib/dateUtils';
+
+function formatDateRange(startISO: string, days: number): string {
+  const start = new Date(startISO);
+  const end = new Date(start.getTime() + (days - 1) * 86400000);
+  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
+function getEndDateISO(startISO: string, days: number): string {
+  const start = new Date(startISO);
+  const end = new Date(start.getTime() + (days - 1) * 86400000);
+  return end.toISOString().split('T')[0];
+}
 
 const STEPS_DEFAULT = [
   'Scouting hidden gems…',
@@ -46,7 +60,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, trips, budget } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -89,6 +103,10 @@ export default function GeneratePage() {
   // so the user sees the plan first. Switches on when ?edit=1 or via the
   // header toggle. Manual mode is always editable.
   const [editAffordances, setEditAffordances] = useState(true);
+  const [editTripDetailsOpen, setEditTripDetailsOpen] = useState(false);
+  const [editTripName, setEditTripName] = useState('');
+  const [editTripStartDate, setEditTripStartDate] = useState('');
+  const [editTripEndDate, setEditTripEndDate] = useState('');
   // Track which stops/days the user has edited so re-roll can warn before
   // wiping work in progress.
   const [userEdited, setUserEdited] = useState(false);
@@ -603,12 +621,37 @@ export default function GeneratePage() {
                   className="flex-1 flex flex-col overflow-hidden"
                 >
                   {/* Summary card — compact */}
-                  <div className="mx-5 mt-3 mb-2.5 p-4.5 rounded-2xl bg-brand-600 text-white shrink-0">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
-                        <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain brightness-0 invert" />
-                        {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
+                  <div className="mx-5 mt-3 mb-2.5 p-4.5 rounded-2xl bg-brand-600 text-white shrink-0 shadow-soft">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-brand-200 uppercase mb-1">
+                          <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain brightness-0 invert shrink-0" />
+                          {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
+                        </div>
+                        <h2 className="font-extrabold text-white text-base sm:text-lg font-display leading-tight truncate">
+                          {activeTrip.name !== 'My Trip' ? activeTrip.name : (destinations[0] ? destinations[0].name.split(',')[0] : 'My Trip')}
+                        </h2>
+                        {journeyStart.date && journeyStart.date !== 'today' && (
+                          <p className="text-xs text-brand-100/90 mt-0.5 font-medium truncate">
+                            {formatDateRange(journeyStart.date, perDayItineraries.length || journeyStart.days)}
+                          </p>
+                        )}
                       </div>
+                      {editAffordances && (
+                        <button
+                          onClick={() => {
+                            setEditTripName(activeTrip.name !== 'My Trip' ? activeTrip.name : (destinations[0] ? destinations[0].name.split(',')[0] : 'My Trip'));
+                            const startD = journeyStart.date === 'today' ? todayISO() : journeyStart.date;
+                            setEditTripStartDate(startD);
+                            setEditTripEndDate(getEndDateISO(startD, perDayItineraries.length || journeyStart.days));
+                            setEditTripDetailsOpen(true);
+                          }}
+                          className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center press shrink-0 transition-colors"
+                          title="Edit trip details"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/15 pt-3 mt-1 text-sm font-medium text-brand-100">
                       <div className="flex items-center justify-between">
@@ -1726,6 +1769,116 @@ export default function GeneratePage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Edit Trip Details Modal ── */}
+      <AnimatePresence>
+        {editTripDetailsOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setEditTripDetailsOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm pointer-events-auto"
+            />
+            {/* Center aligned Modal Card */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-3xl p-6 shadow-xl border border-ink-100 flex flex-col pointer-events-auto font-sans"
+            >
+              <h3 className="font-bold text-ink-900 text-lg mb-4 font-display">Edit Trip Details</h3>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase">Trip Name</label>
+                  <input
+                    type="text"
+                    value={editTripName}
+                    onChange={(e) => setEditTripName(e.target.value)}
+                    placeholder="e.g. Summer Vacation"
+                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase font-sans">Start Date</label>
+                    <input
+                      type="date"
+                      value={editTripStartDate}
+                      onChange={(e) => setEditTripStartDate(e.target.value)}
+                      className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase font-sans">End Date</label>
+                    <input
+                      type="date"
+                      value={editTripEndDate}
+                      onChange={(e) => setEditTripEndDate(e.target.value)}
+                      className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
+                    />
+                  </div>
+                </div>
+
+                {editTripStartDate && editTripEndDate && (
+                  <div className="text-xs text-ink-500 font-medium font-sans">
+                    Total duration: <span className="text-brand-600 font-bold">{tripDurationDays(editTripStartDate, editTripEndDate)} days</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditTripDetailsOpen(false)}
+                  className="flex-1 h-12 rounded-2xl bg-ink-50 hover:bg-ink-100 text-ink-700 font-semibold press flex items-center justify-center text-sm font-sans"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const newDays = tripDurationDays(editTripStartDate, editTripEndDate);
+                    if (exceedsMaxDuration(newDays)) {
+                      show(COPY.tripTooLong.urlToast(MAX_TRIP_DAYS), 'info');
+                      return;
+                    }
+
+                    const updatedPerDay = [...perDayItineraries];
+                    if (newDays > updatedPerDay.length) {
+                      while (updatedPerDay.length < newDays) {
+                        updatedPerDay.push([]);
+                      }
+                    } else if (newDays < updatedPerDay.length) {
+                      updatedPerDay.splice(newDays);
+                    }
+                    setPerDayItineraries(updatedPerDay);
+                    setItinerary(updatedPerDay.flat());
+
+                    setTripName(editTripName.trim() || activeTrip.name);
+                    setJourneyStart({
+                      ...journeyStart,
+                      date: editTripStartDate || journeyStart.date,
+                      days: newDays,
+                    });
+                    if (activeDay >= newDays) {
+                      setActiveDay(newDays - 1);
+                    }
+
+                    setEditTripDetailsOpen(false);
+                    show('Trip details updated', 'success');
+                  }}
+                  className="flex-1 h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center text-sm font-sans"
+                >
+                  Save Changes
+                </button>
               </div>
             </motion.div>
           </>

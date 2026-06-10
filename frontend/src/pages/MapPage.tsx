@@ -468,9 +468,6 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onEdit, currency, on
       </AnimatePresence>
 
       <div className="px-5 space-y-2">
-        <button onClick={onEdit} className="w-full h-10 rounded-2xl border border-brand-200 text-brand-600 text-xs font-semibold press flex items-center justify-center gap-1.5">
-          <Pencil className="w-3.5 h-3.5" /> Edit Plan
-        </button>
         <button onClick={onStart} disabled={itinerary.length === 0} className="w-full h-12 bg-brand-500 disabled:bg-ink-200 disabled:text-ink-400 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-glow press disabled:shadow-none">
           <Navigation className="w-4 h-4" /> Start Navigation
         </button>

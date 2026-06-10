@@ -140,9 +140,7 @@ export default function HomePage() {
   const [showOverlapWarning, setShowOverlapWarning] = useState<string | null>(null);
   const [overlapAcknowledged, setOverlapAcknowledged] = useState(false);
   const [scopeTipOpen, setScopeTipOpen] = useState(false);
-  const [editTripDetailsOpen, setEditTripDetailsOpen] = useState(false);
-  const [editTripName, setEditTripName] = useState('');
-  const [editTripDate, setEditTripDate] = useState('');
+
   // Review-step modal: shown after validation passes, before /generate nav.
   // Strict 30-day cap modal.
   const [tooLongOpen, setTooLongOpen] = useState(false);
@@ -575,17 +573,6 @@ export default function HomePage() {
                   <span className="text-[10px] font-bold tracking-widest text-brand-600 uppercase">ACTIVE TRIP</span>
                   <h2 className="text-xl font-bold text-ink-900 font-display mt-0.5 leading-snug truncate flex items-center gap-1.5">
                     <span className="truncate">{activeTrip.name || `${dayHeaderInfo.cityName} Trip`}</span>
-                    <button
-                      onClick={() => {
-                        setEditTripName(activeTrip.name || `${dayHeaderInfo.cityName} Trip`);
-                        setEditTripDate(journeyStart.date === 'today' ? new Date().toISOString().split('T')[0] : journeyStart.date);
-                        setEditTripDetailsOpen(true);
-                      }}
-                      className="p-1 rounded-full text-ink-400 hover:text-brand-500 hover:bg-brand-50 press shrink-0 transition-colors"
-                      aria-label="Edit trip details"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
                   </h2>
                   <p className="text-xs text-ink-500 mt-1 flex items-center gap-1.5 font-medium">
                     <span>Day {dayHeaderInfo.dayNum} of {activeTrip.daysTotal || destinations.length}</span>
@@ -2137,76 +2124,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* ── Edit Trip Details Modal ── */}
-      <AnimatePresence>
-        {editTripDetailsOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setEditTripDetailsOpen(false)}
-              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
-            />
-            {/* Center aligned Modal Card */}
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-3xl p-6 shadow-xl border border-ink-100 flex flex-col"
-            >
-              <h3 className="font-bold text-ink-900 text-lg mb-4 font-display">Edit Trip Details</h3>
-              
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase">Trip Name</label>
-                  <input
-                    type="text"
-                    value={editTripName}
-                    onChange={(e) => setEditTripName(e.target.value)}
-                    placeholder="e.g. Summer Vacation"
-                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
-                  />
-                </div>
-                
-                <div>
-                  <label className="text-[10px] font-bold tracking-widest text-ink-500 block mb-1.5 uppercase">Start Date</label>
-                  <input
-                    type="date"
-                    value={editTripDate}
-                    onChange={(e) => setEditTripDate(e.target.value)}
-                    className="w-full bg-ink-50 rounded-xl px-3 py-2.5 text-sm text-ink-900 border border-ink-200 outline-none focus:border-brand-400 font-sans"
-                  />
-                </div>
-              </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditTripDetailsOpen(false)}
-                  className="flex-1 h-12 rounded-2xl bg-ink-50 hover:bg-ink-100 text-ink-700 font-semibold press flex items-center justify-center text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setTripName(editTripName.trim() || activeTrip.name);
-                    setJourneyStart({
-                      ...journeyStart,
-                      date: editTripDate || journeyStart.date,
-                    });
-                    setEditTripDetailsOpen(false);
-                    show('Trip details updated', 'success');
-                  }}
-                  className="flex-1 h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center text-sm"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
