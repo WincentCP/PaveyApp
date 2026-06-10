@@ -603,7 +603,7 @@ export default function GeneratePage() {
                   className="flex-1 flex flex-col overflow-hidden"
                 >
                   {/* Summary card — compact */}
-                  <div className="mx-5 mt-2 p-4.5 rounded-[24px] bg-brand-600 text-white shrink-0 shadow-glow">
+                  <div className="mx-5 mt-2 p-4.5 rounded-2xl bg-brand-600 text-white shrink-0">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
                         <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain brightness-0 invert" />

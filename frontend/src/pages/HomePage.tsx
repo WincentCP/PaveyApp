@@ -773,35 +773,56 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* ── Upcoming Trips Row ── */}
-      {upcomingTrips.length > 0 && (
-        <div className="px-5 mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-bold tracking-widest text-ink-500 uppercase">UPCOMING TRIPS</span>
-            <button onClick={() => nav('/trips')} className="text-xs text-brand-600 font-semibold press">See all</button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-            {upcomingTrips.map((trip) => (
+      {/* ── Upcoming Trips / Plan Another Section ── */}
+      {hasTodayPlan && (
+        upcomingTrips.length > 0 ? (
+          <div className="px-5 mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold tracking-widest text-ink-500 uppercase">UPCOMING TRIPS</span>
+              <button onClick={() => nav('/trips')} className="text-xs text-brand-600 font-semibold press">See all</button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              {upcomingTrips.map((trip) => (
+                <motion.button
+                  key={trip.id}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { setActiveTripId(trip.id); show(`Switched active trip to ${trip.name}`, 'success'); }}
+                  className="shrink-0 w-40 rounded-2xl p-3 text-left press transition-all bg-ink-50 border border-ink-100 hover:border-brand-200"
+                >
+                  <div className="text-[9px] font-bold tracking-wider text-ink-400 mb-1">
+                    TRIP
+                  </div>
+                  <div className="font-bold text-xs truncate font-display text-ink-900">{trip.name}</div>
+                  <div className="text-[10px] truncate text-ink-500 mt-0.5">{trip.destination}</div>
+                  <div className="flex items-center gap-1.5 mt-2 text-[9px] font-semibold text-ink-400">
+                    <span>{trip.daysTotal}d</span>
+                    <span>·</span>
+                    <span>{trip.currency}</span>
+                  </div>
+                </motion.button>
+              ))}
+              {/* Dotted Plan Another Card at the end of scroll */}
               <motion.button
-                key={trip.id}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => { setActiveTripId(trip.id); show(`Switched active trip to ${trip.name}`, 'success'); }}
-                className="shrink-0 w-40 rounded-2xl p-3 text-left press transition-all bg-ink-50 border border-ink-100 hover:border-brand-200"
+                onClick={openPlanChoiceSheet}
+                className="shrink-0 w-32 rounded-2xl border border-dashed border-brand-300 bg-brand-50/10 hover:bg-brand-50/20 flex flex-col items-center justify-center gap-1.5 text-brand-600 press transition-colors"
               >
-                <div className="text-[9px] font-bold tracking-wider text-ink-400 mb-1">
-                  TRIP
-                </div>
-                <div className="font-bold text-xs truncate font-display text-ink-900">{trip.name}</div>
-                <div className="text-[10px] truncate text-ink-500 mt-0.5">{trip.destination}</div>
-                <div className="flex items-center gap-1.5 mt-2 text-[9px] font-semibold text-ink-400">
-                  <span>{trip.daysTotal}d</span>
-                  <span>·</span>
-                  <span>{trip.currency}</span>
-                </div>
+                <Plus className="w-5 h-5" />
+                <span className="text-[10px] font-bold">Plan another</span>
               </motion.button>
-            ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Dotted full-width banner if no other upcoming trips */
+          <div className="px-5 mt-4">
+            <button
+              onClick={openPlanChoiceSheet}
+              className="w-full h-11 rounded-2xl border-2 border-dashed border-ink-250 text-ink-500 text-xs font-bold press flex items-center justify-center gap-2 hover:border-brand-300 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Plan another trip
+            </button>
+          </div>
+        )
       )}
 
       {/* Search — full screen dedicated search view */}
