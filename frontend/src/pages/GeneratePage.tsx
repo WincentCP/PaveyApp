@@ -602,8 +602,8 @@ export default function GeneratePage() {
                   className="flex-1 flex flex-col overflow-hidden"
                 >
                   {/* Summary card — compact */}
-                  <div className="mx-5 mt-2 p-3 rounded-2xl bg-brand-600 text-white shrink-0">
-                    <div className="flex items-center justify-between mb-2">
+                  <div className="mx-5 mt-2 p-4.5 rounded-[24px] bg-brand-600 text-white shrink-0 shadow-glow">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
                         <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain" />
                         {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
@@ -612,7 +612,7 @@ export default function GeneratePage() {
                         <Pencil className="w-3 h-3" /> Edit trip
                       </button>
                     </div>
-                    <div className="grid grid-cols-4 gap-1">
+                    <div className="grid grid-cols-4 gap-2 border-t border-white/15 pt-3">
                       <SummStat label="Stops" value={String(displayItinerary.length)} />
                       <SummStat label="Distance" value={`${totals.dist.toFixed(1)}km`} />
                       <SummStat label="Time" value={`${Math.round(totals.time / 60)}h ${totals.time % 60}m`} />
@@ -1866,74 +1866,98 @@ function StopCard({
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -80, height: 0 }}
       transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-      className="relative mb-2.5"
+      className="relative mb-2"
     >
       <div
-        className="relative bg-white rounded-[24px] border border-ink-200/80 p-4 flex flex-col shadow-soft hover:shadow-card transition-all duration-300"
+        className="relative bg-white rounded-2xl border border-ink-150 p-2.5 flex flex-col gap-2 shadow-soft hover:shadow-soft transition-all duration-300"
       >
-        {/* Header Row: Time window, index badge, and drag controls */}
-        <div className="flex items-center justify-between pb-3 border-b border-ink-100 mb-3 shrink-0">
-          <button
-            onClick={onTimeEdit}
-            className="flex items-center gap-2 bg-brand-50 hover:bg-brand-100 rounded-xl px-2.5 py-1 border border-brand-100/60 transition-colors press text-left"
-          >
-            <span className="bg-brand-500 text-white w-4.5 h-4.5 rounded-full flex items-center justify-center text-[10px] font-extrabold shrink-0">
-              {index + 1}
-            </span>
-            <span className="text-xs font-bold text-brand-700">
-              {scheduledTime}–{(() => {
-                const [h, m] = scheduledTime.split(':').map(Number);
-                const end = h * 60 + m + place.durationMin;
-                return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
-              })()}
-            </span>
-            <span className="text-[10px] text-brand-400 font-semibold ml-0.5">Edit</span>
-          </button>
+        {/* Row 1: Drag handle, Index + Image, Title/Stats, Edit Actions */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Drag Handle */}
+            {editable && dragControls && (
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="cursor-grab active:cursor-grabbing text-ink-300 hover:text-brand-600 p-0.5 shrink-0 select-none touch-none"
+                aria-label="Drag to reorder"
+              >
+                <GripVertical className="w-4 h-4" />
+              </div>
+            )}
 
-          {editable && dragControls && (
-            <div
-              onPointerDown={(e) => dragControls.start(e)}
-              className="cursor-grab active:cursor-grabbing text-ink-300 hover:text-brand-600 p-1.5 rounded-lg hover:bg-ink-50 shrink-0 select-none touch-none transition-colors"
-              aria-label="Drag to reorder"
-            >
-              <GripVertical className="w-4.5 h-4.5" />
+            {/* Image with overlaid index badge */}
+            <div className="relative shrink-0">
+              <img src={place.image} alt={place.name} className="w-11 h-11 rounded-xl object-cover border border-ink-100" />
+              <div className="absolute -top-1.5 -left-1.5 bg-brand-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-extrabold border border-white shrink-0">
+                {index + 1}
+              </div>
+              {isManual && (
+                <div className="absolute -bottom-1 -right-1 bg-ink-900 text-white text-[7px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white">✎</div>
+              )}
+            </div>
+
+            {/* Core Info */}
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-ink-900 text-xs sm:text-sm leading-tight truncate">{place.name}</div>
+              <div className="flex items-center gap-1.5 text-[10px] text-ink-500 mt-0.5 flex-wrap">
+                <span className="flex items-center gap-0.5 font-semibold text-amber-500 bg-amber-50 px-1 rounded-sm shrink-0">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                  <span>{place.rating}</span>
+                </span>
+                <span className="text-ink-300">·</span>
+                <span className="truncate">{place.category}</span>
+                <span className="text-ink-300">·</span>
+                <span className="text-brand-600 font-bold shrink-0">
+                  {formatCost(place.priceRange.min, activeTrip.currency)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Edit Actions (Swap & Delete) */}
+          {editable && (
+            <div className="shrink-0 flex items-center gap-0.5">
+              {canSwap && (
+                <button
+                  onClick={onReplace}
+                  className="w-7 h-7 rounded-lg hover:bg-brand-50 text-brand-600 flex items-center justify-center transition-colors press"
+                  title="Swap stop"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                onClick={onRemove}
+                className="w-7 h-7 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center transition-colors press"
+                title="Remove stop"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
 
-        {/* Body Row: Place image, core description, rating/stats */}
-        <div className="flex items-start gap-4">
-          <div className="relative shrink-0">
-            <img src={place.image} alt={place.name} className="w-14 h-14 rounded-2xl object-cover shadow-sm border border-ink-150" />
-            {isManual && (
-              <div className="absolute -bottom-1 -right-1 bg-ink-900 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">✎</div>
-            )}
-          </div>
-
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="font-bold text-ink-900 text-sm sm:text-base leading-tight truncate">{place.name}</div>
-            <div className="flex items-center gap-2 text-xs text-ink-500 mt-1 flex-wrap">
-              <span className="flex items-center gap-0.5 font-medium text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-md">
-                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-                <span>{place.rating}</span>
+        {/* Row 2: Time Button, Alerts, Tips, and Bookmark Button */}
+        <div className="flex items-center justify-between border-t border-ink-50 pt-2 shrink-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+            {/* Time Pill */}
+            <button
+              onClick={onTimeEdit}
+              className="flex items-center gap-1 bg-brand-50 hover:bg-brand-100 rounded-lg px-2 py-0.5 border border-brand-100/60 transition-colors press shrink-0"
+            >
+              <span className="text-[10px] font-bold text-brand-700">
+                {scheduledTime}–{(() => {
+                  const [h, m] = scheduledTime.split(':').map(Number);
+                  const end = h * 60 + m + place.durationMin;
+                  return `${String(Math.floor(end / 60) % 24).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
+                })()}
               </span>
-              <span className="text-ink-300">·</span>
-              <span className="truncate">{place.category}</span>
-              <span className="text-ink-300">·</span>
-              <span className="text-brand-600 font-bold shrink-0">
-                {formatCost(place.priceRange.min, activeTrip.currency)}{place.priceRange.max !== place.priceRange.min ? '+' : ''}
-              </span>
-              <span className="text-ink-300">·</span>
-              <span className="text-ink-400 font-medium shrink-0">{place.durationMin}m visit</span>
-            </div>
-          </div>
-        </div>
+              <span className="text-[8px] text-brand-400 font-medium">Edit</span>
+            </button>
 
-        {/* Footer Row: Inline alerts (e.g. closes early) / Tip icon on left, actions on right */}
-        <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-ink-50">
-          <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0 mr-2">
+            {/* Alert pills */}
             {hasConflict && (
-              <div className="flex items-center gap-1 bg-red-50 border border-red-150 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+              <div className="flex items-center gap-1 bg-red-50 border border-red-100 text-red-600 text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0">
                 <span>Closes early</span>
                 {editable && onFixTime && (
                   <button
@@ -1952,51 +1976,31 @@ function StopCard({
                 )}
               </div>
             )}
+            
             {onTipClick && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onTipClick();
                 }}
-                className="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-100 transition-colors press shrink-0"
+                className="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-100 transition-colors press shrink-0"
               >
-                <Lightbulb className="w-3 h-3 text-amber-500" />
+                <Lightbulb className="w-2.5 h-2.5 text-amber-500" />
                 <span>Tip</span>
               </button>
             )}
           </div>
 
-          <div className="shrink-0 flex items-center gap-2">
-            <button
-              onClick={handleSave}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all press border ${
-                saved ? 'bg-brand-50 text-brand-600 border-brand-200 shadow-sm' : 'bg-ink-50 hover:bg-ink-100 text-ink-600 border-transparent'
-              }`}
-              title={saved ? 'Remove from Saved' : 'Save place'}
-            >
-              <Bookmark className={`w-4 h-4 ${saved ? 'fill-brand-500 text-brand-500' : ''}`} />
-            </button>
-            {editable && (
-              <>
-                {canSwap && (
-                  <button
-                    onClick={onReplace}
-                    className="w-9 h-9 rounded-xl bg-brand-50 hover:bg-brand-100 border border-brand-100/30 flex items-center justify-center text-brand-600 transition-all press"
-                    title="Swap stop"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </button>
-                )}
-                <button
-                  onClick={onRemove}
-                  className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 border border-red-100/30 flex items-center justify-center text-red-500 transition-all press"
-                  title="Remove stop"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </>
-            )}
-          </div>
+          {/* Bookmark Action */}
+          <button
+            onClick={handleSave}
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all press border shrink-0 ${
+              saved ? 'bg-brand-50 text-brand-600 border-brand-200' : 'bg-ink-50 hover:bg-ink-100 text-ink-500 border-transparent'
+            }`}
+            title={saved ? 'Remove from Saved' : 'Save place'}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${saved ? 'fill-brand-500 text-brand-500' : ''}`} />
+          </button>
         </div>
       </div>
     </motion.div>
