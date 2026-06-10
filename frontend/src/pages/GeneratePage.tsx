@@ -1,8 +1,9 @@
-import { AnimatePresence, motion, Reorder } from 'framer-motion';
+import { AnimatePresence, motion, Reorder, useMotionValue, useTransform, animate, useDragControls } from 'framer-motion';
 import {
   ArrowLeft, ArrowDown, Check, Plus, RefreshCw, X,
   Clock, Star, Pencil, Search, Wallet, Bookmark,
   Plane, Train, Sun, Compass, Trash2, Lightbulb, Car, AlertTriangle,
+  GripVertical,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -97,6 +98,7 @@ export default function GeneratePage() {
   const [successOverlay, setSuccessOverlay] = useState(false);
 
   const [exitModalOpen, setExitModalOpen] = useState(false);
+  const [confirmStartTripOpen, setConfirmStartTripOpen] = useState(false);
   const [hasConfirmedTrip, setHasConfirmedTrip] = useState(false);
   const hasConfirmedTripRef = useRef(false);
 
@@ -197,8 +199,14 @@ export default function GeneratePage() {
   // Active cultural tip bottom sheet state
   const [activeCulturalIntel, setActiveCulturalIntel] = useState<CulturalIntel | null>(null);
 
-  // Drag state for Tinder-style review deck
-  const [deckDragX, setDeckDragX] = useState(0);
+  // Drag state for Tinder-style review deck (useMotionValue to prevent parent re-renders)
+  const deckDragX = useMotionValue(0);
+
+  // Left/Right cue circle animations transformed from motion value
+  const leftCueOpacity = useTransform(deckDragX, [-100, 0, 30], [1, 0.15, 0]);
+  const leftCueScale = useTransform(deckDragX, [-100, 0, 100], [1.2, 0.95, 0.8]);
+  const rightCueOpacity = useTransform(deckDragX, [-30, 0, 100], [0, 0.15, 1]);
+  const rightCueScale = useTransform(deckDragX, [-100, 0, 100], [0.8, 0.95, 1.2]);
 
   const getPlaceDayNumber = (placeId: string) => {
     if (!isMultiDay) return 1;
@@ -463,7 +471,11 @@ export default function GeneratePage() {
       setSignupSheetOpen(true);
       return;
     }
-    proceedConfirm();
+    if (isEditMode) {
+      proceedConfirm();
+    } else {
+      setConfirmStartTripOpen(true);
+    }
   };
 
   const proceedConfirm = () => {
@@ -472,6 +484,28 @@ export default function GeneratePage() {
     if (isManualMode) setItinerary(manualStops);
     setConfirmingPulse(true);
     setHasConfirmedTrip(true);
+
+    if (isPostOnboarding && !isEditMode) {
+      const tripName = destinations.length === 1
+        ? `${destinations[0].name.split(',')[0]} Trip`
+        : destinations.length > 0
+          ? `${destinations[0].name.split(',')[0]} + ${destinations.length - 1} more`
+          : 'New Trip';
+      const tripDest = destinations.map((d) => d.name).join(' → ') || 'Custom Destination';
+      const tripCurrency = destinations[0]?.currency ?? 'IDR';
+      const tripDays = journeyStart.days || daysParam || 1;
+
+      createTrip({
+        name: tripName,
+        destination: tripDest,
+        currency: tripCurrency,
+        budget: budget * Math.max(1, tripDays),
+        daysTotal: tripDays,
+        daysRemaining: tripDays,
+        linkedToPlan: true,
+      });
+    }
+
     if (isPostOnboarding) {
       show('Your trip is ready', 'success');
       setTimeout(() => nav('/', { replace: true }), 700);
@@ -571,7 +605,7 @@ export default function GeneratePage() {
                   <div className="mx-5 mt-2 p-3 rounded-2xl bg-brand-600 text-white shrink-0">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
-                        <img src="/smile.svg" alt="TinTin" className="w-4 h-4 object-contain" />
+                        <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain" />
                         {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
                       </div>
                       <button onClick={() => nav('/?openIntent=1')} className="text-[11px] font-semibold opacity-75 hover:opacity-100 press flex items-center gap-1">
@@ -621,7 +655,7 @@ export default function GeneratePage() {
                   )}
 
                   {/* Stop list */}
-                  <div className="flex-1 overflow-y-auto no-scrollbar mt-3 px-5 pb-28">
+                  <div className="flex-1 overflow-y-auto no-scrollbar mt-3 px-5 pb-20">
                     {/* Issue 8: Error state when generation yields empty itinerary */}
                     {generationError && displayItinerary.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-4 py-12">
@@ -738,31 +772,29 @@ export default function GeneratePage() {
                             const timeStr = getTime(p.id, i);
                             const conflict = hasConflict(p, timeStr);
                             return (
-                              <Reorder.Item key={p.id} value={p} drag={editAffordances ? "y" : false} className="mb-2 list-none">
-                                <StopCard
-                                  index={i} total={displayItinerary.length} place={p}
-                                  scheduledTime={timeStr}
-                                  hasConflict={conflict}
-                                  editable={editAffordances}
-                                  onTimeEdit={() => { setUserEdited(true); setEditingTimeFor(p.id); }}
-                                  onRemove={() => removeWithUndo(p, i, false)}
-                                  onReplace={() => setReplaceFor(p.id)}
-                                  onMoveUp={() => reorderDayStop(i, Math.max(0, i - 1))}
-                                  onMoveDown={() => reorderDayStop(i, Math.min(displayItinerary.length - 1, i + 1))}
-                                  onFixTime={(newTime) => {
-                                    setUserEdited(true);
-                                    setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
-                                  }}
-                                  onTipClick={intel ? () => setActiveCulturalIntel(intel) : undefined}
-                                />
-                                {i < displayItinerary.length - 1 && (
-                                  <StopConnector
-                                    distanceKm={displayItinerary[i + 1].distanceKm}
-                                    fromTime={getTime(p.id, i)}
-                                    durationMin={p.durationMin}
-                                  />
-                                )}
-                              </Reorder.Item>
+                              <ItineraryItem
+                                key={p.id}
+                                place={p}
+                                index={i}
+                                total={displayItinerary.length}
+                                scheduledTime={timeStr}
+                                hasConflict={conflict}
+                                editable={editAffordances}
+                                onTimeEdit={() => { setUserEdited(true); setEditingTimeFor(p.id); }}
+                                onRemove={() => removeWithUndo(p, i, false)}
+                                onReplace={() => setReplaceFor(p.id)}
+                                onMoveUp={() => reorderDayStop(i, Math.max(0, i - 1))}
+                                onMoveDown={() => reorderDayStop(i, Math.min(displayItinerary.length - 1, i + 1))}
+                                onFixTime={(newTime) => {
+                                  setUserEdited(true);
+                                  setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
+                                }}
+                                onTipClick={intel ? () => setActiveCulturalIntel(intel) : undefined}
+                                showConnector={i < displayItinerary.length - 1}
+                                nextDistanceKm={displayItinerary[i + 1]?.distanceKm}
+                                connectorFromTime={getTime(p.id, i)}
+                                connectorDurationMin={p.durationMin}
+                              />
                             );
                           });
                         })()}
@@ -782,7 +814,7 @@ export default function GeneratePage() {
                           }}
                           className="flex items-center gap-2 text-xs font-semibold text-brand-600 px-4 py-2 rounded-full bg-brand-50 press"
                         >
-                          <img src="/smile.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Swipe review
+                          <img src="/mascot.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Swipe review
                         </button>
                         <button
                           onClick={() => {
@@ -835,8 +867,8 @@ export default function GeneratePage() {
                     </>)}
                   </div>
 
-                  {/* Sticky CTA — compact, above bottom nav */}
-                  <div className="absolute inset-x-0 bottom-0 px-5 pt-3 pb-20 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
+                  {/* Sticky CTA — compact */}
+                  <div className="absolute inset-x-0 bottom-0 px-5 pt-3 pb-6 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
                     <motion.button
                       whileTap={{ scale: 0.97 }}
                       animate={confirmingPulse ? { boxShadow: ['0 0 0 0 rgba(59,91,255,0.4)', '0 0 0 16px rgba(59,91,255,0)'] } : {}}
@@ -869,12 +901,12 @@ export default function GeneratePage() {
                   <div className="text-sm font-bold">{manualStops.length} stops · {formatCost(totals.cost, activeTrip.currency)}</div>
                 </div>
                 <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
-                  <img src="/smile.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Mix TinTin
+                  <img src="/mascot.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Mix TinTin
                 </button>
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-28">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-5 pb-20">
 
               {/* ── ITINERARY (TOP PRIORITY) ── */}
               {manualStops.length > 0 && (
@@ -892,35 +924,30 @@ export default function GeneratePage() {
                       {manualStops.map((p, i) => {
                         const intel = getCulturalIntel(p.id, p.category);
                         return (
-                          <Reorder.Item key={p.id} value={p} className="list-none">
-                            <StopCard
-                              index={i} total={manualStops.length} place={p}
-                              scheduledTime={getTime(p.id, i)}
-                              onTimeEdit={() => setEditingTimeFor(p.id)}
-                              onRemove={() => removeWithUndo(p, i, true)}
-                              onReplace={() => {}}
-                              isManual
-                              onMoveUp={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.max(0, i - 1), 0, x); return n; })}
-                              onMoveDown={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.min(prev.length - 1, i + 1), 0, x); return n; })}
-                              onFixTime={(newTime) => {
-                                setUserEdited(true);
-                                setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
-                              }}
-                            />
-                            {intel && (
-                              <div className="mt-1.5 flex items-center justify-end px-1.5">
-                                <button
-                                  onClick={() => setActiveCulturalIntel(intel)}
-                                  className="flex items-center gap-1 bg-violet-50 text-violet-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full hover:bg-violet-100 transition-colors press"
-                                >
-                                  💡 Tip: {intel.prompt}
-                                </button>
-                              </div>
-                            )}
-                            {i < manualStops.length - 1 && (
-                              <StopConnector distanceKm={manualStops[i + 1].distanceKm} fromTime={getTime(p.id, i)} durationMin={p.durationMin} />
-                            )}
-                          </Reorder.Item>
+                          <ItineraryItem
+                            key={p.id}
+                            place={p}
+                            index={i}
+                            total={manualStops.length}
+                            scheduledTime={getTime(p.id, i)}
+                            editable={true}
+                            onTimeEdit={() => setEditingTimeFor(p.id)}
+                            onRemove={() => removeWithUndo(p, i, true)}
+                            onReplace={() => {}}
+                            isManual={true}
+                            onMoveUp={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.max(0, i - 1), 0, x); return n; })}
+                            onMoveDown={() => setManualStops((prev) => { const n = prev.slice(); const [x] = n.splice(i, 1); n.splice(Math.min(prev.length - 1, i + 1), 0, x); return n; })}
+                            onFixTime={(newTime) => {
+                              setUserEdited(true);
+                              setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
+                            }}
+                            intelPrompt={intel?.prompt}
+                            onTipClickIntel={intel ? () => setActiveCulturalIntel(intel) : undefined}
+                            showConnector={i < manualStops.length - 1}
+                            nextDistanceKm={manualStops[i + 1]?.distanceKm}
+                            connectorFromTime={getTime(p.id, i)}
+                            connectorDurationMin={p.durationMin}
+                          />
                         );
                       })}
                     </AnimatePresence>
@@ -1025,13 +1052,13 @@ export default function GeneratePage() {
                   <div className="font-semibold text-ink-700 text-sm">No stops yet</div>
                   <div className="text-xs text-ink-500 mt-1">Search above or pick from recommendations</div>
                   <button onClick={importAi} className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold press">
-                    <img src="/smile.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Import TinTin suggestions
+                    <img src="/mascot.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Import TinTin suggestions
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="absolute inset-x-0 bottom-0 px-5 pt-4 pb-24 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
+            <div className="absolute inset-x-0 bottom-0 px-5 pt-4 pb-8 bg-gradient-to-t from-white via-white/95 to-transparent pointer-events-none">
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={onConfirm}
@@ -1057,7 +1084,7 @@ export default function GeneratePage() {
             {/* Header */}
             <div className="px-5 py-4 flex items-center justify-between shrink-0 border-b border-ink-50">
               <div className="flex items-center gap-2">
-                <img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain animate-pulse" />
+                <img src="/mascot.svg" alt="TinTin" className="w-6 h-6 object-contain animate-pulse" />
                 <div className="font-bold text-ink-900 font-display">Review Your Places</div>
               </div>
               <div className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full">
@@ -1068,34 +1095,26 @@ export default function GeneratePage() {
             {/* Stack Area */}
             <div className="flex-1 relative flex items-center justify-center p-6 select-none bg-ink-50/20 overflow-hidden">
               {/* Left Side Keep Cue Circle */}
-              <div
+              <motion.div
                 style={{
-                  opacity: deckDragX < 0 
-                    ? Math.min(1, 0.15 + (Math.abs(deckDragX) / 100) * 0.85) 
-                    : Math.max(0, 0.15 - (deckDragX / 30) * 0.15),
-                  scale: deckDragX < 0 
-                    ? Math.min(1.2, 0.95 + (Math.abs(deckDragX) / 100) * 0.25) 
-                    : Math.max(0.8, 0.95 - (deckDragX / 100) * 0.15),
+                  opacity: leftCueOpacity,
+                  scale: leftCueScale,
                 }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
               >
-                <div className="w-14 h-14 rounded-full bg-violet-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
                   <Check className="w-7 h-7 stroke-[3px]" />
                 </div>
-                <span className="text-[10px] font-bold text-violet-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
+                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
                   Keep
                 </span>
-              </div>
+              </motion.div>
 
               {/* Right Side Remove Cue Circle */}
-              <div
+              <motion.div
                 style={{
-                  opacity: deckDragX > 0 
-                    ? Math.min(1, 0.15 + (deckDragX / 100) * 0.85) 
-                    : Math.max(0, 0.15 - (Math.abs(deckDragX) / 30) * 0.15),
-                  scale: deckDragX > 0 
-                    ? Math.min(1.2, 0.95 + (deckDragX / 100) * 0.25) 
-                    : Math.max(0.8, 0.95 - (Math.abs(deckDragX) / 100) * 0.15),
+                  opacity: rightCueOpacity,
+                  scale: rightCueScale,
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
               >
@@ -1105,7 +1124,7 @@ export default function GeneratePage() {
                 <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
                   Remove
                 </span>
-              </div>
+              </motion.div>
 
               {reviewQueue.slice(deckIndex, deckIndex + 3).reverse().map((place, offsetIdx, sliceArr) => {
                 const actualIdx = deckIndex + sliceArr.length - 1 - offsetIdx;
@@ -1120,15 +1139,12 @@ export default function GeneratePage() {
                     depth={depth}
                     dayIndex={getPlaceDayNumber(place.id)}
                     onSwipeLeft={() => {
-                      setDeckDragX(0);
                       handleSwipe('keep', place);
                     }}
                     onSwipeRight={() => {
-                      setDeckDragX(0);
                       handleSwipe('discard', place);
                     }}
-                    dragX={isTop ? deckDragX : 0}
-                    setDragX={isTop ? setDeckDragX : () => {}}
+                    dragX={deckDragX}
                   />
                 );
               })}
@@ -1475,6 +1491,57 @@ export default function GeneratePage() {
         )}
       </AnimatePresence>
 
+      {/* Start Trip confirmation modal */}
+      <AnimatePresence>
+        {confirmStartTripOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmStartTripOpen(false)}
+              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm pointer-events-auto"
+            />
+            <div className="absolute inset-0 z-50 flex items-center justify-center p-5 pointer-events-none">
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                className="w-full max-w-sm bg-white rounded-3xl shadow-card p-6 pointer-events-auto flex flex-col items-center text-center"
+              >
+                <div className="w-14 h-14 rounded-full bg-brand-50 flex items-center justify-center mb-4 shrink-0">
+                  <Compass className="w-7 h-7 text-brand-500" />
+                </div>
+                
+                <h3 className="text-lg font-bold text-ink-900 font-display">Ready to start your trip?</h3>
+                <p className="text-xs text-ink-500 mt-2 leading-relaxed">
+                  You can still edit your itinerary later at any time from the <b>My Plans</b> section.
+                </p>
+                
+                <div className="grid grid-cols-2 gap-3 w-full mt-6">
+                  <button
+                    onClick={() => setConfirmStartTripOpen(false)}
+                    className="h-11 rounded-2xl bg-ink-50 text-ink-700 text-xs font-semibold press hover:bg-ink-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmStartTripOpen(false);
+                      proceedConfirm();
+                    }}
+                    className="h-11 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold press transition-colors shadow-glow"
+                  >
+                    Start My Trip
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Guest Save Sheet */}
       <AnimatePresence>
         {signupSheetOpen && (
@@ -1713,7 +1780,7 @@ function LoadingState({ stepIdx, steps }: { stepIdx: number; steps: string[] }) 
         
         <div className="relative w-24 h-24 rounded-full bg-white border border-brand-100 flex items-center justify-center shadow-sm z-10">
           <motion.img
-            src="/smile.svg"
+            src="/mascot.svg"
             alt="TinTin"
             className="w-12 h-12"
             animate={{ y: [-6, 6, -6] }}
@@ -1767,7 +1834,7 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
 
 /* ── Stop Card ── */
 function StopCard({
-  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, onTipClick,
+  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, onTipClick, dragControls,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
@@ -1776,6 +1843,7 @@ function StopCard({
   editable?: boolean;
   onFixTime?: (newTime: string) => void;
   onTipClick?: () => void;
+  dragControls?: any;
 }) {
   const { activeTrip, isSaved, savePlace, removeSavedPlace } = useApp();
   const { show } = useToast();
@@ -1803,8 +1871,18 @@ function StopCard({
       <div
         className="relative bg-white rounded-3xl border border-ink-100/60 p-3 flex items-center gap-3.5 shadow-sm hover:shadow transition-shadow duration-300"
       >
-        {/* Reorder arrows — editable mode only. */}
-        <div className="w-6 h-6 rounded-xl bg-violet-50 text-violet-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
+        {/* Drag handle */}
+        {editable && dragControls && (
+          <div
+            onPointerDown={(e) => dragControls.start(e)}
+            className="cursor-grab active:cursor-grabbing text-ink-300 hover:text-brand-600 p-1 mr-0.5 shrink-0 select-none touch-none"
+            aria-label="Drag to reorder"
+          >
+            <GripVertical className="w-4 h-4" />
+          </div>
+        )}
+
+        <div className="w-6 h-6 rounded-full bg-brand-50 text-brand-600 text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</div>
 
         <div className="relative shrink-0">
           <img src={place.image} alt={place.name} className="w-12 h-12 rounded-2xl object-cover shadow-sm border border-ink-100/50" />
@@ -1863,9 +1941,9 @@ function StopCard({
                   e.stopPropagation();
                   onTipClick();
                 }}
-                className="flex items-center gap-1 bg-violet-50 hover:bg-violet-100 text-violet-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-violet-100 transition-colors press shrink-0"
+                className="flex items-center gap-1 bg-brand-50 hover:bg-brand-100 text-brand-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-brand-100 transition-colors press shrink-0"
               >
-                <Lightbulb className="w-3 h-3 text-violet-500" />
+                <Lightbulb className="w-3 h-3 text-brand-500" />
                 <span>Tip</span>
               </button>
             )}
@@ -1887,7 +1965,7 @@ function StopCard({
               {canSwap && (
                 <button
                   onClick={onReplace}
-                  className="w-8 h-8 rounded-full bg-violet-50 hover:bg-violet-100 flex items-center justify-center text-violet-600 transition-colors press"
+                  className="w-8 h-8 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center text-brand-600 transition-colors press"
                   title="Swap stop"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -1905,6 +1983,98 @@ function StopCard({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/* ── Itinerary Item Wrapper to host useDragControls hook and prevent loop hooks violations ── */
+function ItineraryItem({
+  place,
+  index,
+  total,
+  scheduledTime,
+  hasConflict,
+  editable,
+  onTimeEdit,
+  onRemove,
+  onReplace,
+  onMoveUp,
+  onMoveDown,
+  onFixTime,
+  onTipClick,
+  isManual,
+  showConnector,
+  nextDistanceKm,
+  connectorFromTime,
+  connectorDurationMin,
+  intelPrompt,
+  onTipClickIntel,
+}: {
+  place: Place;
+  index: number;
+  total: number;
+  scheduledTime: string;
+  hasConflict?: boolean;
+  editable: boolean;
+  onTimeEdit: () => void;
+  onRemove: () => void;
+  onReplace: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onFixTime: (t: string) => void;
+  onTipClick?: () => void;
+  isManual?: boolean;
+  showConnector?: boolean;
+  nextDistanceKm?: number;
+  connectorFromTime?: string;
+  connectorDurationMin?: number;
+  intelPrompt?: string;
+  onTipClickIntel?: () => void;
+}) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={place}
+      drag={editable ? 'y' : false}
+      dragListener={false}
+      dragControls={dragControls}
+      className="mb-2 list-none"
+    >
+      <StopCard
+        index={index}
+        total={total}
+        place={place}
+        scheduledTime={scheduledTime}
+        hasConflict={hasConflict}
+        editable={editable}
+        onTimeEdit={onTimeEdit}
+        onRemove={onRemove}
+        onReplace={onReplace}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onFixTime={onFixTime}
+        onTipClick={onTipClick}
+        isManual={isManual}
+        dragControls={dragControls}
+      />
+      {intelPrompt && onTipClickIntel && (
+        <div className="mt-1.5 flex items-center justify-end px-1.5">
+          <button
+            onClick={onTipClickIntel}
+            className="flex items-center gap-1 bg-brand-50 text-brand-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full hover:bg-brand-100 transition-colors press"
+          >
+            💡 Tip: {intelPrompt}
+          </button>
+        </div>
+      )}
+      {showConnector && nextDistanceKm !== undefined && (
+        <StopConnector
+          distanceKm={nextDistanceKm}
+          fromTime={connectorFromTime}
+          durationMin={connectorDurationMin}
+        />
+      )}
+    </Reorder.Item>
   );
 }
 
@@ -2076,20 +2246,19 @@ interface SwipeCardProps {
   dayIndex: number;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
-  dragX: number;
-  setDragX: (x: number) => void;
+  dragX: any;
 }
 
-function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, dragX, setDragX }: SwipeCardProps) {
+function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, dragX }: SwipeCardProps) {
   const { activeTrip } = useApp();
 
   const scale = 1 - depth * 0.05;
   const yOffset = depth * 12;
   const zIndex = 10 - depth;
-  const rotateVal = dragX * 0.08;
+  const rotate = useTransform(dragX, [-200, 200], [-12, 12]);
 
-  const keepStampOpacity = Math.min(1, Math.max(0, -dragX - 25) / 75);
-  const discardStampOpacity = Math.min(1, Math.max(0, dragX - 25) / 75);
+  const keepStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);
+  const discardStampOpacity = useTransform(dragX, [25, 100], [0, 1]);
 
   return (
     <motion.div
@@ -2098,7 +2267,7 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
         scale: isTop ? 1 : scale,
         y: isTop ? 0 : yOffset,
         x: isTop ? dragX : 0,
-        rotate: isTop ? rotateVal : 0,
+        rotate: isTop ? rotate : 0,
       }}
       animate={
         isTop
@@ -2113,19 +2282,16 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
       drag={isTop ? 'x' : false}
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.7}
-      onDrag={(_, info) => {
-        if (isTop) {
-          setDragX(info.offset.x);
-        }
-      }}
       onDragEnd={(_, info) => {
         if (!isTop) return;
         if (info.offset.x < -120) {
           onSwipeLeft();
+          dragX.set(0);
         } else if (info.offset.x > 120) {
           onSwipeRight();
+          dragX.set(0);
         } else {
-          setDragX(0);
+          animate(dragX, 0, { type: 'spring', stiffness: 300, damping: 25 });
         }
       }}
       className="absolute w-full max-w-[300px] aspect-[3/3.7] bg-white rounded-3xl border border-ink-100 shadow-xl overflow-hidden flex flex-col transition-shadow duration-300"
@@ -2150,19 +2316,19 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
 
         {isTop && (
           <>
-            <div
+            <motion.div
               style={{ opacity: keepStampOpacity }}
-              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-violet-500 rounded-xl px-4 py-2 text-violet-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
             >
               Keep
-            </div>
+            </motion.div>
 
-            <div
+            <motion.div
               style={{ opacity: discardStampOpacity }}
               className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
             >
               Remove
-            </div>
+            </motion.div>
           </>
         )}
 

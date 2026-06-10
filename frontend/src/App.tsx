@@ -37,7 +37,7 @@ function AppShell() {
   };
 
   const hideChrome = pathname.startsWith('/onboarding');
-  const hideNav = pathname.startsWith('/navigate') || hideChrome;
+  const hideNav = pathname.startsWith('/navigate') || pathname.startsWith('/generate') || hideChrome;
   const hideBuddy = hideChrome || pathname.startsWith('/generate') || pathname.startsWith('/navigate');
   // Only show the intro bubble on the home screen.
   const showBuddyIntro = buddyIntroOpen && !hideBuddy && pathname === '/' && !buddyOpen;
@@ -79,7 +79,7 @@ function AppShell() {
           aria-label="Open TinTin"
         >
           <img
-            src="/smile.svg"
+            src="/mascot.svg"
             alt="TinTin"
             className="w-9 h-9 object-contain pointer-events-none"
             style={{ aspectRatio: '997/1036' }}

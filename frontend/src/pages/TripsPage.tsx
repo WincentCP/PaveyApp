@@ -226,7 +226,7 @@ export default function TripsPage() {
               onClick={() => nav('/?newPlan=1')}
               className="h-12 px-8 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2 mx-auto"
             >
-              <img src="/smile.svg" alt="TinTin" className="w-6 h-6 object-contain" /> Plan My Trip
+              <img src="/mascot.svg" alt="TinTin" className="w-6 h-6 object-contain" /> Plan My Trip
             </button>
           </motion.div>
         )}

@@ -23,7 +23,7 @@
  *   - Wallet/trip shape is in src/data/wallet.ts.
  */
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { PLACES, pickItinerary, type Place, type Vibe } from '../data/places';
 import { DEFAULT_TRIP, BUDGET_TOTAL, type Transaction, type Trip, type Currency, suggestCurrency } from '../data/wallet';
 import {
@@ -322,6 +322,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [trips, activeTripId],
   );
 
+  const prevActiveTripIdRef = useRef(activeTripId);
+
+  useEffect(() => {
+    if (activeTripId !== prevActiveTripIdRef.current) {
+      prevActiveTripIdRef.current = activeTripId;
+      const targetTrip = trips.find((t) => t.id === activeTripId);
+      if (targetTrip) {
+        if (targetTrip.itinerary) setItinerary(targetTrip.itinerary);
+        if (targetTrip.destinations) setDestinations(targetTrip.destinations);
+        if (targetTrip.journeyStart) setJourneyStart(targetTrip.journeyStart);
+        if (targetTrip.vibe) setVibe(targetTrip.vibe as Vibe);
+        if (targetTrip.pace) setPace(targetTrip.pace as TripPace);
+        if (targetTrip.perDayItineraries) setPerDayItineraries(targetTrip.perDayItineraries);
+      }
+    }
+  }, [activeTripId, trips]);
+
+  useEffect(() => {
+    const currentActive = trips.find((t) => t.id === activeTripId);
+    if (!currentActive) return;
+
+    const isDifferent =
+      JSON.stringify(currentActive.itinerary) !== JSON.stringify(itinerary) ||
+      JSON.stringify(currentActive.destinations) !== JSON.stringify(destinations) ||
+      JSON.stringify(currentActive.journeyStart) !== JSON.stringify(journeyStart) ||
+      currentActive.vibe !== vibe ||
+      currentActive.pace !== pace ||
+      JSON.stringify(currentActive.perDayItineraries) !== JSON.stringify(perDayItineraries);
+
+    if (isDifferent) {
+      setTrips((prev) =>
+        prev.map((t) =>
+          t.id === activeTripId
+            ? {
+                ...t,
+                itinerary,
+                destinations,
+                journeyStart,
+                vibe,
+                pace,
+                perDayItineraries,
+              }
+            : t
+        )
+      );
+    }
+  }, [itinerary, destinations, journeyStart, vibe, pace, perDayItineraries, activeTripId]);
+
   const updateActiveTrip = (updater: (trip: Trip) => Trip) => {
     setTrips((prev) => prev.map((t) => t.id === activeTripId ? updater(t) : t));
   };
@@ -338,8 +386,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const createTripFn = (data: Omit<Trip, 'id' | 'transactions' | 'createdAt'>): string => {
     const id = `trip-${Math.random().toString(36).slice(2, 9)}`;
-    const newTrip: Trip = { ...data, id, transactions: [], createdAt: new Date().toISOString() };
-    setTrips([newTrip]);
+    const newTrip: Trip = {
+      ...data,
+      id,
+      transactions: [],
+      createdAt: new Date().toISOString(),
+      itinerary,
+      destinations,
+      journeyStart,
+      vibe,
+      pace,
+      perDayItineraries,
+    };
+    setTrips((prev) => [...prev, newTrip]);
     setActiveTripId(id);
     return id;
   };

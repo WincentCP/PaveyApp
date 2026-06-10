@@ -294,7 +294,7 @@ function EmptyDestState({
           onClick={onAiGenerate}
           className="h-12 rounded-2xl bg-brand-500 text-white font-bold shadow-glow press flex items-center justify-center gap-2"
         >
-          <img src="/smile.svg" alt="TinTin" className="w-5 h-5 object-contain" /> TinTin Plan
+          <img src="/mascot.svg" alt="TinTin" className="w-5 h-5 object-contain" /> TinTin Plan
         </button>
         <button
           onClick={onManual}

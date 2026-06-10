@@ -874,7 +874,7 @@ export default function OnboardingPage() {
               <div className="relative w-24 h-24 rounded-full bg-white border border-brand-100 flex items-center justify-center shadow-sm z-10">
                 {/* Bobbing TinTin */}
                 <motion.img
-                  src="/smile.svg"
+                  src="/mascot.svg"
                   alt="TinTin"
                   className="w-12 h-12"
                   animate={{ y: [-6, 6, -6] }}

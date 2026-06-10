@@ -8,7 +8,7 @@ const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[
   { icon: Cloud, label: 'Indoor cafes nearby' },
   { icon: Coffee, label: 'Best coffee in Ubud' },
   { icon: MapPinned, label: 'Less walking route' },
-  { icon: null, imgSrc: '/smile.svg', label: 'Hidden gems' },
+  { icon: null, imgSrc: '/mascot.svg', label: 'Hidden gems' },
 ];
 
 const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
@@ -143,7 +143,7 @@ function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
   return (
     <div className={`${containerCls} rounded-full bg-white border border-brand-500 shadow-sm flex items-center justify-center shrink-0`}>
       <img
-        src="/smile.svg"
+        src="/mascot.svg"
         alt="TinTin"
         className={`${imgCls} object-contain`}
         style={{ aspectRatio: '997/1036' }}

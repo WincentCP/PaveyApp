@@ -95,6 +95,12 @@ export interface Trip {
   /** True when this trip was auto-minted from a confirmed itinerary plan.
    *  Used by the wallet to render the "Linked from your trip plan" subtitle. */
   linkedToPlan?: boolean;
+  itinerary?: any[];
+  destinations?: any[];
+  journeyStart?: any;
+  vibe?: string;
+  pace?: string;
+  perDayItineraries?: any[][];
 }
 
 /**
