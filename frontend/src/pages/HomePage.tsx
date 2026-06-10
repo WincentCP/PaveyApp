@@ -4,7 +4,8 @@ import {
   X, Star, MapPin, Pencil,
   ChevronRight, Plus, Navigation, RefreshCw,
   ArrowRight, Compass, Zap, Link2, AlertTriangle,
-  Trees, Coffee, Landmark, Scale, ArrowLeft, Clock
+  Trees, Coffee, Landmark, Scale, ArrowLeft, Clock,
+  Settings2,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
@@ -553,33 +554,152 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Daily Vibe Card */}
+      {/* Consolidated Active Trip Control Card */}
       <div className="px-5 -mt-12 relative z-20">
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 280, damping: 28 }}
-          className="bg-white/75 backdrop-blur-xl rounded-2xl shadow-lg p-4 flex items-center gap-4 border border-white/80"
+          className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-xl p-5 border border-white/80"
         >
-          <div className="text-center shrink-0">
-            <CloudSun className="w-8 h-8 text-brand-500 mx-auto" />
-            <div className="text-2xl font-extrabold text-ink-900 mt-1 font-display">28°</div>
-            <div className="text-[11px] text-ink-500 leading-tight">Partly Cloudy</div>
-          </div>
-          <div className="w-px h-10 bg-ink-200/60 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-bold tracking-widest text-brand-500">TODAY'S VIBE</div>
-            <div className="text-ink-900 font-bold leading-snug font-display flex items-center gap-1.5">
-              {getVibeIcon(vibe, "w-4 h-4 text-brand-500")}
-              <span>{VIBES.find((v) => v.id === vibe)?.label} Day</span>
-            </div>
-            <div className="text-xs text-ink-500 mt-0.5">Budget · {formatCost(budget, activeTrip.currency)}/day</div>
-          </div>
-          <div className="shrink-0 text-right">
-            <div className="text-[10px] text-ink-400">Humidity</div>
-            <div className="text-sm font-bold text-ink-700">74%</div>
-          </div>
-        </motion.div>
+          {hasTodayPlan ? (
+            /* Case A: Active Trip Plan */
+            <div>
+              {/* Header section with Trip info and Weather */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[10px] font-bold tracking-widest text-brand-600 uppercase">ACTIVE TRIP</span>
+                  <h2 className="text-xl font-bold text-ink-900 font-display mt-0.5 leading-snug truncate">
+                    {activeTrip.name || `${dayHeaderInfo.cityName} Trip`}
+                  </h2>
+                  <p className="text-xs text-ink-500 mt-1 flex items-center gap-1.5 font-medium">
+                    <span>Day {dayHeaderInfo.dayNum} of {activeTrip.daysTotal || destinations.length}</span>
+                    <span className="text-ink-300">•</span>
+                    <span className="truncate">{dayHeaderInfo.cityName}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 bg-ink-50 rounded-2xl p-2 shrink-0 border border-ink-100/50">
+                  <CloudSun className="w-6 h-6 text-brand-500" />
+                  <div className="text-right">
+                    <div className="text-sm font-black text-ink-900 leading-none">28°</div>
+                    <div className="text-[9px] text-ink-500 font-bold leading-none mt-0.5">Cloudy</div>
+                  </div>
+                </div>
+              </div>
 
+              {/* Stats & Vibe Grid */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <button
+                  onClick={() => setVibeSheet(true)}
+                  className="flex items-center gap-2 p-2.5 bg-ink-50/60 rounded-2xl hover:bg-ink-100/60 border border-ink-100/30 text-left transition-all press group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-brand-50 flex items-center justify-center text-sm shrink-0 border border-brand-100/40">
+                    {getVibeIcon(vibe, "w-4 h-4 text-brand-500")}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] text-ink-400 font-bold uppercase tracking-wider">VIBE</div>
+                    <div className="text-xs font-bold text-ink-800 truncate flex items-center gap-0.5">
+                      {VIBES.find((v) => v.id === vibe)?.label}
+                      <Settings2 className="w-3 h-3 text-brand-500/80 group-hover:text-brand-600 transition-colors ml-0.5" />
+                    </div>
+                  </div>
+                </button>
+
+                <div className="flex items-center gap-2 p-2.5 bg-ink-50/60 rounded-2xl border border-ink-100/30 text-left">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-sm shrink-0 border border-purple-100/40">
+                    📍
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[9px] text-ink-400 font-bold uppercase tracking-wider">STOPS</div>
+                    <div className="text-xs font-bold text-ink-800 truncate">
+                      {todayStops.length} stops planned
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Budget Progress Bar */}
+              {activeTrip.transactions.length > 0 && (
+                <div className="mt-4 pt-3.5 border-t border-ink-100/50">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-ink-600 font-semibold flex items-center gap-1">
+                      <span>Spent</span>
+                      <span className="font-extrabold text-ink-900">{formatCurrencyAmount(totalSpent, currency)}</span>
+                      <span className="text-ink-400">/</span>
+                      <span className="text-ink-500">{formatCurrencyAmount(tripBudget, currency)}</span>
+                    </span>
+                    <span className={`font-bold px-2 py-0.5 rounded-full text-[9px] ${budgetPulseInfo.isOnTrack ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                      {budgetPulseInfo.isOnTrack ? 'On track' : 'Over budget'}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-ink-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${budgetPulseInfo.isOnTrack ? 'bg-emerald-400' : 'bg-red-400'}`}
+                      style={{ width: `${Math.min(100, (totalSpent / tripBudget) * 100)}%` }}
+                    />
+                  </div>
+                  {tripDaysRemaining > 0 && (
+                    <div className="text-[10px] text-ink-400 font-semibold mt-1.5">
+                      {formatCurrencyAmount(dailyAllowance, currency)}/day allowance left · {tripDaysRemaining} day{tripDaysRemaining !== 1 ? 's' : ''} remaining
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Active Navigation Alert */}
+              {isNavigating && (
+                <div className="mt-4 bg-brand-50 rounded-2xl p-3 border border-brand-100 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-brand-150 flex items-center justify-center shrink-0">
+                    <Navigation className="w-4 h-4 text-brand-600 animate-pulse" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-brand-900 font-bold text-xs leading-none">Navigation active</div>
+                    <div className="text-[10px] text-brand-600 mt-1">Tap resume to go to live route map</div>
+                  </div>
+                  <button onClick={() => nav('/navigate')} className="h-8 px-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold press transition-colors">
+                    Resume
+                  </button>
+                </div>
+              )}
+
+              {/* Bottom Action buttons inside card */}
+              <div className="flex gap-2.5 mt-4 pt-3.5 border-t border-ink-100/50">
+                <button
+                  onClick={() => nav('/trips')}
+                  className="flex-1 h-11 rounded-2xl bg-ink-50 hover:bg-ink-100 text-ink-800 border border-ink-200/50 font-bold text-xs press flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <span>Open Itinerary</span>
+                  <ChevronRight className="w-3.5 h-3.5 opacity-70" />
+                </button>
+                <button
+                  onClick={() => nav(isNavigating ? '/navigate' : '/map')}
+                  className="flex-1 h-11 rounded-2xl bg-brand-500 text-white font-bold text-xs press flex items-center justify-center gap-1.5 shadow-glow hover:bg-brand-600 transition-colors"
+                >
+                  <span>{isNavigating ? 'Resume Route' : 'Go to Map'}</span>
+                  <Navigation className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Case B: No Active Trip Plan */
+            <div className="text-center py-4">
+              <div className="w-14 h-14 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-3.5 border border-brand-100/50 shadow-sm">
+                <Compass className="w-7 h-7 text-brand-500" />
+              </div>
+              <h3 className="font-bold text-ink-900 text-base font-display">Start Your Adventure</h3>
+              <p className="text-xs text-ink-500 mt-1.5 max-w-[260px] mx-auto leading-relaxed">
+                Build your itinerary with TinTin AI or plan your custom stops manually to get started.
+              </p>
+              <button
+                onClick={openPlanChoiceSheet}
+                className="mt-5 w-full h-11 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs press flex items-center justify-center gap-1.5 shadow-glow transition-colors"
+              >
+                <span>Plan My Journey</span>
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </motion.div>
       </div>
 
       {/* Currency switch banner */}
@@ -858,259 +978,57 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* ── DYNAMIC PLAN SECTION ── */}
-      <div className="px-5 mt-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold tracking-widest text-ink-500">MY PLAN{todayStops.length > 0 ? ` · ${todayStops.length} STOPS` : ''}</span>
+      {/* ── SECONDARY PLAN HELPERS ── */}
+      {hasTodayPlan && destinations.length > 1 && activeDestIdx < destinations.length - 1 && (
+        <div className="px-5 mt-4">
+          <div className="flex items-center justify-between bg-brand-50 border border-brand-100/40 rounded-2xl p-3.5">
+            <div className="text-xs">
+              <span className="text-ink-500 font-medium">Tomorrow: </span>
+              <span className="font-bold text-ink-900">{destinations[activeDestIdx + 1].name.split(',')[0]}</span>
+              <span className="text-ink-400 ml-1 font-semibold">— No plan yet</span>
+            </div>
             <button
-              onClick={() => setVibeSheet(true)}
-              className="flex items-center gap-1.5 bg-brand-50 text-brand-600 text-[11px] font-semibold px-2 py-1 rounded-full border border-brand-100 press"
+              onClick={() => { setActiveDestIdx(activeDestIdx + 1); nav('/generate'); }}
+              className="flex items-center gap-1 text-xs font-extrabold text-brand-600 press"
             >
-              {getVibeIcon(vibe, "w-3 h-3 text-brand-500")}
-              <span>{VIBES.find((v) => v.id === vibe)?.label}</span>
-              <Pencil className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+              Plan Now <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
-
-        {/* ── CASE A: Has today's plan ── */}
-        {hasTodayPlan && (
-          <div>
-            {/* UI1 — Day header */}
-            <div className="mb-3 flex items-center gap-2">
-              <span className="text-xs font-bold text-brand-600">DAY {dayHeaderInfo.dayNum}</span>
-              <span className="text-xs text-ink-500">—</span>
-              <span className="text-xs text-ink-600">{dayHeaderInfo.dateStr}</span>
-              <span className="text-xs text-ink-400">·</span>
-              <span className="text-xs font-semibold text-ink-700">{dayHeaderInfo.cityName}</span>
-            </div>
-
-            {/* Active nav indicator */}
-            {isNavigating && (
-              <motion.button
-                initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                onClick={() => nav('/navigate')}
-                className="w-full mb-3 flex items-center gap-3 bg-brand-500 rounded-2xl px-4 py-3 shadow-glow press"
-              >
-                <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                  <Navigation className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1 text-left">
-                  <div className="text-white font-bold text-sm">Navigation active</div>
-                  <div className="text-white/80 text-xs">Tap to return to your route</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/70" />
-              </motion.button>
-            )}
-
-            {/* Clean summary card */}
-            <div className="bg-ink-50 rounded-2xl p-4 border border-ink-100/60 mb-3 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-ink-900 text-base truncate font-display">
-                    {activeTrip.name || `${dayHeaderInfo.cityName} Trip`}
-                  </h3>
-                  <p className="text-xs text-ink-500 mt-1">
-                    Currently exploring {dayHeaderInfo.cityName}.
-                  </p>
-                  <div className="flex items-center gap-2 mt-3 text-xs font-medium text-ink-600">
-                    <span className="px-2 py-0.5 bg-white rounded-full border border-ink-200/50">
-                      Day {dayHeaderInfo.dayNum} of {activeTrip.daysTotal || destinations.length}
-                    </span>
-                    <span className="px-2 py-0.5 bg-white rounded-full border border-ink-200/50">
-                      {todayStops.length} stops planned
-                    </span>
-                  </div>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center shrink-0 border border-brand-100">
-                  <Compass className="w-6 h-6 text-brand-600" />
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => nav('/trips')}
-              className="w-full h-11 rounded-2xl bg-brand-50 border border-brand-100 text-brand-600 font-semibold text-sm press flex items-center justify-center gap-1.5"
-            >
-              Open My Plan
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            {/* UI7 — Plan tomorrow shortcut */}
-            {destinations.length > 1 && activeDestIdx < destinations.length - 1 && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                className="mt-3 flex items-center justify-between bg-brand-50 rounded-xl p-3"
-              >
-                <div className="text-sm">
-                  <span className="text-ink-500">Tomorrow: </span>
-                  <span className="font-semibold text-ink-900">{destinations[activeDestIdx + 1].name.split(',')[0]}</span>
-                  <span className="text-ink-400 ml-1">— No plan yet</span>
-                </div>
-                <button
-                  onClick={() => { setActiveDestIdx(activeDestIdx + 1); nav('/generate'); }}
-                  className="flex items-center gap-1 text-xs font-bold text-brand-600 press"
-                >
-                  Plan Now <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
-            )}
-
-          </div>
-        )}
-
-        {/* ── CASE B: No plan today — single bold choice CTA ── */}
-        {!hasTodayPlan && (
-          <motion.button
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={openPlanChoiceSheet}
-            className="w-full bg-brand-500 text-white rounded-2xl p-5 text-left press shadow-glow flex items-center justify-between"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-base font-display">Plan your trip</div>
-              <div className="text-xs text-white/80 mt-0.5">
-                Build with TinTin or stop-by-stop manually
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-white/80 shrink-0" />
-          </motion.button>
-        )}
-
-        {/* ── CASE C: Future destination preview ── */}
-        {nextDest && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-4"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold tracking-widest text-ink-500">UP NEXT</span>
-            </div>
-            <div className="bg-brand-50 rounded-2xl p-4 border border-brand-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-brand-500/10 flex items-center justify-center shrink-0">
-                <span className="text-2xl">✈️</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-bold text-ink-900">{nextDest.name.split(',')[0]}</div>
-                <div className="text-xs text-ink-500 mt-0.5">
-                  {nextDest.days} day{nextDest.days !== 1 ? 's' : ''} planned · {nextDest.currency}
-                </div>
-              </div>
-              <button
-                onClick={() => setActiveDestIdx(activeDestIdx + 1)}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl bg-brand-500 text-white text-xs font-semibold press shadow-glow shrink-0"
-              >
-                Plan <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── CASE D: Add destination CTA ── */}
-        {!hasMultiDest && onboardingComplete && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ delay: 0.15 }}
-            className="mt-4"
-          >
-            <button
-              onClick={() => openAddDestSheet()}
-              className="w-full h-11 rounded-2xl border-2 border-dashed border-brand-200 text-brand-600 text-sm font-semibold press flex items-center justify-center gap-2 hover:border-brand-400 transition-colors"
-            >
-              <Plus className="w-4 h-4" /> Add another destination
-            </button>
-          </motion.div>
-        )}
-      </div>
-
-      {/* UI4 — Budget Pulse card */}
-      {activeTrip.transactions.length > 0 && (
-        <div className="px-5 mt-5">
-          <motion.button
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            onClick={() => nav('/wallet')}
-            className="w-full bg-white rounded-2xl p-4 shadow-card text-left press border border-ink-100"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-base">💰</span>
-                <span className="font-bold text-ink-900 font-display text-sm">Budget Pulse</span>
-              </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${budgetPulseInfo.isOnTrack ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
-                {budgetPulseInfo.isOnTrack ? 'On track' : 'Over budget'}
-              </span>
-            </div>
-            <div className="text-xs text-ink-600">
-              Spent {formatCurrencyAmount(totalSpent, currency)} of {formatCurrencyAmount(tripBudget, currency)}
-              {tripDaysRemaining > 0 && ` · ${tripDaysRemaining} day${tripDaysRemaining !== 1 ? 's' : ''} left`}
-            </div>
-            <div className="text-xs text-ink-500 mt-0.5">
-              {formatCurrencyAmount(dailyAllowance, currency)}/day remaining
-            </div>
-            <div className="mt-2 h-1.5 bg-ink-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${budgetPulseInfo.isOnTrack ? 'bg-emerald-400' : 'bg-red-400'}`}
-                style={{ width: `${Math.min(100, (totalSpent / tripBudget) * 100)}%` }}
-              />
-            </div>
-          </motion.button>
         </div>
       )}
 
-      {/* Issue 27: regenerate prompt when vibe/budget changed */}
+      {/* Vibe settings updated alert */}
       <AnimatePresence>
         {vibeChangedPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            className="mx-5 mt-3 flex items-center justify-between bg-brand-50 border border-brand-200 rounded-2xl px-4 py-3"
-          >
-            <div className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 text-brand-500 shrink-0" />
-              <span className="text-sm text-brand-800 font-medium">Preferences updated</span>
-            </div>
-            <button
-              onClick={() => { setVibeChangedPrompt(false); nav('/generate'); }}
-              className="flex items-center gap-1 text-xs text-brand-600 font-bold press"
+          <div className="px-5 mt-4">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+              className="flex items-center justify-between bg-brand-50 border border-brand-200 rounded-2xl px-4 py-3"
             >
-              Regenerate <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </motion.div>
+              <div className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 text-brand-500 shrink-0" />
+                <span className="text-xs text-brand-800 font-semibold">Preferences updated</span>
+              </div>
+              <button
+                onClick={() => { setVibeChangedPrompt(false); nav('/generate'); }}
+                className="flex items-center gap-1 text-xs text-brand-600 font-bold press"
+              >
+                Regenerate <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* CTA — Generate options (only when a plan exists; the no-plan state has its own primary CTA above) */}
-      {hasTodayPlan && (
-        <div className="px-5 mt-5 space-y-3">
-          {/* Primary: Add another plan choice */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={openPlanChoiceSheet}
-            className="w-full bg-brand-500 text-white rounded-2xl p-4 text-left flex items-center justify-between press shadow-glow"
+      {/* Add another destination CTA */}
+      {!hasMultiDest && onboardingComplete && (
+        <div className="px-5 mt-4">
+          <button
+            onClick={() => openAddDestSheet()}
+            className="w-full h-11 rounded-2xl border-2 border-dashed border-brand-200 text-brand-600 text-xs font-bold press flex items-center justify-center gap-2 hover:border-brand-400 transition-colors"
           >
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-sm font-display leading-tight">Add another plan</div>
-              <div className="text-[11px] text-white/75 mt-0.5 leading-tight">Build with TinTin or stop-by-stop manually</div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-white/80 shrink-0" />
-          </motion.button>
-
-          {/* Short outing — trim existing plan to short window */}
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => setQuickPlanSheet(true)}
-            className="w-full rounded-2xl p-4 text-left flex items-center gap-3 press bg-ink-50 border border-ink-100 hover:border-brand-200 transition-colors"
-          >
-            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 border border-ink-100">
-              <Zap className="w-5 h-5 text-amber-500" />
-            </div>
-            <div className="flex-1">
-              <div className="font-bold text-ink-900 text-sm font-display leading-tight">Short outing</div>
-              <div className="text-[11px] text-ink-500 mt-0.5 leading-tight">Trim today's plan to a 2h or 4h window</div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-ink-400" />
-          </motion.button>
+            <Plus className="w-4 h-4" /> Add another destination
+          </button>
         </div>
       )}
 

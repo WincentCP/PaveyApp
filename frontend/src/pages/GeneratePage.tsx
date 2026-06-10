@@ -605,18 +605,27 @@ export default function GeneratePage() {
                   <div className="mx-5 mt-2 p-4.5 rounded-[24px] bg-brand-600 text-white shrink-0 shadow-glow">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1.5 text-xs font-semibold opacity-90">
-                        <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain" />
+                        <img src="/mascot.svg" alt="TinTin" className="w-4 h-4 object-contain brightness-0 invert" />
                         {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
                       </div>
-                      <button onClick={() => nav('/?openIntent=1')} className="text-[11px] font-semibold opacity-75 hover:opacity-100 press flex items-center gap-1">
-                        <Pencil className="w-3 h-3" /> Edit trip
-                      </button>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 border-t border-white/15 pt-3">
-                      <SummStat label="Stops" value={String(displayItinerary.length)} />
-                      <SummStat label="Distance" value={`${totals.dist.toFixed(1)}km`} />
-                      <SummStat label="Time" value={`${Math.round(totals.time / 60)}h ${totals.time % 60}m`} />
-                      <SummStat label="Budget" value={formatCost(totals.cost, activeTrip.currency)} />
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-white/15 pt-3 mt-1 text-sm font-medium text-brand-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Stops</span>
+                        <span className="font-bold text-white text-base">{displayItinerary.length}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Distance</span>
+                        <span className="font-bold text-white text-base">{totals.dist.toFixed(1)}km</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Duration</span>
+                        <span className="font-bold text-white text-base">{Math.round(totals.time / 60)}h {totals.time % 60}m</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Est. Cost</span>
+                        <span className="font-bold text-white text-base">{formatCost(totals.cost, activeTrip.currency)}</span>
+                      </div>
                     </div>
                   </div>
 
