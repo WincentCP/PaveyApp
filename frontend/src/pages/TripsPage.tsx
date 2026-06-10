@@ -434,9 +434,6 @@ export default function TripsPage() {
           </>
         )}
       </AnimatePresence>
-
-      </AnimatePresence>
-
       {/* ── Edit Trip Details Modal ── */}
       <AnimatePresence>
         {editTripDetailsOpen && (
