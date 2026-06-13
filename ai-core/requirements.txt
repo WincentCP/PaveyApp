@@ -1,0 +1,28 @@
+# ---- Global Pip Configuration (For CPU-only Torch) ----
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# ---- Core Web Framework & Server ----
+fastapi==0.110.0
+uvicorn==0.28.0
+pydantic==2.6.4
+
+# ---- Data Engineering & AI/ML Stack ----
+pandas==2.2.1
+numpy==1.26.4
+tiktoken==0.6.0
+
+# ---- LLM Orchestration (Groq) ----
+groq==0.5.0
+
+# ---- AI Local Embeddings & Granite Model Core ----
+sentence-transformers==2.6.1
+torch==2.2.1
+
+# ---- MLOps, Telemetry & Observability ----
+prometheus-client==0.20.0
+scipy>=1.10.0
+sentry-sdk==1.43.0
+redis==5.0.3
+
+# ---- Networking & Integration ----
+requests==2.31.0

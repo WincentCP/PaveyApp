@@ -1,0 +1,28 @@
+# Python bytecode & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# Virtual Environment lokal
+venv/
+.venv/
+env/
+
+# MLOps Artifacts & Tracking Data (JANGAN DI-PUSH, berat dan bikin Git penuh)
+mlruns/
+artifacts/
+outputs/
+
+# Dataset lokal (Dataset harus diunduh manual/terpisah oleh tim, jangan masuk Git)
+data/processed/*.csv
+data/processed/*.npy
+*.pkl
+
+# Environment variables & Secrets (SANGAT KRUSIAL: Biar API Key Groq/OpenWeather gak bocor!)
+.env
+
+# Docker logs & system junk
+*.log
+.DS_Store

@@ -1,0 +1,11 @@
+.git
+.github
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.db
+.ipynb_checkpoints/
+.conda/
+.env
+mlruns/
