@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJ4ddwbASPsUcRuhjNLkHPTqc,Miniatur Wunderland,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.543842899999994,9.9890989,museum tourist attraction point of interest establishment
+ChIJ68iBTQyPsUcRNPB-aZT4YuI,St. Pauli Piers,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5453799,9.9660023,tourist attraction point of interest establishment
+ChIJT8RwZwaPsUcRhkKYaCqr5LI,Elbphilharmonie Hamburg,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5413305,9.9844647,concert hall tourist attraction observation deck auditorium live music venue event venue point of interest establishment
+ChIJ6cjadQSPsUcRAgwQUOqpfaU,Hamburg Dungeon,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5438402,9.98944,tourist attraction performing arts theater event venue service point of interest establishment
+ChIJnQn-7D2PsUcRXC53QWChQkM,Planten un Blomen,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5620171,9.9820652,park tourist attraction point of interest establishment
+ChIJL8-shxuPsUcRYwJK6K8knT8,Hamburg Townhall,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5504312,9.992333499999999,city hall tourist attraction historical landmark historical place local government office government office service point of interest establishment
+ChIJAQAAkAKPsUcRgJn-oX24pYo,Speicherstadt,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.546013099999996,10.0021364,tourist attraction point of interest establishment
+ChIJq2cnIEujY0ERYYlRjZqHwt0,Alsterfontäne,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5550625,9.995816099999999,tourist attraction historical landmark historical place point of interest establishment
+ChIJMQkWH7GPsUcREVNubkHNSYA,Inner Alster,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.554626999999996,9.991479000000002,tourist attraction point of interest establishment
+ChIJO_W-ouaOsUcRu5bbsnkRzJk,Museum of Art and Industry,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5512167,10.0097694,museum tourist attraction art museum point of interest establishment
+ChIJq9-fdg2PsUcRA6AOeeO1j9w,Bismarck Monument,3.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.54870880000001,9.9720917,tourist attraction historical landmark historical place point of interest establishment
+ChIJlSSsLkGPsUcRmlyoSZFKEOQ,Hans-Albers-Platz,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5487354,9.9608945,tourist attraction point of interest establishment
+ChIJp_tULnCPsUcRMdG2xI2jwn0,Beatles-Platz,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5498334,9.957292299999999,tourist attraction point of interest establishment
+ChIJt5u_5QyPsUcRycCU6-zwZ9c,Alter Elbtunnel,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5458861,9.9665878,historical landmark tourist attraction historical place point of interest establishment
+ChIJDVSIIPmOsUcRO2BHa_838jY,Lighthouse Zero,4.2,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.538467999999995,10.004227000000002,tourist attraction point of interest establishment
+ChIJSyfBAquPsUcRfbYt9dhkfgQ,Bleichensteg,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.551847099999996,9.9894512,tourist attraction point of interest establishment
+ChIJkTvC3eKOsUcReP6O5u_10sA,Chocoversum,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5479215,10.002545399999999,museum tourist attraction chocolate shop candy store dessert shop confectionery food store store food point of interest establishment
+ChIJTRWrXA-PsUcRrSdFH5ckJ9A,Jan Fedder Promenade,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5439059,9.979359500000001,scenic spot tourist attraction point of interest establishment
+ChIJpw3eo4CFsUcRJMS6gQnp-aE,Altonaer Balkon,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.545293699999995,9.935098,state park tourist attraction park point of interest establishment
+ChIJDwPU0C6PsUcRqyB6zZrBxSc,Alstermündung,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,53.5444052,9.9838139,tourist attraction point of interest establishment
+ChIJRR3P-d2OsUcRR-HQEv0VVQY,Das Dorf,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,53.557002999999995,10.010267299999999,german restaurant bistro austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJe8bCr92OsUcRG8cKVp4LY2s,Frau Möller,4.5,PRICE_LEVEL_INEXPENSIVE,Indoor,53.558690399999996,10.013202,german restaurant hamburger restaurant american restaurant european restaurant restaurant food point of interest establishment
+ChIJu0knZAyPsUcRAn4H0cWWXb8,Edmondo,4.8,PRICE_LEVEL_EXPENSIVE,Indoor,53.5535784,9.986915999999999,italian restaurant family restaurant mediterranean restaurant pizza restaurant european restaurant restaurant food point of interest establishment
+ChIJtwzDLOGOsUcREtzgUb-s9Go,Schifferbörse Restaurant,4.5,PRICE_LEVEL_MODERATE,Indoor,53.5538013,10.008684899999999,german restaurant european restaurant restaurant food point of interest establishment
+ChIJXetoHRmPsUcRO9lASc7qR3U,HAERLIN,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,53.5556334,9.991587599999999,fine dining restaurant restaurant food point of interest establishment
+ChIJrfu7On6PsUcR0LQWhuvUSo8,Fischereihafen Restaurant,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,53.54454,9.935901999999999,seafood restaurant fish and chips restaurant restaurant food point of interest establishment
+ChIJiwhJqtyPsUcR_DZ-0H4LDNc,Maison Mai Hamburg,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,53.5483438,9.9904273,asian fusion restaurant fusion restaurant asian restaurant restaurant food point of interest establishment
+ChIJQwF76P2OsUcR3ZTDmSebvSc,NENI Hamburg,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,53.5423025,9.9985008,restaurant food point of interest establishment
+ChIJk26TFo-PsUcRcKqo8pCCSZI,memán restaurant,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,53.5619618,9.9623121,restaurant food point of interest establishment
+ChIJaX_i1eePsUcRNaTchyS2ntI,Ugly Duckling,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,53.5480283,9.998513899999999,bistro restaurant food point of interest establishment
+ChIJqZC1g-KOsUcRE8SUejBX2K8,Laufauf,4.6,PRICE_LEVEL_MODERATE,Indoor,53.5490103,9.9996358,german restaurant european restaurant restaurant food point of interest establishment
+ChIJzQHOAuOOsUcRlvxOwMPjyok,Erdapfel Hamburg (Altstadt),4.8,PRICE_LEVEL_MODERATE,Indoor,53.5486572,10.0028568,vegetarian restaurant vegan restaurant restaurant food point of interest establishment
+ChIJ83HsDwWPsUcRy54kZZg6Q18,UNDERDOCKS,4.7,PRICE_LEVEL_MODERATE,Indoor,53.5574198,9.9659439,restaurant food point of interest establishment
+ChIJY8mKQvyOsUcRA-H7nvNI-L8,The Table,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,53.542615999999995,10.003122500000002,fine dining restaurant french restaurant restaurant food point of interest establishment
+ChIJ_Zwn3WqPsUcRjK_e1CzzogY,philipps Restaurant,4.8,PRICE_LEVEL_EXPENSIVE,Indoor,53.5580861,9.9708528,restaurant food point of interest establishment
+ChIJM_-dhxePsUcRtdAjbH-zlb8,[m]eatery restaurant & botanist bar Hamburg,4.6,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,53.556613,9.986829199999999,steak house restaurant food point of interest establishment
+ChIJBxBWnSaPsUcRaWgkWhttxS0,Lakeside,4.8,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,53.5652939,9.997950399999999,fine dining restaurant restaurant food point of interest establishment
+ChIJizE1KgyPsUcRmbNe8tUIihc,Olá Lisboa,4.5,PRICE_LEVEL_MODERATE,Indoor,53.546087,9.975282,portuguese restaurant restaurant food point of interest establishment
+ChIJX9uIaAGPsUcR_C39IjUd4Mg,Bootshaus Grill & Bar - Hafencity,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,53.541102699999996,9.990931699999999,restaurant bar food point of interest establishment
+ChIJbVFERgCFsUcRb6hszmJkMV4,OT Restaurant Hamburg,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,53.552054999999996,9.9293061,thai restaurant asian fusion restaurant fusion restaurant asian restaurant bar restaurant food point of interest establishment

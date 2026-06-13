@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJV4Ey3IdAjoARdgIjQTFtiBc,The Mystery Spot,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.0172306,-122.00292839999999,tourist attraction point of interest establishment
+ChIJe6hluYWP2oAR4p3rOqftdxk,Joshua Tree National Park,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,33.873415,-115.90099229999998,national park tourist attraction park point of interest establishment
+ChIJxeyK9Z3wloAR_gOA7SycJC0,Yosemite National Park,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.8651011,-119.5383294,national park tourist attraction park point of interest establishment
+ChIJw____96GhYARCVVwg5cT7c0,Golden Gate Bridge,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.819910899999996,-122.4785598,bridge tourist attraction historical landmark historical place transportation service point of interest establishment
+ChIJa147K9HX3IAR-lwiGIQv9i4,Disneyland Park,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,33.8120918,-117.91897420000001,tourist attraction amusement center amusement park point of interest establishment
+ChIJmRyMs_mAhYARpViaf6JEWNE,Alcatraz Island,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.8269775,-122.42295550000001,historical place tourist attraction point of interest establishment
+ChIJm6deTdekwoARTY_RzhoRms0,Santa Monica Pier,4.6,PRICE_LEVEL_FREE,Outdoor,34.008282099999995,-118.4987585,fishing pier visitor center tourist attraction historical landmark historical place tourist information center tour agency travel agency service point of interest establishment
+ChIJR4qudndLx4ARVLDye3zwycw,Death Valley National Park,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.505389099999995,-117.0794078,national park tourist attraction park point of interest establishment
+ChIJY_dFYHKHhYARMKc772iLvnE,Golden Gate Park,4.8,PRICE_LEVEL_FREE,Outdoor,37.7689203,-122.482977,park tourist attraction garden point of interest establishment
+ChIJid_rw0PyloARCiimK8Lg11g,Glacier Point,4.9,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.728150899999996,-119.57349989999999,scenic spot landmark hiking area tourist attraction sports activity location point of interest establishment
+ChIJdVU1jjLtloARrwJm73BayOY,El Capitan,4.9,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.733931,-119.63767329999999,tourist attraction point of interest establishment
+ChIJ0aQ123BxlYARi6ZTIGBC_7s,Yucca Point,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.8322667,-118.87495729999999,tourist attraction point of interest establishment
+ChIJUexFVhlAjoARpU8zCcm9Awk,Santa Cruz Beach Boardwalk,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.9645218,-122.01666720000001,amusement park bowling alley hamburger restaurant fast food restaurant american restaurant clothing store snack bar meal takeaway sports complex sports activity location restaurant food store point of interest establishment
+ChIJG-Bf_XpklIARer-HGiww0u0,Kearney Mansion Museum,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.7237575,-119.91942599999999,museum tourist attraction point of interest establishment
+ChIJTZGvDJBzlYAR8A0k6Yv3p_k,Blue Ridge Vista Point,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.73373,-119.02091379999997,tourist attraction point of interest establishment
+ChIJecB6Sre7loARcND8vCuW610,Yosemite Crystals,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,37.4884622,-119.96945899999999,tourist attraction point of interest establishment
+ChIJN4nkPgANlYARWX82p0-U7YE,Sequoia National Forest Marker,0.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.7367981,-119.0482299,tourist attraction point of interest establishment
+ChIJYXgweABVlIAR4V9mGqCRIn4,Monterey peninsula,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.778261,-119.41793240000001,tourist attraction point of interest establishment
+ChIJHfO7VaErlYARbGL4Jv5S_Ec,Tulare Historical Museum,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.2072222,-119.35416670000001,museum tourist attraction point of interest establishment
+ChIJR_s2GQBBlIARemIZKc59tm0,Millerton lake,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,36.996217699999995,-119.69745789999999,tourist attraction point of interest establishment
+ChIJZ9QmbisnlIARIVQoYjgwecY,Mountain Oaks Cafe,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,37.333488599999995,-119.65091269999999,restaurant food point of interest establishment
+ChIJD-8Hn1whlIARSq4Tbr5Ky44,Mountain Oaks Bar & Grill,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,37.262883099999996,-119.6971352,restaurant food point of interest establishment
+ChIJ_XGKLoAjlIAReVUabJCZguo,Chukchansi Gold Resort & Casino,4.2,PRICE_LEVEL_UNSPECIFIED,Indoor,37.2114397,-119.69917579999999,resort hotel casino hotel spa event venue lodging restaurant food point of interest establishment
+ChIJvVvovUvGwoARYrOMSp23rpQ,Maccheroni Republic,4.6,PRICE_LEVEL_MODERATE,Indoor,34.0500306,-118.24853610000001,italian restaurant restaurant food point of interest establishment
+ChIJ67XwyU0hlIAROqG_JjnIu8k,Wild Fig Kitchen,4.6,PRICE_LEVEL_MODERATE,Indoor,37.2622697,-119.69995619999999,restaurant food point of interest establishment
+ChIJIYuDCIQnlIARu5Tn3svj5ZQ,Smokehouse 41 BBQ,4.6,PRICE_LEVEL_MODERATE,Indoor,37.3389473,-119.6439115,barbecue restaurant restaurant food point of interest establishment
+ChIJ10kbquIolIARrRInFNrBbEw,Ducey's On the Lake & Ducey's Bar & Grill,4.4,PRICE_LEVEL_MODERATE,Indoor,37.3189669,-119.5571224,american restaurant steak house bar restaurant food point of interest establishment
+ChIJ8yL6J73_24AR-7VXaycNji8,Menya Ultra,4.6,PRICE_LEVEL_MODERATE,Indoor,32.8322164,-117.1475098,ramen restaurant noodle shop japanese restaurant restaurant food point of interest establishment
+ChIJwfT_y3EnlIARmzzKSCxtBW8,The Elderberry House,4.7,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,37.3270876,-119.660917,fine dining restaurant bar event venue french restaurant restaurant food point of interest establishment
+ChIJH1kEyWtHlIARU_2Qq5My3cU,Blue Oak Grille,4.1,PRICE_LEVEL_UNSPECIFIED,Indoor,36.9856228,-119.64674660000001,american restaurant restaurant food point of interest establishment
+ChIJqS85Wrob24ARhomUoGYdtvE,Tac/Quila,4.6,PRICE_LEVEL_MODERATE,Indoor,33.828782600000004,-116.54709489999999,mexican restaurant bar restaurant food point of interest establishment
+ChIJpfz2qyUN3IARcFhv7qOc4ns,Atelier Manna,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,33.067425799999995,-117.3036184,cafe food point of interest establishment
+ChIJE6rCL0y-woARmlvB7KcqGsQ,Bubba Gump Shrimp Co.,4.3,PRICE_LEVEL_MODERATE,Indoor,34.136074,-118.35336289999998,seafood restaurant american restaurant restaurant food point of interest establishment
+ChIJi_11lwRy3IARYn7ySFVDrxw,Lilo,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,33.1643711,-117.35146909999999,restaurant food point of interest establishment
+ChIJR23WD4MnlIARpxx7Mk8G77U,Oakhurst Grill & Whiskey 41 Lounge,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,37.33602810000001,-119.6461338,american restaurant bar restaurant food point of interest establishment
+ChIJh41KgfGeloARSu9R6fAOru4,The Hitching Post,4.6,PRICE_LEVEL_MODERATE,Indoor,37.3679778,-119.7254222,restaurant food point of interest establishment
+ChIJHby_lyBit4kRWGXTrDaxne4,Asahi Japanese Steak & Seafood,4.4,PRICE_LEVEL_MODERATE,Indoor,38.286396499999995,-76.4843984,japanese restaurant restaurant food point of interest establishment
+ChIJuVj36IE1lIARMgoG96G9sP4,Broken Arrow Restaurant,4.7,PRICE_LEVEL_UNSPECIFIED,Indoor,37.083235099999996,-119.46449749999998,restaurant food point of interest establishment
+ChIJ432Aws1jt4kRb1o43b4tXe8,Olive Garden Italian Restaurant,4.3,PRICE_LEVEL_MODERATE,Indoor,38.299740899999996,-76.5107088,italian restaurant family restaurant mediterranean restaurant soup restaurant seafood restaurant wine bar bar catering service food delivery meal takeaway restaurant food point of interest service establishment
+ChIJOWyeKXsnlIARVk7ozBMEZus,South Gate Brewing Company,4.4,PRICE_LEVEL_MODERATE,Indoor,37.333124999999995,-119.6603,brewpub pub bar restaurant food point of interest establishment

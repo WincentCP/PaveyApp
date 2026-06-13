@@ -1,0 +1,26 @@
+{
+  "name": "pavey-app-root",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "preview": "npm run preview --prefix frontend"
+  },
+  "dependencies": {
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.14.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
+  }
+}

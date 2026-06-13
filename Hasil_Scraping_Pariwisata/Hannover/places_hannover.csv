@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJ6ygyLVgLsEcRsmiHBrQ92hk,Erlebnis-Zoo Hannover,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3818306,9.7686763,zoo tourist attraction point of interest establishment
+ChIJp4G0y390sEcRckXZUrYuuoo,Herrenhäuser Gärten,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.388111099999996,9.6966567,garden tourist attraction park point of interest establishment
+ChIJ76Xzi39zsEcRB0KJ1DPyu04,SEA LIFE Hannover,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3926315,9.6988714,tourist attraction aquarium point of interest establishment
+ChIJmdcJslULsEcR1VqJLegO20E,Eilenriede City Forest,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.38408570000001,9.7581487,state park tourist attraction hiking area national park park sports activity location point of interest establishment
+ChIJKz6D4sl0sEcResFTRvoTIpc,Landesmuseum Hannover,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.365542299999994,9.740122900000001,museum tourist attraction art museum aquarium event venue point of interest establishment
+ChIJvxUCnbZ0sEcRgaL6XHL05a4,Aegidien Church War Memorial,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.369423399999995,9.739007299999999,historical landmark tourist attraction historical place church place of worship association or organization point of interest establishment
+ChIJdcGvBbp0sEcRe-GYCYwHqq4,Marktkirche Hannover,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.371856199999996,9.7353428,tourist attraction church place of worship association or organization point of interest establishment
+ChIJB5WGobd0sEcRGncdSXc87vI,Museum August Kestner,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.367991800000006,9.7362726,museum tourist attraction point of interest establishment
+ChIJRZ9jKrZ0sEcRalh-F98ZH4M,Maschpark,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3659895,9.738335,park tourist attraction point of interest establishment
+ChIJuX0HadU7ZUERK4NaX0friuo,German Museum of Caricature and Drawings,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3842541,9.707735699999999,art museum tourist attraction museum point of interest establishment
+ChIJ5asugIR0sEcRkoWiwNplxYs,Georgengarten,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.385842999999994,9.708460299999999,state park tourist attraction park garden point of interest establishment
+ChIJN9sp_MN1sEcRuqZ1inGNVzc,Leinewelle,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.371339,9.7312219,tourist attraction point of interest establishment
+ChIJoxiOKgALsEcRtWcKNdQZNNI,Vista aérea Hannover-Mitter,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.380960599999995,9.7575314,tourist attraction point of interest establishment
+ChIJ4_dnEn50sEcRlBwgtn3tS-4,Große Fontäne,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3860063,9.695952499999999,tourist attraction historical landmark historical place point of interest establishment
+ChIJkTYnK2N1sEcRcWlDY6DM9fk,Opernplatz,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3731073,9.7401068,tourist attraction point of interest establishment
+ChIJDe82sbd0sEcRk0d2d86DDyQ,New Town Hall,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.367267899999995,9.737423099999999,city hall tourist attraction tourist information center tour agency travel agency point of interest service local government office government office establishment
+ChIJUUSiTlsLsEcRABE0cUQZUag,Stadtpark Hannover,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3739486,9.7714806,park tourist attraction point of interest establishment
+ChIJ2Ynbmsl0sEcRWKIU_Fd3068,Sprengel Museum,4.5,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3634236,9.7402725,art museum museum point of interest establishment
+ChIJY26TSLF0sEcRnK8V1X2R6K4,Leibniz statue,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3713347,9.7415539,tourist attraction point of interest establishment
+ChIJiTflCQB1sEcR3auGhiYibtY,Vista aérea Hannover,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,52.3798986,9.7298323,tourist attraction point of interest establishment
+ChIJ39oYC6Z0sEcRQYIQ2f1oAK8,Meteora,4.7,PRICE_LEVEL_MODERATE,Indoor,52.382119499999995,9.7374013,greek restaurant barbecue restaurant mediterranean restaurant meal takeaway restaurant food point of interest establishment
+ChIJzSqSjbp0sEcR_mDdqjczCPs,6 Sinne Sky Bar and Restaurant,4.6,PRICE_LEVEL_MODERATE,Indoor,52.37453,9.735400000000002,bar and grill bar restaurant food point of interest establishment
+ChIJAyhAxqN1sEcRrt1Uy8FX4Q8,bona'me Hannover,4.8,PRICE_LEVEL_MODERATE,Indoor,52.3735868,9.7302038,middle eastern restaurant turkish restaurant bar restaurant food point of interest establishment
+ChIJP2zecLJ0sEcR3tCasF2R0E8,Restaurant AL DAR,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,52.3752153,9.7468863,restaurant lebanese restaurant bar and grill bar supplier manufacturer food store point of interest establishment
+ChIJpQi83bB0sEcRw49nM-Kfflc,Bavarium Hannover,4.4,PRICE_LEVEL_MODERATE,Indoor,52.372058499999994,9.739534599999999,restaurant german restaurant beer garden european restaurant bar food point of interest establishment
+ChIJEe47JQp1sEcRsSmPPUi_mcs,Soli de Gloria,4.8,PRICE_LEVEL_MODERATE,Indoor,52.37233,9.73579,restaurant food point of interest establishment
+ChIJIzGICTYLsEcR0xlFmjULaxE,Beef and Reef - Hannover,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,52.3633331,9.754784599999999,steak house cocktail bar seafood restaurant bar restaurant food point of interest establishment
+ChIJR6oc6E4LsEcRlR7P_4Xu6p4,Ristorante Tesoro,4.8,PRICE_LEVEL_EXPENSIVE,Indoor,52.370518999999994,9.759807499999999,italian restaurant pizza restaurant restaurant food point of interest establishment
+ChIJn5pai3x1sEcRwL9fbnf1koI,Roy’s Restaurant,4.8,PRICE_LEVEL_MODERATE,Indoor,52.379145199999996,9.7503028,restaurant food point of interest establishment
+ChIJ6a1PQbt0sEcREZvEMsJIPAY,Max Walloschke,4.7,PRICE_LEVEL_MODERATE,Indoor,52.376152,9.731539999999999,german restaurant european restaurant restaurant food point of interest establishment
+ChIJqcHrWKh1sEcR9Nucr8pUFmE,PETER PANE Burgergrill & Bar,4.8,PRICE_LEVEL_UNSPECIFIED,Indoor,52.3729351,9.7394736,restaurant catering service hamburger restaurant american restaurant vegan restaurant vegetarian restaurant bar food delivery food service point of interest establishment
+ChIJ_e-fYSN1sEcRGuhqC6OMFkk,VINCE Vinoteca & Ristorante,4.8,PRICE_LEVEL_EXPENSIVE,Indoor,52.3730243,9.741993599999999,mediterranean restaurant restaurant food point of interest establishment
+ChIJ0fiOVMoLsEcRB60s8XWRlu4,Kytaro,4.7,PRICE_LEVEL_MODERATE,Indoor,52.3394979,9.8290084,greek restaurant mediterranean restaurant european restaurant restaurant food point of interest establishment
+ChIJ1ync95x1sEcRjtXnf15-Z3o,Stadtmauer am Fluss,4.6,PRICE_LEVEL_MODERATE,Indoor,52.3723622,9.731147499999999,restaurant food point of interest establishment
+ChIJJRlyna10sEcRlAAPQbGDCcs,Restaurant Aspera,4.8,PRICE_LEVEL_MODERATE,Indoor,52.3763545,9.7484063,turkish restaurant restaurant food point of interest establishment
+ChIJM8muYIl1sEcRLGuI8D9Y-i8,Spoon Restaurant & Bar,4.8,PRICE_LEVEL_MODERATE,Indoor,52.3832282,9.7363919,italian restaurant restaurant food point of interest establishment
+ChIJT-Oh5b90sEcRCiUvMMy0YWo,The Harp,4.7,PRICE_LEVEL_MODERATE,Indoor,52.3679451,9.7208455,hamburger restaurant irish pub gastropub american restaurant pub bar restaurant food point of interest establishment
+ChIJD8S6O7p0sEcRA6opO72_68I,Enchilada Hannover,4.2,PRICE_LEVEL_MODERATE,Indoor,52.3722978,9.7337622,mexican restaurant restaurant food point of interest establishment
+ChIJPfBAaLp0sEcRsRdYeiy6xbg,Brauhaus Ernst August,4.2,PRICE_LEVEL_MODERATE,Indoor,52.3730499,9.7346457,restaurant gastropub night club live music venue event venue pub bar food point of interest establishment
+ChIJgzqu2Zd0sEcRMuUtlfspFCI,Boca Chica Restaurant,4.4,PRICE_LEVEL_MODERATE,Indoor,52.3758026,9.722728700000001,caribbean restaurant restaurant food point of interest establishment

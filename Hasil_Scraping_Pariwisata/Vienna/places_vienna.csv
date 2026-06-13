@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJ3wYgv5kHbUcRX0LEFIAWhYY,Hofburg,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2056578,16.3647803,historical place history museum tourist attraction historical landmark museum point of interest establishment
+ChIJv3zAHAmobUcRyYvq5F26aU4,Schönbrunn Palace,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.185812399999996,16.3127641,castle tourist attraction historical landmark historical place museum point of interest establishment
+ChIJz-w_Ip8HbUcRWTHc-vNXlxc,St. Stephen's Cathedral,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.208411399999996,16.3734707,tourist attraction church place of worship association or organization point of interest establishment
+ChIJd7QUtBIHbUcRnIE5N35NVIQ,Hundertwasser House,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.207336999999995,16.394294,tourist attraction point of interest establishment
+ChIJpZ4LAn0HbUcRB3aToFL8ZUo,Belvedere Palace,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.191475100000005,16.3809322,museum tourist attraction point of interest establishment
+ChIJ8XfPY5oHbUcRQbimbLVSYG8,Kunsthistorisches Museum Wien,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2038016,16.3617874,museum tourist attraction art museum point of interest establishment
+ChIJY6GrTT8HbUcR9LGo6Zxp5_w,Prater,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2154648,16.4001739,amusement park tourist attraction park restaurant food store point of interest establishment
+ChIJf5_KqpAHbUcROuTS5DKluMk,Heldenplatz,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2065038,16.3634618,tourist attraction plaza historical landmark historical place park point of interest establishment
+ChIJbac0_JgHbUcRXkPUJudXIpA,Time Travel Vienna,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.20825920000001,16.3682589,tourist attraction historical landmark historical place museum point of interest establishment
+ChIJJYWNjA8HbUcRBlfleWeh1qw,Viennese Giant Ferris Wheel,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2166995,16.3959008,ferris wheel tourist attraction historical landmark historical place point of interest establishment
+ChIJ3wYgv5kHbUcRYE5RLK05Uz4,Neue Burg,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.205177199999994,16.3645756,historical landmark tourist attraction castle historical place museum point of interest establishment
+ChIJnQAHwZAHbUcRycXUTr8uocQ,Museum of Natural History Vienna,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.205211999999996,16.359845099999998,tourist attraction museum point of interest establishment
+ChIJl8BKuBIHbUcRt5WLSS7fIEI,Hundertwasser Village,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.207749799999995,16.39445,tourist attraction point of interest establishment
+ChIJSf3_sJ4HbUcRL92Jt9bgurM,Donnerbrunnen,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2061461,16.3707219,tourist attraction point of interest establishment
+ChIJQ0Ey03UHbUcRRcGuE0WeIL8,Stadtpark,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2047335,16.3796601,park tourist attraction city park point of interest establishment
+ChIJG0kLqp4HbUcRvbtOLMhP3gc,Imperial Crypt,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2057146,16.3700245,historical place tourist attraction museum point of interest establishment
+ChIJx2oWgoIHbUcRMvVm3Lylq84,St. Charles's Church,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.198562599999995,16.3716999,tourist attraction historical landmark historical place church place of worship association or organization point of interest establishment
+ChIJbSP7XLsHbUcRhIkiVBH7f00,Otto-Wagner-Haus,4.3,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2165714,16.3674775,tourist attraction point of interest establishment
+ChIJ77b5O5kHbUcR53Ud3DXJy7w,Jewish Museum of the City of Vienna,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.2072113,16.3694568,museum history museum tourist attraction point of interest establishment
+ChIJdWDYUZoHbUcRTq4MHzRMp2s,Burggarten,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,48.204338199999995,16.3658336,park tourist attraction point of interest establishment
+ChIJ767P4CGobUcRGWRIdQ3VmeE,Bauernbräu,4.8,PRICE_LEVEL_MODERATE,Indoor,48.1906403,16.3396896,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJqQ5jOaAHbUcRH4goYTgfLXc,Restaurant Vienne/OnurChefs,4.8,PRICE_LEVEL_MODERATE,Indoor,48.2103471,16.377622199999998,restaurant food point of interest establishment
+ChIJ34DhZwUHbUcR9v1IZGG4eds,ROLLERCOASTERRESTAURANT Vienna,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,48.21744580000001,16.3969633,restaurant food point of interest establishment
+ChIJfx1lJ5kHbUcRsKCobUkQm5U,Reinthaler's Beisl,4.5,PRICE_LEVEL_MODERATE,Indoor,48.2079768,16.3699139,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJMSXDM6AHbUcRnEeWRFZzKoo,ef16 Restaurant Weinbar,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,48.210441599999996,16.3767052,restaurant food point of interest establishment
+ChIJ49AyM54HbUcRRyIAvNYXJwQ,Puerstner,4.3,PRICE_LEVEL_MODERATE,Indoor,48.2070167,16.3764583,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJ2-iEcY0HbUcRey8RJa8Iq9I,Schnitzelwirt,4.4,PRICE_LEVEL_INEXPENSIVE,Indoor,48.2025369,16.3491982,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJp324WJ4HbUcRb3WRtwYb7Dc,Gasthaus Pöschl,4.4,PRICE_LEVEL_MODERATE,Indoor,48.2066898,16.373828,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJD-Af7N4HbUcR4vBUZtW0ulU,Verde,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,48.209227399999996,16.367588899999998,restaurant brunch restaurant mediterranean restaurant cocktail bar breakfast restaurant bar food point of interest establishment
+ChIJu7HT7lcHbUcRNhssXDUwWsI,Glasswing Restaurant by Alexandru Simon,4.9,PRICE_LEVEL_UNSPECIFIED,Indoor,48.201709,16.3710315,fine dining restaurant austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJxbJGSKAHbUcRYkajfP16obQ,Griechenbeisl,4.5,PRICE_LEVEL_EXPENSIVE,Indoor,48.210745499999994,16.3772573,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJ31aoYaMHbUcRuZyYyGVwSZ8,LOLA - Spanisches Restaurant,4.7,PRICE_LEVEL_MODERATE,Indoor,48.2154484,16.3704879,tapas restaurant wine bar spanish restaurant bar restaurant food point of interest establishment
+ChIJAVBLfJ8HbUcRtNmZ6bBxQi4,Lugeck,4.3,PRICE_LEVEL_MODERATE,Indoor,48.209679099999995,16.375215,restaurant meal takeaway austrian restaurant european restaurant food point of interest establishment
+ChIJ69GzhyIHbUcRDWSajEacrpI,Restaurant JOLA,5.0,PRICE_LEVEL_UNSPECIFIED,Indoor,48.2132059,16.371343300000003,fine dining restaurant vegan restaurant vegetarian restaurant restaurant food point of interest establishment
+ChIJb07NUPYHbUcRfi9oTU6xsWk,GRAND Restaurant Vienna,4.5,PRICE_LEVEL_MODERATE,Indoor,48.201484,16.3694214,restaurant karaoke night club bar cafe food point of interest establishment
+ChIJReKZ_J0HbUcRROd4n2z-gMs,Huth Gastwirtschaft,4.6,PRICE_LEVEL_MODERATE,Indoor,48.2043495,16.375369,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJZVJ68KIHbUcRyh74Sz7Rx-Y,LETO Restaurant,4.5,PRICE_LEVEL_MODERATE,Indoor,48.212553299999996,16.3695186,restaurant greek restaurant mediterranean restaurant vegetarian restaurant european restaurant food point of interest establishment
+ChIJlX8jKp4HbUcRWR8E97qOMhA,Restaurant Al Borgo,4.6,PRICE_LEVEL_MODERATE,Indoor,48.2067619,16.3773885,italian restaurant restaurant food point of interest establishment
+ChIJV3zcOIIHbUcR_9_eUl2PQEA,Wiener Wiazhaus,4.7,PRICE_LEVEL_MODERATE,Indoor,48.1967126,16.3694477,austrian restaurant european restaurant restaurant food point of interest establishment
+ChIJe209RqAHbUcR-4jme17CIjc,Café Restaurant Markt58,4.9,PRICE_LEVEL_MODERATE,Indoor,48.228674399999996,16.3573061,restaurant food point of interest establishment

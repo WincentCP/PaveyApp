@@ -1,0 +1,41 @@
+id,name,rating,price_level,indoor_outdoor,latitude,longitude,features_text
+ChIJWZB6TKqj5okRUEf_Ppi-mBI,Old Sturbridge Village,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.108942899999995,-72.0992342,history museum tourist attraction museum point of interest establishment
+ChIJtT5ZHIlw44kRzCtDBAjPP3A,The Paul Revere House,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.363738999999995,-71.05369999999999,history museum tourist attraction museum historical place point of interest establishment
+ChIJqbzYStCd44kRMKlEvvU3B7g,Lexington Battle Green,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.4496222,-71.230762,historical place tourist attraction point of interest establishment
+ChIJQaVVg5xw44kRsHwgE2eA_GQ,Massachusetts State House,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.3587772,-71.0638101,tourist attraction local government office government office point of interest establishment
+ChIJyZFSZ-Nx44kR85NUePQYDYM,LEGO® Discovery Center Boston,4.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.3948514,-71.0796259,tourist attraction indoor playground playground event venue point of interest service establishment
+ChIJS6KU7Xxx44kR_n1XvZQhk3s,Boston Sign,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.359763799999996,-71.0576854,tourist attraction point of interest establishment
+ChIJbz8lP_Z544kRBFV6ZMsNgKI,Fenway Park,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.3466764,-71.0972178,stadium tourist attraction athletic field sports complex sports activity location event venue point of interest establishment
+ChIJza_vsnm844kR7jTIyaXaWHE,The Butterfly Place,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.6420378,-71.43965539999999,botanical garden wedding venue tourist attraction event venue point of interest service establishment
+ChIJaxSbrXsU44kRlkuQDQIsixM,The Witch House at Salem,4.4,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.5215276,-70.8988888,tourist attraction museum point of interest establishment
+ChIJTZTh1d-b44kR2A0pWTKtjTc,Thoreau Farm,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.46877670000001,-71.31110919999999,tourist attraction point of interest establishment
+ChIJrwsSDyEG5IkRfz6_ORAYIyM,EcoTarium,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.2642941,-71.7666023,tourist attraction museum point of interest establishment
+ChIJKYmGZl2D44kRtd3wf9BdQtY,Prospect View,4.7,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.385044099999995,-71.2548911,tourist attraction point of interest establishment
+ChIJi-R0xSSa44kRzbbrpsC6sd0,North Bridge,4.8,PRICE_LEVEL_UNSPECIFIED,Mixed,42.4690383,-71.35062119999999,historical landmark bridge historical place transportation service point of interest establishment
+ChIJH4UCqiWa44kRTPtHOSVdvGs,The Robbins House,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.4702081,-71.3482011,history museum tourist attraction museum point of interest establishment
+ChIJX4DhbNCd44kRtcH46-jSimU,Lexington Visitors Center,4.7,PRICE_LEVEL_UNSPECIFIED,Mixed,42.4491593,-71.2289196,visitor center public bathroom gift shop tourist information center tour agency travel agency store point of interest service establishment
+ChIJW62s8gE944kRE1ME7Dysv_Q,Singing Beach,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.570176499999995,-70.7603999,tourist attraction point of interest establishment
+ChIJdYRrcgCb44kRFJZmi17OiVY,Author's Ridge,5.0,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.464769,-71.34234339999999,tourist attraction point of interest establishment
+ChIJG-iKIh-G44kRg5tBLw9wQuc,Cochituate State Park,4.5,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.309031999999995,-71.3774657,state park tourist attraction park sports activity location point of interest establishment
+ChIJTSJJkU9244kRZVhy30Kp9Vw,Jason Russell House & Museum,4.8,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.4161347,-71.1585853,historical landmark tourist attraction museum historical place point of interest establishment
+ChIJq9vVrB9644kRFIkWw3hiqfE,James P. Kelleher Rose Garden,4.6,PRICE_LEVEL_UNSPECIFIED,Outdoor,42.3419564,-71.0949218,garden tourist attraction point of interest establishment
+ChIJKz7ENohw44kR-Aq6LJoK9Sg,Boston Sail Loft,4.6,PRICE_LEVEL_MODERATE,Indoor,42.3624738,-71.050544,seafood restaurant bar and grill cafe bar restaurant food point of interest establishment
+ChIJCTK0bYlw44kRZYlFMM9e3jg,Carmelina's,4.6,PRICE_LEVEL_MODERATE,Indoor,42.36393270000001,-71.0541827,italian restaurant restaurant food point of interest establishment
+ChIJN7puMGh344kRHRLkKr-YpKM,Alden & Harlow,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,42.3735771,-71.12140649999999,bar american restaurant restaurant food point of interest establishment
+ChIJVbrdD4lw44kRdZLKJo0e02o,Mamma Maria,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,42.3640428,-71.0533421,italian restaurant restaurant food point of interest establishment
+ChIJZ7s5k8x744kRIY0GX_xBoo0,Contessa Boston,4.0,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,42.3527771,-71.0717651,italian restaurant restaurant food point of interest establishment
+ChIJX531iwt644kRaJ9LqHM3rRk,Saltie Girl,4.4,PRICE_LEVEL_EXPENSIVE,Indoor,42.351156599999996,-71.07756789999999,seafood restaurant american restaurant restaurant food point of interest establishment
+ChIJAZdvUptw44kRfXewjayzpw4,Mooo.... Beacon Hill,4.5,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,42.3583423,-71.0619593,steak house restaurant food point of interest establishment
+ChIJe68AObGP44kRp6f9hwbVJFE,The Farmer's Daughter,4.4,PRICE_LEVEL_MODERATE,Indoor,42.3605995,-71.4311752,restaurant food point of interest establishment
+ChIJFUWFZ4Zw44kR0RI3sWVFTnE,Bostonia Public House,4.4,PRICE_LEVEL_MODERATE,Indoor,42.3591358,-71.05440999999999,american restaurant banquet hall live music venue brunch restaurant event venue bar restaurant food point of interest establishment
+ChIJ57pOLgV644kR7DyFbT5fANk,The Capital Grille,4.6,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,42.347725,-71.085255,fine dining restaurant steak house wine bar seafood restaurant bar american restaurant restaurant food point of interest establishment
+ChIJTRa97T9344kRt_HspVyvshg,Giulia,4.7,PRICE_LEVEL_EXPENSIVE,Indoor,42.3825222,-71.1199694,italian restaurant pub pizza restaurant bar restaurant food point of interest establishment
+ChIJ7TZSdUp344kRHPVJ66TKE3A,Moëca,4.6,PRICE_LEVEL_UNSPECIFIED,Indoor,42.381858,-71.12013,seafood restaurant restaurant food point of interest establishment
+ChIJS8YDwIdw44kRUjKyHG1ghZ4,State Street Provisions,4.4,PRICE_LEVEL_MODERATE,Indoor,42.3595128,-71.05141689999999,american restaurant brunch restaurant bar restaurant food point of interest establishment
+ChIJC35Yf1B344kRAg1CTTMsPU8,Pammy's,4.6,PRICE_LEVEL_EXPENSIVE,Indoor,42.368431099999995,-71.109197,american restaurant restaurant food point of interest establishment
+ChIJC5XfBYaL44kR-Wc4hSFh8oc,Chill Kitchen and Bar,4.5,PRICE_LEVEL_MODERATE,Indoor,42.347929199999996,-71.5132418,catering service food delivery bar american restaurant restaurant food service point of interest establishment
+ChIJ9ShLookI5IkRrNXjqx5gFL8,Tavern in the Square,4.2,PRICE_LEVEL_MODERATE,Indoor,42.276046,-71.745944,restaurant bar food point of interest establishment
+ChIJL8L_n4J644kRvjY9czf-Tis,Del Frisco's Double Eagle Steakhouse,4.3,PRICE_LEVEL_VERY_EXPENSIVE,Indoor,42.3489496,-71.038692,steak house fine dining restaurant seafood restaurant bar american restaurant restaurant food point of interest establishment
+ChIJqzdTO9uJ44kRhYB9o9qZnxM,Tavern in the Square,4.2,PRICE_LEVEL_MODERATE,Indoor,42.3040272,-71.3961252,restaurant bar food point of interest establishment
+ChIJgzpdraWO44kRU7dME-HnqK8,Longfellow's Wayside Inn,4.6,PRICE_LEVEL_MODERATE,Indoor,42.357424599999995,-71.46900579999999,historical landmark fine dining restaurant lodging american restaurant restaurant historical place food point of interest establishment
+ChIJ2w69uEJ344kRKVe3Zf0YBK8,Russell House Tavern,4.3,PRICE_LEVEL_MODERATE,Indoor,42.373158,-71.11945899999999,american restaurant bar restaurant food point of interest establishment
