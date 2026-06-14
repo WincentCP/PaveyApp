@@ -5,19 +5,39 @@ import { WeatherWidget } from './WeatherWidget'
 import { TravelPlanView } from './TravelPlanView'
 import { Bot, User } from 'lucide-react'
 
+// function renderMarkdownAndCleanJSON(text: string): string {
+//     // Bersihkan block XML/JSON data dari layout rendering
+//     let cleaned = text.replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/g, '')
+//     cleaned = cleaned.replace(/<DATA_JSON>[\s\S]*/g, '') // bersihkan trailing open tags secara aman
+
+//     return cleaned
+//     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Perbaikan escape asteris bold
+//     .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Perbaikan escape asteris italic
+//     .replace(/_(.*?)_/g, '<em>$1</em>')
+//     .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 rounded text-cyan-400 text-xs">$1</code>')
+//     .replace(/\n/g, '<br/>')
+// }
+
 function renderMarkdownAndCleanJSON(text: string): string {
-    // Bersihkan block XML/JSON data dari layout rendering
-    let cleaned = text.replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/g, '')
-    cleaned = cleaned.replace(/<DATA_JSON>[\s\S]*/g, '') // bersihkan trailing open tags secara aman
+    let cleaned = text
+        .replace(/```json[\s\S]*?```/gi, '')
+        .replace(/```json[\s\S]*/gi, '')
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/gi, '')
+        .replace(/<DATA_JSON>[\s\S]*/gi, '')
+        .trim()
+
+    if (cleaned.trimStart().startsWith('{') || cleaned.trimStart().startsWith('[')) {
+        cleaned = ''
+    }
 
     return cleaned
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Perbaikan escape asteris bold
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Perbaikan escape asteris italic
-    .replace(/_(.*?)_/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 rounded text-cyan-400 text-xs">$1</code>')
-    .replace(/\n/g, '<br/>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1 rounded text-cyan-400 text-xs">$1</code>')
+        .replace(/\n/g, '<br/>')
 }
-
 interface Props {
     message: ChatMessage
     isStreaming?: boolean

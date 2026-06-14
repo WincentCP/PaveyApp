@@ -36,11 +36,12 @@ function uid() { return `m${++_counter}-${Date.now()}` }
 
 function stripJsonBlocks(text: string): string {
     return text
-    .replace(/```json[\s\S]*?```/g, '')
-    .replace(/```json[\s\S]*/g, '')
-    .replace(/\(?DATA_JSON>[\s\S]*?\)?/g, '')
-    .replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/g, '')
-    .trim()
+        .replace(/```json[\s\S]*?```/gi, '')   
+        .replace(/```json[\s\S]*/gi, '')       
+        .replace(/```[\s\S]*?```/g, '')         
+        .replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/gi, '') 
+        .replace(/^\s*[\[{][\s\S]*$/m, '')     
+        .trim()
 }
 
 // ── IP geolocation — used only as absolute last resort ─────────────────────
@@ -178,6 +179,7 @@ export function useChat() {
         },
         []
     )
+    
 
     // ── Intent processor ────────────────────────────────────────────────────
 
@@ -323,7 +325,7 @@ export function useChat() {
                         content: 'Sorry, something went wrong. Please try again!',
                         isStreaming: false,
                     })
-                } finaly ; {
+                } finally {
                     setIsLoading(false)
                 }
         },
