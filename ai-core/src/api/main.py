@@ -141,15 +141,11 @@ def generate_itinerary(payload: TravelPlannerRequest):
     # MLOps DATA DRIFT MONITORING SUITE
     # ----------------------------------------------------------------------
     try:
-        # 1. Catat panjang preferensi di Gauge Proxy (Lama)
         TelemetryManager.monitor_data_drift(payload.preference)
-
-        # 2. Hitung Uji Statistik Kolmogorov-Smirnov via Rolling Window (Baru)
         pref_len = len(payload.preference)
         drift_detector.add_prediction_input(pref_len)
         is_drift, p_val = drift_detector.detect_drift()
 
-        # 3. Ekspos hasil kalkulasi p-value dan deteksi alert ke Prometheus
         DATA_DRIFT_P_VALUE.set(p_val)
         if is_drift:
             DATA_DRIFT_ALERTS_TOTAL.inc()
@@ -157,7 +153,6 @@ def generate_itinerary(payload: TravelPlannerRequest):
     except Exception as drift_err:
         logger.warning(f"[Telemetry Warning] Gagal menguji status data drift: {str(drift_err)}")
 
-    # Normalisasi filter input untuk stabilitas matching data
     req_place_type = payload.place_type.lower().strip() if payload.place_type else "all"
     req_price_level = payload.price_level
 
@@ -182,7 +177,7 @@ def generate_itinerary(payload: TravelPlannerRequest):
     # ----------------------------------------------------------------------
     durations_cache_str = "-".join(map(str, validated_durations))
     cache_key = (
-        f"itinerary:v4:{payload.city.lower().replace(' ', '_')}:"
+        f"itinerary:v5:{payload.city.lower().replace(' ', '_')}:"
         f"{hash(payload.preference)}:{payload.num_places}:{payload.start_datetime}:"
         f"{durations_cache_str}:{req_place_type}:{req_price_level}"
     )
@@ -276,6 +271,9 @@ def generate_itinerary(payload: TravelPlannerRequest):
     rag_context_builder = ""
     current_itinerary_time = user_datetime_obj
 
+    # Kamus penampung metadata untuk sinkronisasi pasca inferensi LLM
+    metadata_mapping = {}
+
     for index in range(len(places_records)):
         current_node = places_records[index]
         raw_transit_time = 0
@@ -299,11 +297,19 @@ def generate_itinerary(payload: TravelPlannerRequest):
         current_node["calculated_transit_to_next"] = rounded_transit_time
         current_node["calculated_duration_stay"] = current_place_duration
 
+        # Simpan metadata Rating dan Total Reviews asli dari model recommender
+        place_name_key = str(current_node.get('name', '')).strip().lower()
+        metadata_mapping[place_name_key] = {
+            "rating": float(current_node.get("rating", 4.0) if current_node.get("rating") is not None else 4.0),
+            "total_reviews": int(current_node.get("total_reviews", 0) if current_node.get("total_reviews") is not None else 0)
+        }
+
         rag_context_builder += (
             f"- Destinasi {index+1}: {current_node.get('name', 'N/A')} | "
             f"Tipe Tempat: {current_node.get('place_type', 'N/A')} | "
             f"Level Harga: {current_node.get('price_level', 'N/A')}/5 | "
-            f"Total Ulasan: {current_node.get('total_reviews', 0)} | "
+            f"Rating Asli: {metadata_mapping[place_name_key]['rating']} | "
+            f"Total Ulasan: {metadata_mapping[place_name_key]['total_reviews']} | "
             f"Jam Operasional Hari Ini: {current_node.get('today_hours', 'N/A')} | "
             f"WAKTU TIBA HARUS: {arrival_string} | "
             f"DURASI KUNJUNGAN: {current_place_duration} Menit | "
@@ -332,13 +338,14 @@ def generate_itinerary(payload: TravelPlannerRequest):
 
     STRICT TIME-CALCULATION RULES:
     1. Step 1 MUST start exactly at the USER STARTING DATETIME.
-    2. HUMAN TIME ROUNDING UP: Round up the travel times to the nearest 5-minute interval.
-    3. LINEAR TIME ACCUMULATION LAW: The arrival time (`arrival_time`) for the NEXT step MUST match exactly with the timeline cumulative chain provided in the context builder metrics above. Do not modify or overlap the times.
+    2. LINEAR TIME ACCUMULATION LAW: The arrival time (`arrival_time`) for each step MUST match exactly with the 'WAKTU TIBA HARUS' value specified in the context layer above. Do not recalculate or guess.
+    3. You MUST preserve the exact numbers from the context for `duration_spent_minutes` and `travel_time_to_next_minutes` for each respective destination.
 
     STRICT FORMATTING & CLASSIFICATION RULES:
     4. PROPER CAPITALIZATION: You MUST capitalize the first letter of each word for the `"name"` field.
     5. ACCURATE TYPE MAPPING: Map the `"type"` field directly from the context ('restaurant' or 'destination').
-    6. Provide specific, engaging, and creative 'activity_todo' descriptions in fluent ENGLISH, perfectly customized to the user's core preference: "{payload.preference}".
+    6. EXTRACT DATA: Pass the exact numerical `"rating"` and `"total_reviews"` from the context into each respective JSON object.
+    7. Provide specific, engaging, and creative 'activity_todo' descriptions in fluent ENGLISH, perfectly customized to the user's core preference: "{payload.preference}".
 
     The output format MUST be a raw JSON Object adhering strictly to this structure:
     {{
@@ -347,9 +354,11 @@ def generate_itinerary(payload: TravelPlannerRequest):
           "step": 1,
           "type": "destination or restaurant from context",
           "name": "Proper Case Place Name from Context",
-          "arrival_time": "Ambil dari WAKTU TIBA HARUS di atas",
-          "duration_spent_minutes": "Ambil angka DURASI KUNJUNGAN spesifik langkah ini dari konteks",
-          "travel_time_to_next_minutes": "Ambil dari Estimasi Perjalanan Terbuang di atas",
+          "arrival_time": "HH:MM (Ambil mutlak dari WAKTU TIBA HARUS)",
+          "duration_spent_minutes": "Ambil angka DURASI KUNJUNGAN lokasi ini",
+          "travel_time_to_next_minutes": "Ambil dari Estimasi Perjalanan Terbuang ke titik berikutnya",
+          "rating": "Numerical rating value from context",
+          "total_reviews": "Integer total reviews value from context",
           "activity_todo": "Detailed English description based on preference"
         }}
       ]
@@ -365,16 +374,15 @@ def generate_itinerary(payload: TravelPlannerRequest):
             ],
             model="llama-3.1-8b-instant",
             response_format={"type": "json_object"},
-            temperature=0.25
+            temperature=0.25,
+            max_tokens=2048
         )
 
         response_payload_text = chat_completion.choices[0].message.content
 
-        # Ambil data token akurat langsung dari metadata penggunaan Groq API response
         actual_prompt_tokens = chat_completion.usage.prompt_tokens
         actual_completion_tokens = chat_completion.usage.completion_tokens
 
-        # Kirim data token riil langsung ke instans Prometheus registry
         try:
             TelemetryManager.log_inference_telemetry(
                 prompt_tokens=actual_prompt_tokens,
@@ -388,6 +396,27 @@ def generate_itinerary(payload: TravelPlannerRequest):
         parsed_itinerary_json = json.loads(response_payload_text)
         if isinstance(parsed_itinerary_json, dict) and "itinerary" in parsed_itinerary_json:
             parsed_itinerary_json = parsed_itinerary_json["itinerary"]
+
+        # --- SINKRONISASI PASCA INFERENCE: PROTEKSI PERHITUNGAN WAKTU & DATA RECOMENDER ---
+        for idx, item in enumerate(parsed_itinerary_json):
+            item_name_lower = str(item.get("name", "")).strip().lower()
+
+            # Ambil data fallback langsung dari memory mapping jika LLM salah menyalin angka rating/reviews
+            backup_meta = metadata_mapping.get(item_name_lower, {"rating": 4.0, "total_reviews": 100})
+
+            try:
+                item["rating"] = float(item.get("rating", backup_meta["rating"]))
+                item["total_reviews"] = int(item.get("total_reviews", backup_meta["total_reviews"]))
+            except:
+                item["rating"] = backup_meta["rating"]
+                item["total_reviews"] = backup_meta["total_reviews"]
+
+            # Keamanan Tambahan: Paksa konversi waktu agar kalkulator transit frontend tidak broken
+            try:
+                item["duration_spent_minutes"] = int(item["duration_spent_minutes"])
+                item["travel_time_to_next_minutes"] = int(item["travel_time_to_next_minutes"])
+            except:
+                pass
 
         final_api_response = {
             "status": "success",
@@ -418,7 +447,6 @@ def generate_itinerary(payload: TravelPlannerRequest):
             except Exception as cache_write_err:
                 logger.error(f"[AIOps Cache] Gagal menulis hasil ke Redis: {str(cache_write_err)}")
 
-        # Observasi e2e latensi endpoint setelah seluruh proses selesai
         API_LATENCY.labels(endpoint="/generate-itinerary").observe(time.time() - start_execution_time)
         return final_api_response
 
