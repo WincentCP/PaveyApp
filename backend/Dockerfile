@@ -1,7 +1,5 @@
 FROM python:3.11-slim
 
-WORKDIR /app
-
 RUN apt-get update && apt-get install -y \
     build-essential \
     libglib2.0-0 \
@@ -12,14 +10,21 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
+
+WORKDIR /home/user/app
+
+COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir paddlepaddle && \
     pip install --no-cache-dir paddleocr && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY --chown=user . .
 
-EXPOSE 8000
+#hugging face
+EXPOSE 7860
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
