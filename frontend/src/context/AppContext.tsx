@@ -128,6 +128,7 @@ interface AppState {
   setTripDaysRemaining: (n: number) => void;
   currency: Currency;
   setCurrency: (c: Currency) => void;
+  changeTripCurrency: (targetCurrency: Currency, exchangeRate: number, convertedTxns: Transaction[]) => void;
   dailyAllowance: number;
 
   // Navigation
@@ -843,6 +844,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTripDaysRemaining: (n) => updateActiveTrip((t) => ({ ...t, daysRemaining: n })),
     currency: activeTrip.currency,
     setCurrency: (c) => updateActiveTrip((t) => ({ ...t, currency: c })),
+    changeTripCurrency: (targetCurrency, exchangeRate, convertedTxns) => {
+      setTrips((prev) =>
+        prev.map((t) =>
+          t.id === activeTripId
+            ? {
+                ...t,
+                currency: targetCurrency,
+                budget: Math.round(t.budget * exchangeRate),
+                transactions: convertedTxns,
+              }
+            : t
+        )
+      );
+    },
     dailyAllowance,
 
     isNavigating, setIsNavigating,

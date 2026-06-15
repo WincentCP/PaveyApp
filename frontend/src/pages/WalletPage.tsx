@@ -41,8 +41,8 @@ export default function WalletPage() {
     tripName, setTripName,
     tripDays, tripDaysRemaining, setTripDaysRemaining,
     totalSpent, dailyAllowance,
-    trips, activeTrip,
-    currency, setCurrency,
+    trips, activeTrip, activeTripId,
+    currency, setCurrency, changeTripCurrency,
     isNavigating, tripCompleted,
     itinerary, perDayItineraries,
     destinations, journeyStart,
@@ -409,9 +409,40 @@ export default function WalletPage() {
         <CurrencyPickerSheet
           current={currency}
           hasTransactions={transactions.length > 0}
-          onSelect={(c) => {
-            setCurrency(c);
-            show(`Currency set to ${c}`, 'success');
+          onSelect={async (c) => {
+            if (c === currency) {
+              setSheet(null);
+              return;
+            }
+            if (accessToken && transactions.length > 0) {
+              try {
+                show('Converting currency rates...', 'info');
+                const { apiConvertExpenses } = await import('../lib/api');
+                const res = await apiConvertExpenses(activeTripId, c);
+                if (res.exchange_rate) {
+                  const mappedTxns = (res.transactions ?? []).map((t: any) => ({
+                    id: t.id,
+                    title: t.description,
+                    category: t.category,
+                    amount: -t.amount_converted,
+                    date: t.created_at,
+                    icon: ''
+                  }));
+                  changeTripCurrency(c, res.exchange_rate, mappedTxns);
+                  show(`Converted budget and transactions to ${c}`, 'success');
+                } else {
+                  setCurrency(c);
+                  show(`Currency set to ${c}`, 'success');
+                }
+              } catch (err) {
+                console.error("Failed to convert currency:", err);
+                setCurrency(c);
+                show(`Currency set to ${c} (conversion failed)`, 'warning');
+              }
+            } else {
+              setCurrency(c);
+              show(`Currency set to ${c}`, 'success');
+            }
             setSheet(null);
           }}
         />
@@ -1007,13 +1038,51 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
     }
   };
 
-  const startScan = (name: string) => {
-    setBillName(name);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (file: File) => {
     setStep('scanning');
-    setTimeout(() => {
-      setItems(SCAN_MOCK_ITEMS.map(i => ({ ...i, assignedTo: [] })));
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('function', 'split_bill');
+      formData.append('people_names', JSON.stringify(participants.map(p => p.name)));
+
+      const { apiScanReceipt } = await import('../lib/api');
+      const res = await apiScanReceipt(formData);
+
+      if (res.error) {
+        show(res.error, 'error');
+        setStep('entry');
+        return;
+      }
+
+      const mappedItems: BillItem[] = (res.items ?? []).map((it: any) => ({
+        id: String(it.item_id),
+        name: it.item_name ?? it.name ?? 'Item',
+        price: it.total_item_price ?? it.price ?? 0,
+        assignedTo: []
+      }));
+
+      setItems(mappedItems);
+      setBillName(res.merchant_name ?? 'Group Bill');
+
+      const sub = res.totals?.subtotal ?? 0;
+      if (sub > 0) {
+        setTax(Math.round(((res.totals?.tax ?? 0) / sub) * 100));
+        setService(Math.round(((res.totals?.service_charge ?? 0) / sub) * 100));
+      } else {
+        setTax(0);
+        setService(0);
+      }
+
       setStep('edit');
-    }, 2200);
+    } catch (err: any) {
+      console.warn('[SplitBillSheet] Backend error, using demo data:', err?.message);
+      setItems(SCAN_MOCK_ITEMS.map(i => ({ ...i, assignedTo: [] })));
+      setBillName('Demo Receipt');
+      setStep('edit');
+    }
   };
 
   const STEP_LABELS: { id: SplitStep; label: string }[] = [
@@ -1106,8 +1175,15 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
                 {/* ENTRY */}
                 {step === 'entry' && (
                   <motion.div key="entry" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-3 py-2">
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+                    />
                     <p className="text-sm text-ink-500 mb-2">How do you want to enter the bill?</p>
-                    <button onClick={() => startScan('Warung Nasi Campur Bali')} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-brand-500 text-white press shadow-glow">
+                    <button onClick={() => fileRef.current?.click()} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-brand-500 text-white press shadow-glow">
                       <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
                         <Scan className="w-6 h-6" />
                       </div>
@@ -1117,7 +1193,7 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
                       </div>
                       <ChevronRight className="w-5 h-5 opacity-70" />
                     </button>
-                    <button onClick={() => startScan('Restaurant Receipt')} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-ink-50 border border-ink-100 press">
+                    <button onClick={() => fileRef.current?.click()} className="w-full flex items-center gap-4 p-4 rounded-2xl bg-ink-50 border border-ink-100 press">
                       <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shrink-0 border border-ink-100">
                         <Receipt className="w-6 h-6 text-ink-600" />
                       </div>
