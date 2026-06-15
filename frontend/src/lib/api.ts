@@ -1,0 +1,82 @@
+const BASE_URL = 'https://siilvered-pavey-backend.hf.space';
+
+function getToken(): string | null {
+  try {
+    const raw = localStorage.getItem('pavey_state');
+    if (!raw) return null;
+    const state = JSON.parse(raw);
+    return state.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function apiFetch(path: string, options: RequestInit = {}) {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> ?? {}),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+  if (res.status === 401) {
+    localStorage.removeItem('pavey_state');
+    window.location.href = '/onboarding';
+    throw new Error('Session expired');
+  }
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail ?? 'Request failed');
+  return data;
+}
+
+export async function apiRegister(email: string, password: string) {
+  return apiFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function apiLogin(email: string, password: string) {
+  return apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function apiGetTrips() {
+  return apiFetch('/trips/');
+}
+
+export async function apiCreateTrip(data: {
+  destination: string;
+  start_date: string;
+  end_date: string;
+  vibe: string;
+  budget_min: number;
+  budget_max: number;
+}) {
+  return apiFetch('/trips/', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function apiGetExpenses(tripId: string) {
+  return apiFetch(`/wallet/expenses/${tripId}`);
+}
+
+export async function apiAddExpense(data: {
+  trip_id: string;
+  amount: number;
+  category: string;
+  description: string;
+}) {
+  return apiFetch('/wallet/expenses', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function apiChat(message: string, tripId?: string) {
+  return apiFetch('/chatbot/message', {
+    method: 'POST',
+    body: JSON.stringify({ message, trip_id: tripId }),
+  });
+}

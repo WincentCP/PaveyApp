@@ -59,6 +59,8 @@ interface AppState {
   onboardingComplete: boolean;
   everOnboarded: boolean;
   isOnboarded: boolean;
+  accessToken: string | null;
+  setAccessToken: (t: string | null) => void;
   signIn: (name: string, email: string) => void;
   completeOnboarding: (data: {
     name: string;
@@ -226,6 +228,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Auth
   const [isAuthenticated, setIsAuthenticated] = useState(persisted?.isAuthenticated ?? false);
   const [authUser, setAuthUser] = useState<{ name: string; email: string } | null>(persisted?.authUser ?? null);
+  const [accessToken, setAccessToken] = useState<string | null>(persisted?.accessToken ?? null);
   const [onboardingComplete, setOnboardingComplete] = useState(persisted?.onboardingComplete ?? false);
   const [everOnboarded, setEverOnboarded] = useState(persisted?.everOnboarded ?? false);
 
@@ -270,7 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(PERSIST_KEY, JSON.stringify({
-        isAuthenticated, authUser, onboardingComplete, everOnboarded,
+        isAuthenticated, authUser, onboardingComplete, everOnboarded, accessToken,
         vibe, budget, itinerary, savedPlaces, destinations,
         trips, activeTripId, journeyStart,
         placeRatings,
@@ -468,6 +471,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     onboardingComplete,
     everOnboarded,
     isOnboarded: onboardingComplete,
+    accessToken,
+    setAccessToken,
     signIn: (name, email) => {
       setAuthUser({ name, email });
       setIsAuthenticated(true);

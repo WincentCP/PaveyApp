@@ -14,6 +14,7 @@ import { pickItinerary } from '../data/places';
 import { suggestCurrency, CURRENCY_SYMBOLS, CURRENCY_RATES_TO_IDR } from '../data/wallet';
 import { splashImg, welcomeImg } from '../assets/images';
 import MiniCalendar from '../components/MiniCalendar';
+import { apiLogin, apiRegister } from '../lib/api';
 
 type AuthMode = 'signup' | 'login';
 type Step =
@@ -143,16 +144,19 @@ export default function OnboardingPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleAuthSubmit = () => {
+  const { setAccessToken } = useApp();
+
+  const handleAuthSubmit = async () => {
     if (!validateAuth()) return;
     setAuthLoading(true);
-    setTimeout(() => {
-      setAuthLoading(false);
+    try {
       if (authMode === 'login') {
+        const res = await apiLogin(email, password);
+        setAccessToken(res.access_token);
         justCompletedRef.current = true;
         completeOnboarding({
-          name: name || email.split('@')[0],
-          email,
+          name: res.email?.split('@')[0] ?? 'Traveler',
+          email: res.email,
           vibe: 'balanced',
           destinations: [],
           totalDays: 3,
@@ -161,10 +165,17 @@ export default function OnboardingPage() {
         });
         nav('/', { replace: true });
       } else {
-        // Signup after the plan preview — finalize onboarding and route in.
+        await apiRegister(email, password);
+        const res = await apiLogin(email, password);
+        setAccessToken(res.access_token);
         finalizeOnboarding();
       }
-    }, 1200);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
+      setAuthErrors({ email: msg });
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   const handleGoToGenerate = () => {
