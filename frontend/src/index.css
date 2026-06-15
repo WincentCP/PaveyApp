@@ -111,5 +111,19 @@ input[type="range"].time-slider::-moz-range-thumb {
     radial-gradient(800px 500px at 70% 80%, #E8F0FF 0%, transparent 65%),
     linear-gradient(180deg, #F1F5FF 0%, #E6ECF8 100%);
 }
-
 .text-balance { text-wrap: balance; }
+ 
+/* Custom Leaflet Styles */
+.custom-leaflet-icon {
+  background: none !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+ 
+/* Offset Leaflet controls to prevent overlapping top-right buttons */
+.leaflet-top.leaflet-right {
+  top: 64px !important;
+  right: 12px !important;
+}

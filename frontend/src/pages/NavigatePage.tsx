@@ -5,10 +5,13 @@ import {
 } from 'lucide-react';
 import { PaveyLogoMark } from '../components/PaveyLogo';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
+import type { Place } from '../data/places';
 
 const PROMPTS = [
   '🌧 Rain in 15 mins — want indoor options nearby?',
@@ -88,10 +91,16 @@ export default function NavigatePage() {
     }
   }, [navIndex]); // eslint-disable-line
 
+  const totalTravelTimeMin = useMemo(() => {
+    if (!current) return 0;
+    return Math.max(1, Math.round(current.distanceKm * 4)); // ~15 km/h walking/riding
+  }, [current]);
+
   const eta = useMemo(() => {
-    if (!current) return '0m';
-    return `${Math.round((1 - progress) * 12)} min`;
-  }, [progress, current]);
+    if (!current) return '0 min';
+    const remainingMin = Math.round((1 - progress) * totalTravelTimeMin);
+    return `${remainingMin} min`;
+  }, [progress, totalTravelTimeMin, current]);
 
   const distRemain = useMemo(() => {
     if (!current) return '0 km';
@@ -266,26 +275,12 @@ export default function NavigatePage() {
           )}
         </AnimatePresence>
 
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d="M -5 30 Q 30 35, 60 25 T 110 30" stroke="#FFFFFF" strokeWidth="1.4" fill="none" />
-          <path d="M -5 60 Q 30 55, 60 65 T 110 60" stroke="#FFFFFF" strokeWidth="1.2" fill="none" />
-          <path d="M 30 -5 Q 36 40, 30 60 T 36 110" stroke="#FFFFFF" strokeWidth="1.2" fill="none" />
-        </svg>
-
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <motion.path d="M 25 78 Q 38 60, 50 50 T 70 26" fill="none" stroke="#3B5BFF" strokeWidth="1.8" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9 }} />
-          <motion.path d="M 25 78 Q 38 60, 50 50 T 70 26" fill="none" stroke="#172A8C" strokeWidth="1.8" strokeLinecap="round" style={{ pathLength: progress }} />
-        </svg>
-
-        <motion.div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: '70%', top: '26%' }} animate={{ scale: [1, 1.08, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-          <div className="bg-brand-500 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-card flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-full bg-white text-brand-500 flex items-center justify-center text-[11px] font-bold">{navIndex + 1}</span>
-            {current.name.split(' ').slice(0, 2).join(' ')}
-          </div>
-          <div className="w-2 h-2 bg-brand-500 rotate-45 mx-auto -mt-1" />
-        </motion.div>
-
-        <UserDot progress={progress} />
+        <NavigateMapStage
+          currentStop={current}
+          prevStop={navIndex > 0 ? itinerary[navIndex - 1] : null}
+          progress={progress}
+          navIndex={navIndex}
+        />
 
         <AnimatePresence>
           {prompt && (
@@ -582,16 +577,103 @@ function ActionBtn({ icon, label, onClick }: { icon: React.ReactNode; label: str
   );
 }
 
-function UserDot({ progress }: { progress: number }) {
-  const t = progress;
-  const x = (1 - t) * (1 - t) * 25 + 2 * (1 - t) * t * 50 + t * t * 70;
-  const y = (1 - t) * (1 - t) * 78 + 2 * (1 - t) * t * 50 + t * t * 26;
-  return (
-    <div className="absolute -translate-x-1/2 -translate-y-1/2 transition-all duration-200" style={{ left: `${x}%`, top: `${y}%` }}>
-      <div className="relative">
-        <span className="absolute -inset-3 rounded-full bg-brand-500/30 animate-pulseDot" />
-        <span className="block w-4 h-4 rounded-full bg-brand-500 ring-4 ring-white shadow" />
-      </div>
-    </div>
-  );
+function NavigateMapStage({
+  currentStop,
+  prevStop,
+  progress,
+  navIndex
+}: {
+  currentStop: Place;
+  prevStop: Place | null;
+  progress: number;
+  navIndex: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const userMarkerRef = useRef<L.Marker | null>(null);
+
+  const startLat = prevStop ? prevStop.lat : currentStop.lat - 0.003;
+  const startLng = prevStop ? prevStop.lng : currentStop.lng - 0.003;
+
+  const userLat = startLat + (currentStop.lat - startLat) * progress;
+  const userLng = startLng + (currentStop.lng - startLng) * progress;
+
+  // Initialize Map
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const map = L.map(containerRef.current, {
+      zoomControl: false,
+      attributionControl: false
+    });
+    mapRef.current = map;
+
+    L.control.zoom({
+      position: 'bottomright'
+    }).addTo(map);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    // Target stop marker
+    const targetIcon = L.divIcon({
+      html: `<div class="bg-brand-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg">${navIndex + 1}</div>`,
+      className: 'custom-leaflet-icon',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+    L.marker([currentStop.lat, currentStop.lng], { icon: targetIcon }).addTo(map);
+
+    // If there is a prevStop, add its marker too
+    if (prevStop) {
+      const prevIcon = L.divIcon({
+        html: `<div class="bg-emerald-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow">${navIndex}</div>`,
+        className: 'custom-leaflet-icon',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+      L.marker([prevStop.lat, prevStop.lng], { icon: prevIcon }).addTo(map);
+    }
+
+    // Draw route path line from start to target
+    L.polyline([[startLat, startLng], [currentStop.lat, currentStop.lng]], {
+      color: '#3B5BFF',
+      weight: 4,
+      dashArray: '8, 8',
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map);
+
+    // User location marker
+    const userIcon = L.divIcon({
+      html: `<div class="relative">
+        <span class="absolute -inset-3 rounded-full bg-brand-500/30 animate-pulseDot" style="display: block; width: 28px; height: 28px; border-radius: 50%;"></span>
+        <span class="block w-4 h-4 rounded-full bg-brand-500 ring-4 ring-white shadow"></span>
+      </div>`,
+      className: 'custom-leaflet-icon',
+      iconSize: [16, 16],
+      iconAnchor: [8, 8]
+    });
+    const userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
+    userMarkerRef.current = userMarker;
+
+    // Set map bounds to fit both start and end point
+    map.fitBounds([[startLat, startLng], [currentStop.lat, currentStop.lng]], {
+      padding: [60, 60]
+    });
+
+    return () => {
+      map.remove();
+    };
+  }, [currentStop, prevStop]); // Re-create map when target stop changes
+
+  // Update user dot position when progress changes
+  useEffect(() => {
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([userLat, userLng]);
+    }
+  }, [userLat, userLng]);
+
+  return <div ref={containerRef} className="absolute inset-0 w-full h-full" style={{ background: '#E6ECF8', zIndex: 0 }} />;
 }

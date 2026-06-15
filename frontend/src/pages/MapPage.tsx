@@ -6,7 +6,9 @@ import {
   Trees, Coffee, Landmark, Scale, Compass
 } from 'lucide-react';
 import PlaceCard from '../components/PlaceCard';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
 import PageHeader from '../components/PageHeader';
@@ -320,73 +322,73 @@ function EmptyDestState({
 }
 
 /* ---------------- MAP STAGE ----------------- */
-
+ 
 function MapStage({ itinerary, onPin }: { itinerary: Place[]; onPin: (p: Place) => void }) {
-  const positions = [
-    { x: 70, y: 18 }, { x: 60, y: 34 }, { x: 46, y: 50 }, { x: 62, y: 64 }, { x: 30, y: 72 },
-  ];
-  const pts = itinerary.map((_, i) => positions[i % positions.length]);
-  const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div className="absolute inset-0 map-bg isolate">
-      <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <line key={`h${i}`} x1="0" y1={i * 10} x2="100" y2={i * 10} stroke="#C7D2FE" strokeWidth="0.05" />
-        ))}
-        {Array.from({ length: 10 }).map((_, i) => (
-          <line key={`v${i}`} x1={i * 10} y1="0" x2={i * 10} y2="100" stroke="#C7D2FE" strokeWidth="0.05" />
-        ))}
-      </svg>
+  useEffect(() => {
+    if (!containerRef.current) return;
+    if (itinerary.length === 0) return;
 
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <path d="M -5 30 Q 30 35, 60 25 T 110 30" stroke="#FFFFFF" strokeWidth="1.4" fill="none" />
-        <path d="M -5 60 Q 30 55, 60 65 T 110 60" stroke="#FFFFFF" strokeWidth="1.2" fill="none" />
-        <path d="M 30 -5 Q 36 40, 30 60 T 36 110" stroke="#FFFFFF" strokeWidth="1.2" fill="none" />
-        <path d="M 70 -5 Q 64 40, 72 60 T 70 110" stroke="#FFFFFF" strokeWidth="1.4" fill="none" />
-      </svg>
+    // Initialize Leaflet map on the ref element
+    const map = L.map(containerRef.current, {
+      zoomControl: false,
+      attributionControl: false
+    });
 
-      {pts.length > 0 && (
-        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <motion.path
-            d={path} fill="none" stroke="#3B5BFF" strokeWidth="0.9" strokeLinecap="round"
-            strokeDasharray="2 1.4"
-            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-            transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </svg>
-      )}
+    // Add zoom control manually to position it at the top-right (offset down via CSS)
+    L.control.zoom({
+      position: 'topright'
+    }).addTo(map);
 
-      <div className="absolute" style={{ left: '24%', top: '68%' }}>
-        <div className="relative">
-          <span className="absolute -inset-3 rounded-full bg-brand-500/30 animate-pulseDot" />
-          <span className="block w-4 h-4 rounded-full bg-brand-500 ring-4 ring-white shadow" />
-        </div>
-      </div>
+    // Add Voyager TileLayer (CartoDB has a premium, clean light aesthetic that matches PaveyApp perfectly)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(map);
 
-      {itinerary.map((p, i) => {
-        const pos = pts[i];
-        return (
-          <motion.button
-            key={p.id} onClick={() => onPin(p)}
-            initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1 + i * 0.08, type: 'spring', stiffness: 400, damping: 18 }}
-            whileTap={{ scale: 0.92 }}
-            className="absolute press z-20 flex flex-col items-center"
-            style={{ left: `${pos.x}%`, top: `${pos.y}%`, transform: 'translateX(-50%) translateY(-100%)' }}
-          >
-            <div className="mb-1 bg-white/95 backdrop-blur-sm rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-ink-900 shadow-soft whitespace-nowrap border border-white">
-              {p.name.split(' ').slice(0, 2).join(' ')}
-            </div>
-            <div className="w-8 h-8 rounded-full bg-brand-500 text-white text-sm font-bold flex items-center justify-center ring-[3px] ring-white shadow-card">
-              {i + 1}
-            </div>
-            <div className="w-2 h-2 rotate-45 bg-brand-500 -mt-1 shadow-sm" />
-          </motion.button>
-        );
-      })}
-    </div>
-  );
+    const latlngs = itinerary.map(p => [p.lat, p.lng] as L.LatLngTuple);
+
+    // Create markers for each place
+    const markers: L.Marker[] = [];
+    itinerary.forEach((place, i) => {
+      const customIcon = L.divIcon({
+        html: `<div class="bg-brand-500 text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg press">${i + 1}</div>`,
+        className: 'custom-leaflet-icon',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+
+      const marker = L.marker([place.lat, place.lng], { icon: customIcon }).addTo(map);
+      marker.on('click', () => onPin(place));
+      markers.push(marker);
+    });
+
+    // Draw route path line between stops
+    if (latlngs.length > 1) {
+      L.polyline(latlngs, {
+        color: '#3B5BFF',
+        weight: 3.5,
+        dashArray: '6, 6', // Dashed line
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(map);
+    }
+
+    // Set bounds to fit all markers
+    if (latlngs.length > 0) {
+      if (latlngs.length === 1) {
+        map.setView(latlngs[0], 15);
+      } else {
+        map.fitBounds(latlngs, { padding: [50, 50] });
+      }
+    }
+
+    return () => {
+      map.remove();
+    };
+  }, [itinerary, onPin]);
+
+  return <div ref={containerRef} className="absolute inset-0 w-full h-full" style={{ background: '#E6ECF8', zIndex: 0 }} />;
 }
 
 /* --------------- BOTTOM SHEET (collapsible) --------------- */

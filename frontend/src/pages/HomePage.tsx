@@ -101,6 +101,14 @@ export default function HomePage() {
     intentDraft, setIntentDraft, destAutoAdvanced, clearDestAutoAdvanced,
     setNavIndex, setBuddyOpen,
   } = useApp();
+
+  // ── Trip state logic ──────────────────────────────────────────
+  const todayStops = perDayItineraries.length > 0 ? (perDayItineraries[0] ?? []) : itinerary;
+  const hasTodayPlan = todayStops.length > 0;
+  const activeDest = destinations[activeDestIdx];
+  const nextDest = destinations[activeDestIdx + 1];
+  const hasMultiDest = destinations.length > 1;
+  const upcomingTrips = trips.filter((t) => t.id !== 'default-trip' && t.id !== activeTrip.id);
   const { show } = useToast();
   const [weatherInfo, setWeatherInfo] = useState<{ temp: number; desc: string } | null>(null);
 
@@ -225,13 +233,7 @@ export default function HomePage() {
 
   const activeFilters = filterCats.length + (filterMinRating > 0 ? 1 : 0);
 
-  // ── Trip state logic ──────────────────────────────────────────
-  const todayStops = perDayItineraries.length > 0 ? (perDayItineraries[0] ?? []) : itinerary;
-  const hasTodayPlan = todayStops.length > 0;
-  const activeDest = destinations[activeDestIdx];
-  const nextDest = destinations[activeDestIdx + 1];
-  const hasMultiDest = destinations.length > 1;
-  const upcomingTrips = trips.filter((t) => t.id !== 'default-trip' && t.id !== activeTrip.id);
+  // ── Trip state logic is moved to the top of the component to avoid TDZ issues ──
 
   const displayName = authUser?.name?.split(' ')[0] ?? USER.firstName;
 
