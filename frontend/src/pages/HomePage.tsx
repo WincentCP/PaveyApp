@@ -8,6 +8,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { apiGetWeather } from '../lib/api';
 import StatusBar from '../components/StatusBar';
 import PlaceCard from '../components/PlaceCard';
 import { useApp } from '../context/AppContext';
@@ -101,6 +102,7 @@ export default function HomePage() {
     setNavIndex, setBuddyOpen,
   } = useApp();
   const { show } = useToast();
+  const [weatherInfo, setWeatherInfo] = useState<{ temp: number; desc: string } | null>(null);
 
   const [search, setSearch] = useState<string | null>(null);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -182,6 +184,28 @@ export default function HomePage() {
     }
     clearDestAutoAdvanced();
   }, [activeDestIdx, destinations, activeTrip.currency, destAutoAdvanced]);
+
+  // Load real weather for active destination
+  useEffect(() => {
+    if (!activeDest) return;
+    const cityName = activeDest.name.split(',')[0].trim().toLowerCase();
+    const match = PLACES.find((p) => p.city.toLowerCase() === cityName);
+    const lat = match?.lat ?? -8.5070; // fallback to Ubud/Bali
+    const lon = match?.lng ?? 115.2624;
+
+    apiGetWeather(lat, lon)
+      .then((data) => {
+        if (data) {
+          setWeatherInfo({
+            temp: Math.round(data.temp_celsius),
+            desc: data.condition || 'Cloudy',
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch weather:', err);
+      });
+  }, [activeDest]);
 
   const sliderPct = useMemo(() => {
     const min = 50_000, max = 1_000_000;
@@ -583,8 +607,8 @@ export default function HomePage() {
                 <div className="flex items-center gap-2 bg-ink-50 rounded-2xl p-2 shrink-0 border border-ink-100/50">
                   <CloudSun className="w-6 h-6 text-brand-500" />
                   <div className="text-right">
-                    <div className="text-sm font-black text-ink-900 leading-none">28°</div>
-                    <div className="text-[9px] text-ink-500 font-bold leading-none mt-0.5">Cloudy</div>
+                    <div className="text-sm font-black text-ink-900 leading-none">{weatherInfo ? `${weatherInfo.temp}°` : '28°'}</div>
+                    <div className="text-[9px] text-ink-500 font-bold leading-none mt-0.5 capitalize">{weatherInfo ? weatherInfo.desc : 'Cloudy'}</div>
                   </div>
                 </div>
               </div>

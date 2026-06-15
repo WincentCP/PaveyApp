@@ -50,46 +50,6 @@ export default function WalletPage() {
   } = useApp();
   const { show } = useToast();
 
-  const [backendTxns, setBackendTxns] = useState<Transaction[]>([]);
-
-  // Sync expenses dari backend — hanya jika user sudah login dan punya trip aktif di backend
-  useEffect(() => {
-    // Jangan call API kalau:
-    // 1. Tidak ada token (belum login)
-    // 2. Trip ID adalah default/local-only
-    if (!accessToken) return;
-    if (!activeTrip?.id || activeTrip.id === 'trip-default') return;
-    // Trip ID lokal frontend format: 'trip-xxxxxxx' (7 karakter random)
-    // Trip ID backend format: UUID dari Supabase
-    // Kita hanya call backend untuk trip yang punya UUID-like ID
-    const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTrip.id);
-    if (!isBackendTrip) return;
-    
-    apiGetExpenses(activeTrip.id)
-      .then((res) => {
-        // Convert backend format ke frontend Transaction format
-        const fetched = (res.transactions ?? []).map((t: any) => ({
-          id: t.id,
-          title: t.description,
-          category: mapCategory(t.category),
-          amount: -t.amount, // backend simpan positif, frontend pakai negatif untuk expense
-          date: t.created_at,
-          icon: '',
-        }));
-        if (fetched.length > 0) {
-          setBackendTxns(fetched);
-        }
-      })
-      .catch((err: Error) => {
-        // 401 = silent (sudah di-redirect oleh apiFetch)
-        // Error lain: juga silent, fallback ke localStorage
-        if (!err.message?.includes('Session expired')) {
-          console.warn('[WalletPage] Failed to fetch backend expenses:', err.message);
-        }
-      });
-  }, [activeTrip?.id, accessToken]);
-
-
   const hasItinerary = perDayItineraries.flat().length > 0 || itinerary.length > 0;
   const hasUserTrips = trips.some(t => t.id !== 'trip-default');
   const showEmptyOnboarding = !hasItinerary && !hasUserTrips && transactions.length === 0;
@@ -116,13 +76,6 @@ export default function WalletPage() {
       cat, val, pct: val / total,
     })).sort((a, b) => b.val - a.val);
   }, [transactions]);
-
-  // Merge backend + local transactions, deduplicate by id
-  const allTransactions = useMemo(() => {
-    const localIds = new Set(transactions.map((t) => t.id));
-    const merged = [...transactions, ...backendTxns.filter((t) => !localIds.has(t.id))];
-    return merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, backendTxns]);
 
   const remaining = tripBudget - totalSpent;
   const usedPct = Math.min(1, totalSpent / tripBudget);
@@ -429,23 +382,6 @@ export default function WalletPage() {
           addTransaction(t);
           show(`Added ${t.title}`, 'success');
           setSheet(null);
-
-          // Hanya sync ke backend kalau trip ID adalah UUID dari Supabase
-          // Trip ID lokal format: 'trip-xxxxxxx' (random), UUID format: 36 char hex
-          const isBackendTrip = activeTrip?.id && /^[0-9a-f-]{36}$/.test(activeTrip.id);
-          if (isBackendTrip) {
-            try {
-              await apiAddExpense({
-                trip_id: activeTrip.id,
-                amount: Math.abs(t.amount),
-                category: t.category,
-                description: t.title,
-              });
-            } catch (err: any) {
-              // Swallow silently — expense sudah tersimpan di localStorage
-              console.warn('[WalletPage] Failed to sync expense to backend:', err?.message);
-            }
-          }
         }} />
       </Sheet>
 

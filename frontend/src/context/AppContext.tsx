@@ -30,7 +30,7 @@ import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
-import { apiGetMe } from '../lib/api';
+import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses } from '../lib/api';
 
 // Re-export planning types so existing imports from '../context/AppContext' keep working.
 export { PACE_STOPS, allocateDays };
@@ -285,6 +285,133 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
   }, []); 
 
+  // Synchronize local trips to backend and pull backend trips on login
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
+    apiGetTrips()
+      .then((res) => {
+        const backendTrips = res.trips || [];
+
+        setTrips((prev) => {
+          let updated = [...prev];
+
+          // Identify local unsynced trips (ID starts with 'trip-' but not 'trip-default')
+          const unsyncedTrips = updated.filter(t => t.id.startsWith('trip-') && t.id !== 'trip-default');
+
+          unsyncedTrips.forEach((localTrip) => {
+            const startD = localTrip.journeyStart?.date || 'today';
+            const startDateStr = startD === 'today' ? new Date().toISOString().slice(0, 10) : startD;
+            const days = localTrip.daysTotal || 1;
+            const endD = new Date(new Date(startDateStr).getTime() + (days - 1) * 86400000);
+            const endDateStr = endD.toISOString().slice(0, 10);
+
+            apiCreateTrip({
+              destination: localTrip.destination,
+              start_date: startDateStr,
+              end_date: endDateStr,
+              vibe: localTrip.vibe || 'balanced',
+              budget_min: localTrip.budget,
+              budget_max: localTrip.budget,
+            })
+            .then((createRes) => {
+              const newUuid = createRes.trip_id;
+
+              // Sync local expenses for this trip to the backend
+              const localExpenses = localTrip.transactions || [];
+              localExpenses.forEach((exp) => {
+                apiAddExpense({
+                  trip_id: newUuid,
+                  amount: Math.abs(exp.amount),
+                  category: exp.category,
+                  description: exp.title || exp.description || '',
+                }).catch((e) => console.error("Failed to sync expense during sync:", e));
+              });
+
+              // Replace temporary local ID with backend UUID in trips state
+              setTrips((currentTrips) =>
+                currentTrips.map((t) =>
+                  t.id === localTrip.id
+                    ? { ...t, id: newUuid }
+                    : t
+                )
+              );
+
+              // Update activeTripId if it was this unsynced trip
+              setActiveTripId((prevActive) => prevActive === localTrip.id ? newUuid : prevActive);
+            })
+            .catch((err) => {
+              console.error("Failed to sync local trip during login sync:", err);
+            });
+          });
+
+          // Add any backend trips that aren't already in local state
+          backendTrips.forEach((bt: any) => {
+            const exists = updated.some((t) => t.id === bt.id);
+            if (!exists) {
+              const start = new Date(bt.start_date);
+              const end = new Date(bt.end_date);
+              const diffTime = Math.abs(end.getTime() - start.getTime());
+              const daysTotal = (isNaN(diffTime) ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))) + 1;
+
+              updated.push({
+                id: bt.id,
+                name: `${bt.destination.split(' → ')[0]} Trip`,
+                destination: bt.destination,
+                currency: 'IDR',
+                budget: bt.budget_max || 500000,
+                daysTotal: daysTotal,
+                daysRemaining: daysTotal,
+                transactions: [],
+                createdAt: bt.created_at || new Date().toISOString(),
+                itinerary: [],
+                destinations: [],
+                journeyStart: { date: bt.start_date, time: '09:00', days: daysTotal },
+                vibe: bt.vibe,
+                pace: 'balanced',
+                perDayItineraries: [],
+              });
+            }
+          });
+
+          return updated;
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to sync/fetch backend trips:", err);
+      });
+  }, [isAuthenticated, accessToken]);
+
+  // Load expenses from backend for the active trip if it is a UUID
+  useEffect(() => {
+    if (!accessToken || !activeTripId) return;
+    const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
+    if (!isBackendTrip) return;
+
+    apiGetExpenses(activeTripId)
+      .then((res) => {
+        const fetched = (res.transactions ?? []).map((t: any) => ({
+          id: t.id,
+          title: t.description,
+          category: t.category,
+          amount: -t.amount, // backend positive, frontend negative for expenses
+          date: t.created_at,
+          icon: '',
+        }));
+
+        setTrips((prev) =>
+          prev.map((t) =>
+            t.id === activeTripId
+              ? { ...t, transactions: fetched }
+              : t
+          )
+        );
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch expenses for active trip:", err);
+      });
+  }, [activeTripId, accessToken]);
+
   // Issue 35: persist key state to localStorage
   useEffect(() => {
     try {
@@ -419,6 +546,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     setTrips((prev) => [...prev, newTrip]);
     setActiveTripId(id);
+
+    // Sync to backend if logged in
+    if (accessToken) {
+      const startD = journeyStart.date === 'today' ? new Date().toISOString().slice(0, 10) : (journeyStart.date || new Date().toISOString().slice(0, 10));
+      const days = data.daysTotal || 1;
+      const endD = new Date(new Date(startD).getTime() + (days - 1) * 86400000);
+      const endDateStr = endD.toISOString().slice(0, 10);
+
+      apiCreateTrip({
+        destination: data.destination,
+        start_date: startD,
+        end_date: endDateStr,
+        vibe: vibe || 'balanced',
+        budget_min: data.budget,
+        budget_max: data.budget,
+      })
+      .then((res) => {
+        const backendUuid = res.trip_id;
+        setTrips((prev) =>
+          prev.map((t) =>
+            t.id === id
+              ? { ...t, id: backendUuid }
+              : t
+          )
+        );
+        setActiveTripId((prevActive) => prevActive === id ? backendUuid : prevActive);
+      })
+      .catch((err) => {
+        console.error("Failed to sync new trip to backend:", err);
+      });
+    }
+
     return id;
   };
 
@@ -621,12 +780,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Active trip proxies
     transactions: activeTrip.transactions,
     addTransaction: (t) => {
+      const tempId = `t${Math.random().toString(36).slice(2, 9)}`;
       const txn: Transaction = {
-        id: `t${Math.random().toString(36).slice(2, 9)}`,
+        id: tempId,
         date: t.date ?? new Date().toISOString(),
         ...t,
       };
       updateActiveTrip((trip) => ({ ...trip, transactions: [txn, ...trip.transactions] }));
+
+      // Sync to backend if logged in and activeTrip is a UUID
+      if (accessToken && activeTripId) {
+        const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
+        if (isBackendTrip) {
+          apiAddExpense({
+            trip_id: activeTripId,
+            amount: Math.abs(t.amount),
+            category: t.category,
+            description: t.title,
+          })
+          .then((res) => {
+            setTrips((prev) =>
+              prev.map((trip) =>
+                trip.id === activeTripId
+                  ? {
+                      ...trip,
+                      transactions: trip.transactions.map((tx) =>
+                        tx.id === tempId ? { ...tx, id: res.data.id } : tx
+                      ),
+                    }
+                  : trip
+              )
+            );
+          })
+          .catch((err) => {
+            console.error("Failed to sync expense to backend:", err);
+          });
+        }
+      }
     },
     budgetTotal: BUDGET_TOTAL,
     totalSpent,
