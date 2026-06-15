@@ -30,6 +30,7 @@ import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
+import { apiGetMe } from '../lib/api';
 
 // Re-export planning types so existing imports from '../context/AppContext' keep working.
 export { PACE_STOPS, allocateDays };
@@ -268,6 +269,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rainyDayMode, setRainyDayMode] = useState(false);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set(persisted?.visitedPlaceIds ?? []));
   const [pace, setPace] = useState<TripPace>(persisted?.pace ?? 'balanced');
+
+  useEffect(() => {
+    if (!accessToken || authUser) return;
+    apiGetMe()
+      .then((res) => {
+        setAuthUser({ name: res.name, email: res.email });
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        // Token expired atau invalid, clear state
+        setAccessToken(null);
+        setIsAuthenticated(false);
+      });
+  }, []); 
 
   // Issue 35: persist key state to localStorage
   useEffect(() => {

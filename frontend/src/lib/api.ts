@@ -80,3 +80,7 @@ export async function apiChat(message: string, tripId?: string) {
     body: JSON.stringify({ message, trip_id: tripId }),
   });
 }
+
+export async function apiGetMe() {
+  return apiFetch('/auth/me');
+}

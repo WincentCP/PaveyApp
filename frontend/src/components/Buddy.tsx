@@ -1,6 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X, Cloud, Coffee, MapPinned } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { apiChat } from '../lib/api';
+import { useApp } from '../context/AppContext';
 
 interface Msg { from: 'buddy' | 'me'; text: string }
 
@@ -14,24 +16,35 @@ const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[
 const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
 
 export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { activeTripId } = useApp();
   const [text, setText] = useState('');
   const [msgs, setMsgs] = useState<Msg[]>([
-    { from: 'buddy', text: "Hey Aria! 👋 I planned a chill route with 3 spots nearby. Want me to optimize for less walking?" },
+    { from: 'buddy', text: "Hey! 👋 I'm TinTin, your travel companion. Ask me anything about your trip!" },
   ]);
+  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' });
   }, [msgs, open]);
 
-  const send = (t: string) => {
-    if (!t.trim()) return;
+  const send = async (t: string) => {
+    if (!t.trim() || loading) return;
     setMsgs((m) => [...m, { from: 'me', text: t }]);
     setText('');
-    setTimeout(() => {
-      const reply = generateReply(t);
-      setMsgs((m) => [...m, { from: 'buddy', text: reply }]);
-    }, 600);
+    setLoading(true);
+
+    try {
+      const tripId = activeTripId !== 'trip-default' && activeTripId !== 'default-trip'
+        ? activeTripId
+        : undefined;
+      const res = await apiChat(t, tripId);
+      setMsgs((m) => [...m, { from: 'buddy', text: res.reply }]);
+    } catch {
+      setMsgs((m) => [...m, { from: 'buddy', text: 'Maaf, ada gangguan koneksi. Coba lagi ya! 🙏' }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,7 +67,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 <BuddyAvatar />
                 <div>
                   <div className="text-ink-900 font-bold leading-tight">TinTin</div>
-                  <div className="text-[11px] text-ink-500 leading-tight">Your TinTin travel companion</div>
+                  <div className="text-[11px] text-ink-500 leading-tight">Your AI travel companion</div>
                 </div>
               </div>
               <button onClick={onClose} className="mt-3 w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center text-ink-600 press">
@@ -95,6 +108,20 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                   </div>
                 </motion.div>
               ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-ink-50 rounded-2xl rounded-bl-md px-4 py-3 flex gap-1">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-2 h-2 rounded-full bg-ink-400"
+                        animate={{ y: [0, -4, 0] }}
+                        transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
@@ -102,7 +129,8 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 <button
                   key={label}
                   onClick={() => send(label)}
-                  className="press shrink-0 flex items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full"
+                  disabled={loading}
+                  className="press shrink-0 flex items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50"
                 >
                   {imgSrc
                     ? <img src={imgSrc} alt="" className="w-3.5 h-3.5 object-contain" />
@@ -120,12 +148,14 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Ask TinTin anything…"
-                className="flex-1 bg-ink-50 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300"
+                disabled={loading}
+                className="flex-1 bg-ink-50 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
               />
               <motion.button
                 type="submit"
+                disabled={loading || !text.trim()}
                 whileTap={{ scale: 0.92 }}
-                className="w-11 h-11 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-glow"
+                className="w-11 h-11 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-glow disabled:bg-ink-300"
               >
                 <Send className="w-4 h-4" />
               </motion.button>
@@ -150,24 +180,4 @@ function BuddyAvatar({ size = 'md' }: { size?: 'sm' | 'md' }) {
       />
     </div>
   );
-}
-
-function generateReply(t: string) {
-  const lower = t.toLowerCase();
-  if (lower.includes('rain') || lower.includes('indoor')) {
-    return 'I found 3 cozy indoor cafes within 800m: Seniman Coffee, Locavore To Go, and Anomali. Want me to swap them in?';
-  }
-  if (lower.includes('walking') || lower.includes('less')) {
-    return "Optimized! Your new route saves ~1.4 km of walking and shaves 18 mins. I'll update your itinerary.";
-  }
-  if (lower.includes('hidden') || lower.includes('gem')) {
-    return "Goa Gajah cave is 12 mins away — quiet at this hour and only Rp 30K entry. Add it?";
-  }
-  if (lower.includes('budget') || lower.includes('cheap')) {
-    return "You have Rp 1.76M left. I can plan a Rp 250K afternoon — interested?";
-  }
-  if (lower.includes('coffee')) {
-    return "Seniman Coffee Studio (4.7★) is 6 mins away. Their Sumatra pour-over is unreal.";
-  }
-  return "Got it — I'll keep that in mind for your trip ✨";
 }
