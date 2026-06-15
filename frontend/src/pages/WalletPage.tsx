@@ -410,65 +410,25 @@ export default function WalletPage() {
         <CurrencyPickerSheet
           current={currency}
           hasTransactions={transactions.length > 0}
-          onSelect={async (c) => {
+          onSelect={(c) => {
             if (c === currency) {
               setSheet(null);
               return;
             }
-            // Hanya convert via backend kalau activeTripId adalah UUID backend
-            const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
-            if (accessToken && isBackendTrip && transactions.length > 0) {
-              try {
-                show('Converting currency rates...', 'info');
-                const { apiConvertExpenses } = await import('../lib/api');
-                const res = await apiConvertExpenses(activeTripId, c);
-                if (res && res.exchange_rate) {
-                  const mappedTxns = (res.transactions ?? []).map((t: any) => ({
-                    id: t.id,
-                    title: t.description ?? '',
-                    category: mapCategory(t.category ?? 'Food & Drinks'),
-                    amount: -(t.amount_converted ?? 0),
-                    date: t.created_at ?? new Date().toISOString(),
-                    icon: ''
-                  }));
-                  changeTripCurrency(c, res.exchange_rate, mappedTxns);
-                  show(`Converted to ${c} ✓`, 'success');
-                } else {
-                  // Fallback ke local conversion jika backend returned IDR atau tidak ada rate
-                  const rateFrom = CURRENCY_RATES_TO_IDR[currency] || 1;
-                  const rateTo = CURRENCY_RATES_TO_IDR[c] || 1;
-                  const localRate = rateFrom / rateTo;
-                  const mappedTxns = transactions.map((t) => ({
-                    ...t,
-                    amount: t.amount * localRate,
-                  }));
-                  changeTripCurrency(c, localRate, mappedTxns);
-                  show(`Converted to ${c} (estimasi local)`, 'success');
-                }
-              } catch (err) {
-                console.error("Failed to convert currency:", err);
-                const rateFrom = CURRENCY_RATES_TO_IDR[currency] || 1;
-                const rateTo = CURRENCY_RATES_TO_IDR[c] || 1;
-                const localRate = rateFrom / rateTo;
-                const mappedTxns = transactions.map((t) => ({
-                  ...t,
-                  amount: t.amount * localRate,
-                }));
-                changeTripCurrency(c, localRate, mappedTxns);
-                show(`Converted to ${c} (offline fallback)`, 'warning');
-              }
-            } else {
-              // Local trip atau belum login
-              const rateFrom = CURRENCY_RATES_TO_IDR[currency] || 1;
-              const rateTo = CURRENCY_RATES_TO_IDR[c] || 1;
-              const localRate = rateFrom / rateTo;
-              const mappedTxns = transactions.map((t) => ({
-                ...t,
-                amount: t.amount * localRate,
-              }));
-              changeTripCurrency(c, localRate, mappedTxns);
-              show(`Converted to ${c} ✓`, 'success');
-            }
+
+            const oldCurrency = currency;
+            const targetCurrency = c;
+            const rateFrom = CURRENCY_RATES_TO_IDR[oldCurrency] || 1;
+            const rateTo = CURRENCY_RATES_TO_IDR[targetCurrency] || 1;
+            const localRate = rateFrom / rateTo;
+
+            const mappedTxns = transactions.map((t) => ({
+              ...t,
+              amount: t.amount * localRate,
+            }));
+
+            changeTripCurrency(targetCurrency, localRate, mappedTxns);
+            show(`Converted to ${c} ✓`, 'success');
             setSheet(null);
           }}
         />
