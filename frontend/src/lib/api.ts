@@ -41,6 +41,24 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   return data;
 }
 
+/**
+ * apiFetchSafe — seperti apiFetch tapi TIDAK clear session/redirect on 401.
+ * Dipakai untuk endpoint yang authnya opsional (chatbot, dll).
+ */
+async function apiFetchSafe(path: string, options: RequestInit = {}) {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> ?? {}),
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail ?? 'Request failed');
+  return data;
+}
+
 export async function apiRegister(email: string, password: string) {
   return apiFetch('/auth/register', {
     method: 'POST',
@@ -98,9 +116,19 @@ export async function apiConvertExpenses(tripId: string, targetCurrency: string)
 }
 
 export async function apiChat(message: string, tripId?: string, context?: string) {
-  return apiFetch('/chatbot/message', {
+  // Pakai apiFetchSafe karena chatbot mendukung guest (auth opsional)
+  // — jangan wipe session kalau ada 401 dari Supabase token yang expired
+  return apiFetchSafe('/chatbot/message', {
     method: 'POST',
     body: JSON.stringify({ message, trip_id: tripId, context }),
+  });
+}
+
+export async function apiSocialParse(url: string, tripId?: string) {
+  // Pakai apiFetchSafe — kalau tidak login, tetap bisa parse (backend handle optional auth)
+  return apiFetchSafe('/social/parse', {
+    method: 'POST',
+    body: JSON.stringify({ url, trip_id: tripId }),
   });
 }
 

@@ -61,25 +61,6 @@ function getVibeIcon(id: Vibe, className = "w-6 h-6") {
 
 const CATEGORIES: Category[] = ['Cafe', 'Nature', 'Cultural', 'Historic', 'Foodie', 'Hidden Gem', 'Cozy'];
 
-const SOCIAL_MOCK: Record<string, { platform: string; name: string; category: string; desc: string; image: string; cost: number }> = {
-  tiktok: {
-    platform: 'TikTok',
-    name: 'Warung Sunset Cliff Bali',
-    category: 'Hidden Gem',
-    desc: 'Cliffside warung with jaw-dropping ocean sunset views, found viral on TikTok.',
-    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
-    cost: 65000,
-  },
-  instagram: {
-    platform: 'Instagram',
-    name: 'Pura Tirta Gangga Pool',
-    category: 'Scenic',
-    desc: 'Ancient royal water palace with lotus ponds perfect for an Instagram shot.',
-    image: 'https://images.unsplash.com/photo-1604999333679-b86d54738315?auto=format&fit=crop&w=800&q=80',
-    cost: 30000,
-  },
-};
-
 // Quick Plan durations
 const QUICK_PLAN_OPTIONS = [
   { label: '2h', hours: 2 },
@@ -118,8 +99,13 @@ export default function HomePage() {
   const [filterMinRating, setFilterMinRating] = useState(0);
   const [socialUrl, setSocialUrl] = useState('');
   const [socialParsing, setSocialParsing] = useState(false);
-  const [socialResult, setSocialResult] = useState<typeof SOCIAL_MOCK[string] | null>(null);
-  const [socialError, setSocialError] = useState(false);
+  const [socialResult, setSocialResult] = useState<{
+    platform: string;
+    places: { name: string; type: string; description: string; tips?: string }[];
+    destination?: string;
+    raw_summary?: string;
+  } | null>(null);
+  const [socialError, setSocialError] = useState<string | false>(false);
   const socialInputRef = useRef<HTMLInputElement>(null);
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [addDestSheet, setAddDestSheet] = useState(false);
@@ -345,22 +331,40 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, [intentSheet, intentDest]);
 
-  const parseSocialLink = () => {
+  const parseSocialLink = async () => {
     if (!socialUrl.trim()) return;
     const lower = socialUrl.toLowerCase();
-    const isValid = lower.includes('tiktok.com') || lower.includes('instagram.com') || lower.includes('ig.me') || lower.includes('instagr.am');
+    const isValid =
+      lower.includes('tiktok.com') || lower.includes('instagram.com') ||
+      lower.includes('ig.me') || lower.includes('instagr.am') ||
+      lower.includes('youtube.com') || lower.includes('youtu.be') ||
+      lower.includes('twitter.com') || lower.includes('x.com');
     if (!isValid) {
-      setSocialError(true);
+      setSocialError('Paste a valid TikTok, Instagram, YouTube, or Twitter link');
       return;
     }
     setSocialError(false);
     setSocialParsing(true);
     setSocialResult(null);
-    setTimeout(() => {
+    try {
+      const { apiSocialParse } = await import('../lib/api');
+      const res = await apiSocialParse(socialUrl);
+      if (!res?.parsed_result) throw new Error('Empty response from server');
+      const parsed = res.parsed_result;
+      if (parsed.error) throw new Error(parsed.error);
+      if (!parsed.places || parsed.places.length === 0)
+        throw new Error('Tidak ada tempat yang ditemukan dalam link ini');
+      setSocialResult({
+        platform: res.platform || 'Social Media',
+        places: parsed.places,
+        destination: parsed.destination,
+        raw_summary: parsed.raw_summary,
+      });
+    } catch (err: any) {
+      setSocialError(err?.message || 'Gagal mengekstrak link — coba link yang berbeda');
+    } finally {
       setSocialParsing(false);
-      if (lower.includes('tiktok')) setSocialResult(SOCIAL_MOCK.tiktok);
-      else setSocialResult(SOCIAL_MOCK.instagram);
-    }, 1800);
+    }
   };
 
   // Open add-dest sheet with smart defaults: pre-fill dates from trip-level intent if known
@@ -1178,7 +1182,7 @@ export default function HomePage() {
 
           {socialError && (
             <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2.5 flex items-center gap-1 font-medium">
-              <AlertTriangle className="w-3.5 h-3.5" /> Please paste a valid TikTok or Instagram link
+              <AlertTriangle className="w-3.5 h-3.5" /> {typeof socialError === 'string' ? socialError : 'Please paste a valid social media link'}
             </motion.p>
           )}
 
@@ -1189,56 +1193,120 @@ export default function HomePage() {
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
                     <RefreshCw className="w-3.5 h-3.5" />
                   </motion.div>
-                  Extracting place details…
+                  TinTin is reading the link…
                 </div>
-                <div className="h-2 rounded shimmer w-3/4" />
+                <div className="space-y-1.5">
+                  <div className="h-2 rounded-full shimmer w-3/4" />
+                  <div className="h-2 rounded-full shimmer w-1/2" />
+                </div>
               </motion.div>
             )}
-            
+
             {socialResult && !socialParsing && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden pointer-events-auto">
-                <div className="flex items-start gap-3.5 p-4">
-                  <img src={socialResult.image} alt={socialResult.name} className="w-16 h-16 rounded-xl object-cover shrink-0 border border-ink-100 shadow-sm" />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[9px] font-extrabold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full uppercase tracking-wider">From {socialResult.platform}</span>
-                    <div className="font-bold text-ink-900 text-sm truncate mt-1.5">{socialResult.name}</div>
-                    <div className="text-xs text-ink-600 mt-0.5 line-clamp-2 leading-relaxed">{socialResult.desc}</div>
-                    <div className="text-xs text-brand-600 font-bold mt-1.5">{formatCost(socialResult.cost, activeTrip.currency)}</div>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-2.5">
+                {socialResult.raw_summary && (
+                  <p className="text-[11px] text-ink-500 italic leading-relaxed px-1">
+                    "{socialResult.raw_summary}"
+                  </p>
+                )}
+                {socialResult.places.slice(0, 3).map((place, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden">
+                    <div className="flex items-start gap-3 p-3.5">
+                      <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+                        <MapPin className="w-4.5 h-4.5 text-brand-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[9px] font-extrabold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                            {socialResult.platform}
+                          </span>
+                          <span className="text-[9px] text-ink-400 capitalize">{place.type}</span>
+                        </div>
+                        <div className="font-bold text-ink-900 text-sm truncate">{place.name}</div>
+                        {place.description && (
+                          <div className="text-xs text-ink-500 mt-0.5 line-clamp-2 leading-relaxed">{place.description}</div>
+                        )}
+                        {place.tips && (
+                          <div className="text-xs text-amber-600 mt-1 font-medium">💡 {place.tips}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 px-3.5 pb-3.5">
+                      <button
+                        onClick={() => {
+                          const p: Place = {
+                            id: `social-${Date.now()}-${idx}`,
+                            city: socialResult.destination ?? '',
+                            name: place.name,
+                            category: 'Hidden Gem',
+                            tags: ['Social Import', socialResult.platform],
+                            vibes: ['nature', 'cafe', 'activities', 'cultural'],
+                            image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+                            cost: 50000,
+                            priceRange: { min: 0, max: 100000 },
+                            durationMin: 60,
+                            distanceKm: 1.0,
+                            lat: -8.5055,
+                            lng: 115.2620,
+                            rating: 4.5,
+                            description: place.description ?? '',
+                            openingHours: 'Check onsite',
+                            indoor: false,
+                            openHour: 0,
+                            closeHour: 24,
+                          };
+                          addStop(p);
+                          show(`${place.name} added to plan`, 'success');
+                          if (idx === socialResult.places.length - 1) {
+                            setSocialResult(null);
+                            setSocialUrl('');
+                            nav('/map');
+                          }
+                        }}
+                        className="h-9 rounded-xl bg-brand-500 text-white text-xs font-bold press flex items-center justify-center gap-1.5 shadow-glow"
+                      >
+                        <MapPin className="w-3.5 h-3.5" /> Add to Plan
+                      </button>
+                      <button
+                        onClick={() => {
+                          const p: Place = {
+                            id: `social-${Date.now()}-${idx}`,
+                            city: socialResult.destination ?? '',
+                            name: place.name,
+                            category: 'Hidden Gem',
+                            tags: ['Social Import', socialResult.platform],
+                            vibes: ['nature', 'cafe', 'activities', 'cultural'],
+                            image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+                            cost: 50000,
+                            priceRange: { min: 0, max: 100000 },
+                            durationMin: 60,
+                            distanceKm: 1.0,
+                            lat: -8.5055,
+                            lng: 115.2620,
+                            rating: 4.5,
+                            description: place.description ?? '',
+                            openingHours: 'Check onsite',
+                            indoor: false,
+                            openHour: 0,
+                            closeHour: 24,
+                          };
+                          savePlace(p);
+                          show(`${place.name} saved for later`, 'success');
+                        }}
+                        className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1.5"
+                      >
+                        <Bookmark className="w-3.5 h-3.5" /> Save for Later
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 px-4 pb-4">
-                  <button
-                    onClick={() => {
-                      const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                      addStop(place);
-                      show(`${socialResult!.name} added to plan`, 'success');
-                      setSocialResult(null);
-                      setSocialUrl('');
-                      nav('/map');
-                    }}
-                    className="h-10 rounded-xl bg-brand-500 text-white text-xs font-bold press flex items-center justify-center gap-1.5 shadow-glow"
-                  >
-                    <MapPin className="w-3.5 h-3.5" /> Add to Plan
-                  </button>
-                  <button
-                    onClick={() => {
-                      const place: Place = { id: `social-${Date.now()}`, city: '', name: socialResult!.name, category: 'Hidden Gem', tags: ['Social Import'], vibes: ['nature','cafe','activities','cultural'], image: socialResult!.image, cost: socialResult!.cost, priceRange: { min: socialResult!.cost, max: socialResult!.cost }, durationMin: 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 4.5, description: socialResult!.desc, openingHours: 'All day', indoor: false, openHour: 0, closeHour: 24 };
-                      savePlace(place);
-                      show(`${socialResult!.name} saved for later`, 'success');
-                      setSocialResult(null);
-                      setSocialUrl('');
-                    }}
-                    className="h-10 rounded-xl bg-ink-50 text-ink-850 text-xs font-semibold press flex items-center justify-center gap-1.5 hover:bg-ink-100 transition-colors"
-                  >
-                    <Bookmark className="w-3.5 h-3.5" /> Save for Later
-                  </button>
-                </div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
       </div>
       </div>
+
 
       {/* ── Pre-Generation Intent Sheet ── */}
       <AnimatePresence>

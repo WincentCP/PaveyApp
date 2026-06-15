@@ -414,32 +414,37 @@ export default function WalletPage() {
               setSheet(null);
               return;
             }
-            if (accessToken && transactions.length > 0) {
+            // Hanya convert via backend kalau activeTripId adalah UUID backend
+            const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
+            if (accessToken && isBackendTrip && transactions.length > 0) {
               try {
                 show('Converting currency rates...', 'info');
                 const { apiConvertExpenses } = await import('../lib/api');
                 const res = await apiConvertExpenses(activeTripId, c);
-                if (res.exchange_rate) {
+                if (res && res.exchange_rate) {
                   const mappedTxns = (res.transactions ?? []).map((t: any) => ({
                     id: t.id,
-                    title: t.description,
-                    category: t.category,
-                    amount: -t.amount_converted,
-                    date: t.created_at,
+                    title: t.description ?? '',
+                    category: mapCategory(t.category ?? 'Food & Drinks'),
+                    amount: -(t.amount_converted ?? 0),
+                    date: t.created_at ?? new Date().toISOString(),
                     icon: ''
                   }));
                   changeTripCurrency(c, res.exchange_rate, mappedTxns);
-                  show(`Converted budget and transactions to ${c}`, 'success');
+                  show(`Converted to ${c} ✓`, 'success');
                 } else {
+                  // Backend returned IDR atau tidak ada rate
                   setCurrency(c);
                   show(`Currency set to ${c}`, 'success');
                 }
               } catch (err) {
                 console.error("Failed to convert currency:", err);
+                // Fallback: cukup ganti currency tampilan tanpa konversi nilai
                 setCurrency(c);
-                show(`Currency set to ${c} (conversion failed)`, 'warning');
+                show(`Currency set to ${c} (conversion skipped)`, 'warning');
               }
             } else {
+              // Local trip atau belum login
               setCurrency(c);
               show(`Currency set to ${c}`, 'success');
             }
@@ -723,16 +728,10 @@ function ScanSheet({ currency, onResult, onAddAllItems }: { currency: Currency; 
       setGrandTotal(res.totals?.grand_total ?? backendItems.reduce((s, i) => s + i.price, 0));
       setPhase('result');
     } catch (err: any) {
-      // Kalau belum login atau error lain, fallback ke demo
-      console.warn('[ScanSheet] Backend error, using demo data:', err?.message);
-      setItems([
-        { name: 'Nasi Goreng Spesial', price: 45_000, confidence: 97 },
-        { name: 'Es Kelapa Muda', price: 25_000, confidence: 91 },
-        { name: 'Sate Lilit (4 pcs)', price: 35_000, confidence: 88 },
-      ]);
-      setMerchant('Demo Receipt');
-      setGrandTotal(105_000);
-      setPhase('result');
+      console.error('[ScanSheet] Backend error:', err?.message);
+      const msg = err?.message || 'Gagal scan struk — pastikan foto jelas dan coba lagi';
+      setErrorMsg(msg);
+      setPhase('error');
     }
   };
 
@@ -939,6 +938,7 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
   onClose: () => void;
   onConfirm: (title: string, amount: number, tag: 'you owe' | 'owed to you') => void;
 }) {
+  const { show } = useToast();
   const [step, setStep] = useState<SplitStep>('entry');
   const [billName, setBillName] = useState('');
   const [items, setItems] = useState<BillItem[]>([]);
@@ -1078,10 +1078,10 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
 
       setStep('edit');
     } catch (err: any) {
-      console.warn('[SplitBillSheet] Backend error, using demo data:', err?.message);
-      setItems(SCAN_MOCK_ITEMS.map(i => ({ ...i, assignedTo: [] })));
-      setBillName('Demo Receipt');
-      setStep('edit');
+      console.error('[SplitBillSheet] Backend error:', err?.message);
+      const msg = err?.message || 'Gagal scan struk — coba lagi';
+      show(msg, 'error');
+      setStep('entry');
     }
   };
 
