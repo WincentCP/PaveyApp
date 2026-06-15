@@ -1,11 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X, Cloud, Coffee, MapPinned } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { apiChat, apiGetChatHistory } from '../lib/api';
 import { useApp } from '../context/AppContext';
-
-
-interface Msg { from: 'buddy' | 'me'; text: string }
+import { useChat } from '../chatbot/hooks/useChat';
+import { MessageBubble } from '../chatbot/components/MessageBubble';
 
 const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[] = [
   { icon: Cloud, label: 'Indoor cafes nearby' },
@@ -17,41 +15,9 @@ const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[
 const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
 
 export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { activeTripId, itinerary, destinations, accessToken } = useApp();
+  const { activeTripId, itinerary, destinations } = useApp();
   const [text, setText] = useState('');
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { from: 'buddy', text: "Hey! 👋 I'm TinTin, your travel companion. Ask me anything about your trip!" },
-  ]);
-  const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open || !accessToken || !activeTripId) return;
-    const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
-    if (!isBackendTrip) return;
-
-    setLoading(true);
-    apiGetChatHistory(activeTripId)
-      .then((res) => {
-        if (res.history && res.history.length > 0) {
-          setMsgs(res.history);
-        } else {
-          setMsgs([
-            { from: 'buddy', text: "Hey! 👋 I'm TinTin, your travel companion. Ask me anything about your trip!" }
-          ]);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to load chat history:", err);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [open, activeTripId, accessToken]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' });
-  }, [msgs, open]);
 
   // Build context string dari itinerary lokal untuk dikirim ke backend
   const buildContext = (): string | undefined => {
@@ -66,28 +32,17 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
     return parts.length > 0 ? parts.join('. ') : undefined;
   };
 
-  const send = async (t: string) => {
-    if (!t.trim() || loading) return;
-    setMsgs((m) => [...m, { from: 'me', text: t }]);
-    setText('');
-    setLoading(true);
+  const itineraryContext = buildContext();
+  const { messages, isLoading, sendChat } = useChat(activeTripId, itineraryContext);
 
-    try {
-      // Hanya kirim trip_id kalau UUID backend (bukan ID lokal)
-      const tripId = activeTripId && /^[0-9a-f-]{36}$/.test(activeTripId)
-        ? activeTripId
-        : undefined;
-      const context = buildContext();
-      const res = await apiChat(t, tripId, context);
-      setMsgs((m) => [...m, { from: 'buddy', text: res.reply }]);
-    } catch (err: any) {
-      const errMsg = err?.message?.includes('Session expired')
-        ? 'Sesi habis, silakan login ulang 🔑'
-        : 'Maaf, ada gangguan koneksi. Coba lagi ya! 🙏';
-      setMsgs((m) => [...m, { from: 'buddy', text: errMsg }]);
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' });
+  }, [messages, open]);
+
+  const send = async (t: string) => {
+    if (!t.trim() || isLoading) return;
+    setText('');
+    await sendChat(t);
   };
 
   return (
@@ -118,7 +73,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
               </button>
             </div>
 
-            {msgs.length === 1 && (
+            {messages.length === 1 && (
               <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -133,25 +88,10 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
             )}
 
             <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-3 space-y-3 no-scrollbar">
-              {msgs.map((m, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-snug ${
-                      m.from === 'me'
-                        ? 'bg-brand-500 text-white rounded-br-md'
-                        : 'bg-ink-50 text-ink-800 rounded-bl-md'
-                    }`}
-                  >
-                    {m.text}
-                  </div>
-                </motion.div>
+              {messages.map((m) => (
+                <MessageBubble key={m.id} message={m} />
               ))}
-              {loading && (
+              {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-ink-50 rounded-2xl rounded-bl-md px-4 py-3 flex gap-1">
                     {[0, 1, 2].map((i) => (
@@ -172,7 +112,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 <button
                   key={label}
                   onClick={() => send(label)}
-                  disabled={loading}
+                  disabled={isLoading}
                   className="press shrink-0 flex items-center gap-1.5 bg-brand-50 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50"
                 >
                   {imgSrc
@@ -191,12 +131,12 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Ask TinTin anything…"
-                disabled={loading}
+                disabled={isLoading}
                 className="flex-1 bg-ink-50 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-brand-300 disabled:opacity-50"
               />
               <motion.button
                 type="submit"
-                disabled={loading || !text.trim()}
+                disabled={isLoading || !text.trim()}
                 whileTap={{ scale: 0.92 }}
                 className="w-11 h-11 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-glow disabled:bg-ink-300"
               >
