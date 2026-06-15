@@ -204,6 +204,7 @@ function loadPersistedState() {
       authUser: { name: string; email: string } | null;
       onboardingComplete: boolean;
       everOnboarded?: boolean;
+      accessToken?: string | null;  // tambah accessToken agar ter-restore saat reload
       vibe: Vibe;
       budget: number;
       itinerary: Place[];
@@ -297,7 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         pace,
       }));
     } catch { /* storage full — ignore */ }
-  }, [isAuthenticated, authUser, onboardingComplete, everOnboarded, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds, perDayItineraries, pace]);
+  }, [isAuthenticated, authUser, onboardingComplete, everOnboarded, accessToken, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds, perDayItineraries, pace]);
 
   // Per-destination itinerary sync:
   // When activeDestIdx changes, load that destination's itinerary into global state.

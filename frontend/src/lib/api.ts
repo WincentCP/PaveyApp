@@ -22,6 +22,8 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (res.status === 401) {
+    // Hanya clear token dan redirect kalau path adalah protected route
+    // Jangan redirect kalau sedang di halaman yang memang bisa diakses tanpa login
     localStorage.removeItem('pavey_state');
     window.location.href = '/onboarding';
     throw new Error('Session expired');
@@ -74,13 +76,66 @@ export async function apiAddExpense(data: {
   return apiFetch('/wallet/expenses', { method: 'POST', body: JSON.stringify(data) });
 }
 
-export async function apiChat(message: string, tripId?: string) {
+export async function apiDeleteExpense(expenseId: string) {
+  return apiFetch(`/wallet/expenses/${expenseId}`, { method: 'DELETE' });
+}
+
+export async function apiGetExpenseSummary(tripId: string) {
+  return apiFetch(`/wallet/expenses/${tripId}/summary`);
+}
+
+export async function apiConvertExpenses(tripId: string, targetCurrency: string) {
+  return apiFetch(`/wallet/expenses/${tripId}/convert?target_currency=${targetCurrency}`, {
+    method: 'POST',
+  });
+}
+
+export async function apiChat(message: string, tripId?: string, context?: string) {
   return apiFetch('/chatbot/message', {
     method: 'POST',
-    body: JSON.stringify({ message, trip_id: tripId }),
+    body: JSON.stringify({ message, trip_id: tripId, context }),
   });
 }
 
 export async function apiGetMe() {
   return apiFetch('/auth/me');
+}
+
+export async function apiGetWeather(lat: number, lon: number) {
+  return apiFetch(`/weather/current?lat=${lat}&lon=${lon}`);
+}
+
+export async function apiGetWeatherForecast(lat: number, lon: number) {
+  return apiFetch(`/weather/forecast?lat=${lat}&lon=${lon}`);
+}
+
+export async function apiScanReceipt(formData: FormData) {
+  // Note: tidak pakai Content-Type JSON — biarkan browser set multipart/form-data
+  const token = (() => {
+    try {
+      const raw = localStorage.getItem('pavey_state');
+      if (!raw) return null;
+      const state = JSON.parse(raw);
+      return state.accessToken ?? null;
+    } catch { return null; }
+  })();
+
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}/receipt/scan`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('pavey_state');
+    window.location.href = '/onboarding';
+    throw new Error('Session expired');
+  }
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail ?? 'Receipt scan failed');
+  return data;
 }

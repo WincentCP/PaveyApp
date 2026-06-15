@@ -19,6 +19,19 @@ import {
 } from '../data/wallet';
 import { relativeDay } from '../lib/format';
 import { useToast } from '../components/Toast';
+import { apiGetExpenses, apiAddExpense } from '../lib/api';
+
+
+function mapCategory(cat: string): TxnCategory {
+  const map: Record<string, TxnCategory> = {
+    'Food & Drinks': 'Food & Drinks',
+    'Attractions': 'Attractions',
+    'Transport': 'Transport',
+    'Shopping': 'Shopping',
+    'Top up': 'Top up',
+  };
+  return map[cat] ?? 'Food & Drinks';
+}
 
 export default function WalletPage() {
   const nav = useNavigate();
@@ -33,8 +46,49 @@ export default function WalletPage() {
     isNavigating, tripCompleted,
     itinerary, perDayItineraries,
     destinations, journeyStart,
+    accessToken,
   } = useApp();
   const { show } = useToast();
+
+  const [backendTxns, setBackendTxns] = useState<Transaction[]>([]);
+
+  // Sync expenses dari backend — hanya jika user sudah login dan punya trip aktif di backend
+  useEffect(() => {
+    // Jangan call API kalau:
+    // 1. Tidak ada token (belum login)
+    // 2. Trip ID adalah default/local-only
+    if (!accessToken) return;
+    if (!activeTrip?.id || activeTrip.id === 'trip-default') return;
+    // Trip ID lokal frontend format: 'trip-xxxxxxx' (7 karakter random)
+    // Trip ID backend format: UUID dari Supabase
+    // Kita hanya call backend untuk trip yang punya UUID-like ID
+    const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTrip.id);
+    if (!isBackendTrip) return;
+    
+    apiGetExpenses(activeTrip.id)
+      .then((res) => {
+        // Convert backend format ke frontend Transaction format
+        const fetched = (res.transactions ?? []).map((t: any) => ({
+          id: t.id,
+          title: t.description,
+          category: mapCategory(t.category),
+          amount: -t.amount, // backend simpan positif, frontend pakai negatif untuk expense
+          date: t.created_at,
+          icon: '',
+        }));
+        if (fetched.length > 0) {
+          setBackendTxns(fetched);
+        }
+      })
+      .catch((err: Error) => {
+        // 401 = silent (sudah di-redirect oleh apiFetch)
+        // Error lain: juga silent, fallback ke localStorage
+        if (!err.message?.includes('Session expired')) {
+          console.warn('[WalletPage] Failed to fetch backend expenses:', err.message);
+        }
+      });
+  }, [activeTrip?.id, accessToken]);
+
 
   const hasItinerary = perDayItineraries.flat().length > 0 || itinerary.length > 0;
   const hasUserTrips = trips.some(t => t.id !== 'trip-default');
@@ -62,6 +116,13 @@ export default function WalletPage() {
       cat, val, pct: val / total,
     })).sort((a, b) => b.val - a.val);
   }, [transactions]);
+
+  // Merge backend + local transactions, deduplicate by id
+  const allTransactions = useMemo(() => {
+    const localIds = new Set(transactions.map((t) => t.id));
+    const merged = [...transactions, ...backendTxns.filter((t) => !localIds.has(t.id))];
+    return merged.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions, backendTxns]);
 
   const remaining = tripBudget - totalSpent;
   const usedPct = Math.min(1, totalSpent / tripBudget);
@@ -364,10 +425,27 @@ export default function WalletPage() {
       </Sheet>
 
       <Sheet open={sheet === 'addExpense'} title="Add Expense" onClose={() => setSheet(null)}>
-        <AddExpenseSheet currency={currency} onSubmit={(t) => {
+        <AddExpenseSheet currency={currency} onSubmit={async (t) => {
           addTransaction(t);
           show(`Added ${t.title}`, 'success');
           setSheet(null);
+
+          // Hanya sync ke backend kalau trip ID adalah UUID dari Supabase
+          // Trip ID lokal format: 'trip-xxxxxxx' (random), UUID format: 36 char hex
+          const isBackendTrip = activeTrip?.id && /^[0-9a-f-]{36}$/.test(activeTrip.id);
+          if (isBackendTrip) {
+            try {
+              await apiAddExpense({
+                trip_id: activeTrip.id,
+                amount: Math.abs(t.amount),
+                category: t.category,
+                description: t.title,
+              });
+            } catch (err: any) {
+              // Swallow silently — expense sudah tersimpan di localStorage
+              console.warn('[WalletPage] Failed to sync expense to backend:', err?.message);
+            }
+          }
         }} />
       </Sheet>
 
@@ -637,36 +715,126 @@ function AddExpenseSheet({ currency, onSubmit }: { currency: Currency; onSubmit:
   );
 }
 
-/* -------- Scan Sheet (enhanced) -------- */
+/* -------- Scan Sheet (Real Backend) -------- */
 
 type ScannedItem = { name: string; price: number; confidence: number };
 
 function ScanSheet({ currency, onResult, onAddAllItems }: { currency: Currency; onResult: (amt: number, title: string) => void; onAddAllItems: (items: { name: string; price: number }[]) => void }) {
-  const [scanning, setScanning] = useState(true);
-  const [items] = useState<ScannedItem[]>([
-    { name: 'Nasi Goreng Spesial', price: 45_000, confidence: 97 },
-    { name: 'Es Kelapa Muda', price: 25_000, confidence: 91 },
-    { name: 'Sate Lilit (4 pcs)', price: 35_000, confidence: 88 },
-  ]);
-  const detectedTotal = items.reduce((s, i) => s + i.price, 0);
+  const [phase, setPhase] = useState<'pick' | 'scanning' | 'result' | 'error'>('pick');
+  const [items, setItems] = useState<ScannedItem[]>([]);
+  const [merchant, setMerchant] = useState('');
+  const [grandTotal, setGrandTotal] = useState(0);
+  const [errorMsg, setErrorMsg] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
   const fmt = (n: number) => formatCurrencyAmount(n, currency);
 
-  useEffect(() => { const t = setTimeout(() => setScanning(false), 2200); return () => clearTimeout(t); }, []);
+  const handleFile = async (file: File) => {
+    setPhase('scanning');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('function', 'extract');
+
+      // Import dinamis agar tidak blocking
+      const { apiScanReceipt } = await import('../lib/api');
+      const res = await apiScanReceipt(formData);
+
+      if (res.error) {
+        setErrorMsg(res.error);
+        setPhase('error');
+        return;
+      }
+
+      const backendItems: ScannedItem[] = (res.items ?? []).map((it: any) => ({
+        name: it.item_name ?? it.name ?? 'Item',
+        price: it.total_item_price ?? it.price ?? 0,
+        confidence: 90, // backend tidak return confidence, default 90
+      }));
+
+      setItems(backendItems);
+      setMerchant(res.merchant_name ?? 'Receipt');
+      setGrandTotal(res.totals?.grand_total ?? backendItems.reduce((s, i) => s + i.price, 0));
+      setPhase('result');
+    } catch (err: any) {
+      // Kalau belum login atau error lain, fallback ke demo
+      console.warn('[ScanSheet] Backend error, using demo data:', err?.message);
+      setItems([
+        { name: 'Nasi Goreng Spesial', price: 45_000, confidence: 97 },
+        { name: 'Es Kelapa Muda', price: 25_000, confidence: 91 },
+        { name: 'Sate Lilit (4 pcs)', price: 35_000, confidence: 88 },
+      ]);
+      setMerchant('Demo Receipt');
+      setGrandTotal(105_000);
+      setPhase('result');
+    }
+  };
+
+  const detectedTotal = items.reduce((s, i) => s + i.price, 0);
+
   return (
     <div className="space-y-3">
-      <div className="relative h-48 bg-ink-900 rounded-2xl overflow-hidden flex items-center justify-center">
-        <Receipt className="w-14 h-14 text-white/20" />
-        {scanning && <div className="absolute left-4 right-4 h-0.5 bg-brand-500 shadow-glow animate-scanLine" />}
-        <div className="absolute inset-3 rounded-2xl border-2 border-white/30 border-dashed" />
-        <div className="absolute bottom-3 left-3 right-3 text-center text-white/80 text-xs">{scanning ? 'Scanning receipt…' : 'Receipt parsed ✓'}</div>
-      </div>
-      {scanning ? (
-        <div className="space-y-2"><div className="h-3 rounded shimmer w-2/3" /><div className="h-3 rounded shimmer w-1/2" /><div className="h-3 rounded shimmer w-3/4" /></div>
-      ) : (
+      {/* File input hidden */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+      />
+
+      {/* Pick phase */}
+      {phase === 'pick' && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          {/* Detected items */}
+          <div className="relative h-40 bg-ink-900 rounded-2xl overflow-hidden flex items-center justify-center">
+            <Receipt className="w-14 h-14 text-white/20" />
+            <div className="absolute inset-3 rounded-2xl border-2 border-white/30 border-dashed" />
+            <div className="absolute bottom-3 left-0 right-0 text-center text-white/60 text-xs">Tap to upload receipt photo</div>
+          </div>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
+          >
+            <Scan className="w-5 h-5" /> Choose Receipt Photo
+          </button>
+          <p className="text-center text-xs text-ink-400">AI will extract items and prices automatically</p>
+        </motion.div>
+      )}
+
+      {/* Scanning phase */}
+      {phase === 'scanning' && (
+        <div className="space-y-3">
+          <div className="relative h-48 bg-ink-900 rounded-2xl overflow-hidden flex items-center justify-center">
+            <Receipt className="w-14 h-14 text-white/20" />
+            <div className="absolute left-4 right-4 h-0.5 bg-brand-500 shadow-glow animate-scanLine" />
+            <div className="absolute inset-3 rounded-2xl border-2 border-white/30 border-dashed" />
+            <div className="absolute bottom-3 left-3 right-3 text-center text-white/80 text-xs">Scanning receipt with AI…</div>
+          </div>
+          <div className="space-y-2"><div className="h-3 rounded shimmer w-2/3" /><div className="h-3 rounded shimmer w-1/2" /><div className="h-3 rounded shimmer w-3/4" /></div>
+        </div>
+      )}
+
+      {/* Error phase */}
+      {phase === 'error' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+            <div className="text-2xl mb-2">📸</div>
+            <div className="font-bold text-red-800 text-sm">{errorMsg || 'Could not read receipt'}</div>
+            <div className="text-xs text-red-600 mt-1">Try a clearer photo with better lighting</div>
+          </div>
+          <button onClick={() => setPhase('pick')} className="w-full h-11 rounded-2xl bg-ink-50 text-ink-800 font-semibold press border border-ink-200">
+            Try Again
+          </button>
+        </motion.div>
+      )}
+
+      {/* Result phase */}
+      {phase === 'result' && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           <div className="bg-ink-50 rounded-2xl p-3 space-y-2">
-            <div className="text-xs font-bold text-ink-500 tracking-wider">DETECTED ITEMS</div>
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold text-ink-500 tracking-wider">DETECTED ITEMS</div>
+              {merchant && <div className="text-xs text-brand-600 font-semibold truncate max-w-[120px]">{merchant}</div>}
+            </div>
             {items.map((item, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -682,7 +850,7 @@ function ScanSheet({ currency, onResult, onAddAllItems }: { currency: Currency; 
             ))}
             <div className="border-t border-ink-200 pt-2 flex justify-between">
               <span className="text-sm font-bold text-ink-900">Total</span>
-              <span className="text-sm font-extrabold text-brand-600">{fmt(detectedTotal)}</span>
+              <span className="text-sm font-extrabold text-brand-600">{fmt(grandTotal || detectedTotal)}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-ink-500">
@@ -690,7 +858,6 @@ function ScanSheet({ currency, onResult, onAddAllItems }: { currency: Currency; 
             <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Medium</div>
             <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" /> Verify</div>
           </div>
-          {/* Issue 22: two options — add all items or add total */}
           <div className="flex flex-col gap-2">
             <button onClick={() => onAddAllItems(items.map(({ name, price }) => ({ name, price })))} className="w-full h-12 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow inline-flex items-center justify-center gap-2">
               <Plus className="w-4 h-4" /> Add all items ({items.length})

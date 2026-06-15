@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { apiChat } from '../lib/api';
 import { useApp } from '../context/AppContext';
 
+
 interface Msg { from: 'buddy' | 'me'; text: string }
 
 const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[] = [
@@ -16,7 +17,7 @@ const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[
 const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
 
 export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { activeTripId } = useApp();
+  const { activeTripId, itinerary, destinations } = useApp();
   const [text, setText] = useState('');
   const [msgs, setMsgs] = useState<Msg[]>([
     { from: 'buddy', text: "Hey! 👋 I'm TinTin, your travel companion. Ask me anything about your trip!" },
@@ -28,6 +29,19 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
     scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' });
   }, [msgs, open]);
 
+  // Build context string dari itinerary lokal untuk dikirim ke backend
+  const buildContext = (): string | undefined => {
+    const parts: string[] = [];
+    if (destinations.length > 0) {
+      parts.push(`Destinasi: ${destinations.map(d => d.name).join(' → ')}`);
+    }
+    if (itinerary.length > 0) {
+      const stopNames = itinerary.slice(0, 8).map(p => p.name).join(', ');
+      parts.push(`Rencana kunjungan: ${stopNames}${itinerary.length > 8 ? ` (+${itinerary.length - 8} lagi)` : ''}`);
+    }
+    return parts.length > 0 ? parts.join('. ') : undefined;
+  };
+
   const send = async (t: string) => {
     if (!t.trim() || loading) return;
     setMsgs((m) => [...m, { from: 'me', text: t }]);
@@ -35,13 +49,18 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
     setLoading(true);
 
     try {
-      const tripId = activeTripId !== 'trip-default' && activeTripId !== 'default-trip'
+      // Hanya kirim trip_id kalau UUID backend (bukan ID lokal)
+      const tripId = activeTripId && /^[0-9a-f-]{36}$/.test(activeTripId)
         ? activeTripId
         : undefined;
-      const res = await apiChat(t, tripId);
+      const context = buildContext();
+      const res = await apiChat(t, tripId, context);
       setMsgs((m) => [...m, { from: 'buddy', text: res.reply }]);
-    } catch {
-      setMsgs((m) => [...m, { from: 'buddy', text: 'Maaf, ada gangguan koneksi. Coba lagi ya! 🙏' }]);
+    } catch (err: any) {
+      const errMsg = err?.message?.includes('Session expired')
+        ? 'Sesi habis, silakan login ulang 🔑'
+        : 'Maaf, ada gangguan koneksi. Coba lagi ya! 🙏';
+      setMsgs((m) => [...m, { from: 'buddy', text: errMsg }]);
     } finally {
       setLoading(false);
     }
