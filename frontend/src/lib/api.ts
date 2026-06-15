@@ -1,6 +1,13 @@
 const BASE_URL = 'https://siilvered-pavey-backend.hf.space';
 
+let apiToken: string | null = null;
+
+export function setApiToken(token: string | null) {
+  apiToken = token;
+}
+
 function getToken(): string | null {
+  if (apiToken) return apiToken;
   try {
     const raw = localStorage.getItem('pavey_state');
     if (!raw) return null;

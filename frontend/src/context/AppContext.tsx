@@ -30,7 +30,7 @@ import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
-import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses } from '../lib/api';
+import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken } from '../lib/api';
 
 // Re-export planning types so existing imports from '../context/AppContext' keep working.
 export { PACE_STOPS, allocateDays };
@@ -270,6 +270,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rainyDayMode, setRainyDayMode] = useState(false);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set(persisted?.visitedPlaceIds ?? []));
   const [pace, setPace] = useState<TripPace>(persisted?.pace ?? 'balanced');
+
+  // Initialize API token synchronously on render
+  if (persisted?.accessToken) {
+    setApiToken(persisted.accessToken);
+  }
+
+  useEffect(() => {
+    setApiToken(accessToken);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken || authUser) return;
@@ -639,6 +648,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setEverOnboarded(true);
   };
 
+  const changeAccessToken = (token: string | null) => {
+    setAccessToken(token);
+    setApiToken(token);
+  };
+
   const value: AppState = {
     // Auth
     isAuthenticated,
@@ -647,7 +661,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     everOnboarded,
     isOnboarded: onboardingComplete,
     accessToken,
-    setAccessToken,
+    setAccessToken: changeAccessToken,
     signIn: (name, email) => {
       setAuthUser({ name, email });
       setIsAuthenticated(true);
