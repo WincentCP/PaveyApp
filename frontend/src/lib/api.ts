@@ -174,3 +174,20 @@ export async function apiScanReceipt(formData: FormData) {
   if (!res.ok) throw new Error(data.detail ?? 'Receipt scan failed');
   return data;
 }
+
+export async function apiSaveOnboarding(data: {
+  name: string;
+  vibe: string;
+  budget: number;
+  destinations: string[];
+}) {
+  return apiFetch('/auth/onboarding', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function apiGetChatHistory(tripId: string) {
+  // Gunakan apiFetchSafe karena chat history bisa diakses saat guest/auth opsional
+  return apiFetchSafe(`/chatbot/history/${tripId}`);
+}

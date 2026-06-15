@@ -30,7 +30,7 @@ import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
-import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken } from '../lib/api';
+import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken, apiSaveOnboarding } from '../lib/api';
 
 // Re-export planning types so existing imports from '../context/AppContext' keep working.
 export { PACE_STOPS, allocateDays };
@@ -664,6 +664,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       };
       setTrips([newTrip]);
       setActiveTripId(id);
+    }
+
+    const token = accessToken || (() => {
+      try {
+        const raw = localStorage.getItem('pavey_state');
+        return raw ? JSON.parse(raw).accessToken : null;
+      } catch { return null; }
+    })();
+
+    if (token) {
+      apiSaveOnboarding({
+        name: data.name,
+        vibe: data.vibe,
+        budget: data.budget,
+        destinations: data.destinations.map((d) => d.name),
+      }).catch((err) => {
+        console.error("Failed to save onboarding preferences to database:", err);
+      });
     }
 
     setOnboardingComplete(true);

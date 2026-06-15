@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X, Cloud, Coffee, MapPinned } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { apiChat } from '../lib/api';
+import { apiChat, apiGetChatHistory } from '../lib/api';
 import { useApp } from '../context/AppContext';
 
 
@@ -17,13 +17,37 @@ const QUICK: { icon: React.ElementType | null; imgSrc?: string; label: string }[
 const SUGGESTIONS = ['What to eat here?', 'How long should I stay?', 'Is it safe to visit?'];
 
 export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { activeTripId, itinerary, destinations } = useApp();
+  const { activeTripId, itinerary, destinations, accessToken } = useApp();
   const [text, setText] = useState('');
   const [msgs, setMsgs] = useState<Msg[]>([
     { from: 'buddy', text: "Hey! 👋 I'm TinTin, your travel companion. Ask me anything about your trip!" },
   ]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || !accessToken || !activeTripId) return;
+    const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
+    if (!isBackendTrip) return;
+
+    setLoading(true);
+    apiGetChatHistory(activeTripId)
+      .then((res) => {
+        if (res.history && res.history.length > 0) {
+          setMsgs(res.history);
+        } else {
+          setMsgs([
+            { from: 'buddy', text: "Hey! 👋 I'm TinTin, your travel companion. Ask me anything about your trip!" }
+          ]);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load chat history:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [open, activeTripId, accessToken]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' });
