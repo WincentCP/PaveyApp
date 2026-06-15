@@ -25,7 +25,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { PLACES, pickItinerary, type Place, type Vibe } from '../data/places';
-import { DEFAULT_TRIP, BUDGET_TOTAL, type Transaction, type Trip, type Currency, suggestCurrency } from '../data/wallet';
+import { DEFAULT_TRIP, BUDGET_TOTAL, type Transaction, type Trip, type Currency, suggestCurrency, CURRENCY_RATES_TO_IDR } from '../data/wallet';
 import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
@@ -316,13 +316,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const endD = new Date(new Date(startDateStr).getTime() + (days - 1) * 86400000);
             const endDateStr = endD.toISOString().slice(0, 10);
 
+            const rate = CURRENCY_RATES_TO_IDR[localTrip.currency] || 1;
+            const budgetInIdr = Math.round(localTrip.budget * rate);
+
             apiCreateTrip({
               destination: localTrip.destination,
               start_date: startDateStr,
               end_date: endDateStr,
               vibe: localTrip.vibe || 'balanced',
-              budget_min: localTrip.budget,
-              budget_max: localTrip.budget,
+              budget_min: budgetInIdr,
+              budget_max: budgetInIdr,
             })
             .then((createRes) => {
               const newUuid = createRes.trip_id;
@@ -330,9 +333,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
               // Sync local expenses for this trip to the backend
               const localExpenses = localTrip.transactions || [];
               localExpenses.forEach((exp) => {
+                const expenseRate = CURRENCY_RATES_TO_IDR[localTrip.currency] || 1;
+                const expenseAmountInIdr = Math.round(Math.abs(exp.amount) * expenseRate);
+
                 apiAddExpense({
                   trip_id: newUuid,
-                  amount: Math.abs(exp.amount),
+                  amount: expenseAmountInIdr,
                   category: exp.category,
                   description: exp.title || exp.description || '',
                 }).catch((e) => console.error("Failed to sync expense during sync:", e));
@@ -364,12 +370,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const diffTime = Math.abs(end.getTime() - start.getTime());
               const daysTotal = (isNaN(diffTime) ? 1 : Math.ceil(diffTime / (1000 * 60 * 60 * 24))) + 1;
 
+              const suggestedCur = suggestCurrency(bt.destination);
+              const rate = CURRENCY_RATES_TO_IDR[suggestedCur] || 1;
+              const convertedBudget = Math.round((bt.budget_max || 500000) / rate);
+
               updated.push({
                 id: bt.id,
                 name: `${bt.destination.split(' → ')[0]} Trip`,
                 destination: bt.destination,
-                currency: 'IDR',
-                budget: bt.budget_max || 500000,
+                currency: suggestedCur,
+                budget: convertedBudget,
                 daysTotal: daysTotal,
                 daysRemaining: daysTotal,
                 transactions: [],
@@ -400,11 +410,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     apiGetExpenses(activeTripId)
       .then((res) => {
+        const targetTrip = trips.find((t) => t.id === activeTripId);
+        const tripCurrency = targetTrip?.currency ?? 'IDR';
+        const rate = CURRENCY_RATES_TO_IDR[tripCurrency] || 1;
+
         const fetched = (res.transactions ?? []).map((t: any) => ({
           id: t.id,
           title: t.description,
           category: t.category,
-          amount: -t.amount, // backend positive, frontend negative for expenses
+          amount: -(t.amount / rate),
           date: t.created_at,
           icon: '',
         }));
@@ -564,13 +578,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const endD = new Date(new Date(startD).getTime() + (days - 1) * 86400000);
       const endDateStr = endD.toISOString().slice(0, 10);
 
+      const rate = CURRENCY_RATES_TO_IDR[data.currency] || 1;
+      const budgetInIdr = Math.round(data.budget * rate);
+
       apiCreateTrip({
         destination: data.destination,
         start_date: startD,
         end_date: endDateStr,
         vibe: vibe || 'balanced',
-        budget_min: data.budget,
-        budget_max: data.budget,
+        budget_min: budgetInIdr,
+        budget_max: budgetInIdr,
       })
       .then((res) => {
         const backendUuid = res.trip_id;
@@ -630,12 +647,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         : `${data.destinations[0].name} + ${data.destinations.length - 1} more`;
       const tripDest = data.destinations.map((d) => d.name).join(' → ');
       const id = `trip-${Math.random().toString(36).slice(2, 9)}`;
+      const newTripCurrency = newDests[0]?.currency ?? 'IDR';
+      const rate = CURRENCY_RATES_TO_IDR[newTripCurrency] || 1;
+      const convertedBudget = Math.round((data.budget * Math.max(1, data.totalDays)) / rate);
+
       const newTrip: Trip = {
         id,
         name: tripName,
         destination: tripDest,
-        currency: newDests[0]?.currency ?? 'IDR',
-        budget: data.budget * Math.max(1, data.totalDays),
+        currency: newTripCurrency,
+        budget: convertedBudget,
         daysTotal: data.totalDays,
         daysRemaining: data.totalDays,
         transactions: [],
@@ -807,9 +828,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (accessToken && activeTripId) {
         const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
         if (isBackendTrip) {
+          const rate = CURRENCY_RATES_TO_IDR[activeTrip.currency] || 1;
+          const amountInIdr = Math.round(Math.abs(t.amount) * rate);
+
           apiAddExpense({
             trip_id: activeTripId,
-            amount: Math.abs(t.amount),
+            amount: amountInIdr,
             category: t.category,
             description: t.title,
           })
