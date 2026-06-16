@@ -3,7 +3,11 @@ import json
 import time
 import math
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
 # Core FastAPI framework
 from fastapi import FastAPI, HTTPException, Response
@@ -122,7 +126,7 @@ class TravelPlannerRequest(BaseModel):
         description="Array durasi kunjungan per lokasi berurutan dalam satuan menit"
     )
     place_type: str = Field(default="all", example="destination", description="Filter tipe lokasi: 'destination', 'restaurant', atau 'all'")
-    price_level: int = Field(default=None, ge=0, le=5, example=0, description="Filter tingkat harga (0=Gratis, 1-5 skala Google). Kosongi untuk semua.")
+    price_level: Optional[int] = Field(default=None, ge=0, le=5, example=0, description="Filter tingkat harga (0=Gratis, 1-5 skala Google). Kosongi untuk semua.")
 
 # ==========================================
 # 2. ENDPOINT ROUTE IMPLEMENTATION
