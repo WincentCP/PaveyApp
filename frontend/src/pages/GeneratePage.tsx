@@ -549,7 +549,10 @@ export default function GeneratePage() {
     if (!manualSearch.trim()) return PLACES.slice(0, 6);
     const q = manualSearch.toLowerCase();
     return PLACES.filter((p) =>
-      p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      p.city.toLowerCase().includes(q) ||
+      p.tags.some((t) => t.toLowerCase().includes(q))
     ).slice(0, 8);
   }, [manualSearch]);
 
@@ -2371,7 +2374,14 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
   const list = useMemo(() => {
     if (!query.trim()) return alternatives(excludeIds);
     const q = query.toLowerCase();
-    return PLACES.filter((p) => !excludeIds.includes(p.id) && (p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))).slice(0, 12);
+    return PLACES.filter((p) =>
+      !excludeIds.includes(p.id) && (
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.toLowerCase().includes(q))
+      )
+    ).slice(0, 12);
   }, [query, excludeIds, alternatives]);
 
   return (

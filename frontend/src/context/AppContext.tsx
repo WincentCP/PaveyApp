@@ -85,6 +85,7 @@ interface AppState {
   perDayItineraries: Place[][];
   setPerDayItineraries: (p: Place[][]) => void;
   perDayMeta: DayPlan[];
+  setPerDayMeta: (m: DayPlan[]) => void;
   buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string) => Promise<void>;
   loadingPlan: boolean;
   reorderStop: (from: number, to: number) => void;
@@ -767,6 +768,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     perDayItineraries,
     setPerDayItineraries,
     perDayMeta,
+    setPerDayMeta,
     loadingPlan,
     buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
       setLoadingPlan(true);

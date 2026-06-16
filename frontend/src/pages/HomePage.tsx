@@ -61,6 +61,29 @@ function getVibeIcon(id: Vibe, className = "w-6 h-6") {
 
 const CATEGORIES: Category[] = ['Cafe', 'Nature', 'Cultural', 'Historic', 'Foodie', 'Hidden Gem', 'Cozy'];
 
+const SUGGESTED_DESTINATIONS = [
+  'Bali, Indonesia',
+  'Ubud, Bali',
+  'Seminyak, Bali',
+  'Canggu, Bali',
+  'Uluwatu, Bali',
+  'Bangkok, Thailand',
+  'Tokyo, Japan',
+  'Paris, France',
+  'London, United Kingdom',
+  'New York, USA',
+  'Singapore',
+  'Kuala Lumpur, Malaysia',
+  'Seoul, South Korea',
+  'Sydney, Australia',
+  'Lisbon, Portugal',
+  'Rome, Italy',
+  'Barcelona, Spain',
+  'Amsterdam, Netherlands',
+  'Berlin, Germany',
+  'Hanoi, Vietnam',
+];
+
 // Quick Plan durations
 const QUICK_PLAN_OPTIONS = [
   { label: '2h', hours: 2 },
@@ -210,7 +233,11 @@ export default function HomePage() {
     if (!search || !search.trim()) return [];
     const q = search.toLowerCase();
     return PLACES.filter((p) => {
-      const matchText = p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || p.tags.some((t) => t.toLowerCase().includes(q));
+      const matchText =
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q) ||
+        p.tags.some((t) => t.toLowerCase().includes(q));
       const matchCat = filterCats.length === 0 || filterCats.includes(p.category);
       const matchRating = p.rating >= filterMinRating;
       return matchText && matchCat && matchRating;
@@ -1417,10 +1444,34 @@ export default function HomePage() {
                     return (
                       <button
                         onClick={() => { setIntentDest(hint); setIntentErrors((p) => ({ ...p, dest: undefined })); }}
-                        className="mt-1.5 text-[11px] text-ink-500 leading-snug press text-left"
+                        className="mt-1.5 text-[11px] text-ink-500 leading-snug press text-left block"
                       >
                         {COPY.destInput.cityHint(hint)}
                       </button>
+                    );
+                  })()}
+                  {/* Destination autocomplete suggestions */}
+                  {intentDest.trim() && !intentErrors.dest && (() => {
+                    const q = intentDest.trim().toLowerCase();
+                    const filtered = SUGGESTED_DESTINATIONS.filter(
+                      (d) => d.toLowerCase().includes(q) && d.toLowerCase() !== q
+                    ).slice(0, 3);
+                    if (filtered.length === 0) return null;
+                    return (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {filtered.map((dest) => (
+                          <button
+                            key={dest}
+                            onClick={() => {
+                              setIntentDest(dest.split(',')[0]);
+                              setIntentErrors((p) => ({ ...p, dest: undefined }));
+                            }}
+                            className="px-2.5 py-1 rounded-full text-xs font-semibold press bg-brand-50 text-brand-700 border border-brand-100 transition-colors flex items-center gap-1"
+                          >
+                            <span>📍</span> {dest}
+                          </button>
+                        ))}
+                      </div>
                     );
                   })()}
                   {/* Popular cities — quiet single line of text-buttons */}
