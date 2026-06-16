@@ -192,7 +192,7 @@ export function useChat(tripId?: string) {
                 return;
             }
 
-            updateMsg(detectingId, { text: `📍 Got it — you're in **${loc.city}**. Let me check the weather first...` });
+            updateMsg(detectingId, { text: `📍 Got it — you're in ${loc.city}. Let me check the weather first...` });
 
             // Fetch weather
             const weather = await fetchWeatherByCoords(loc.lat, loc.lon);
@@ -300,7 +300,7 @@ export function useChat(tripId?: string) {
         }
         pendingFlowRef.current = { type: 'awaiting_edit_instruction', plan: lastPlanRef.current };
         addAssistant(
-            `Here's your current plan for **${lastPlanRef.current.city}** with ${lastPlanRef.current.stops.length} stops. What would you like to change? (e.g. "Remove the restaurant", "Add a museum", "Start at 10am instead")`,
+            `Here's your current plan for ${lastPlanRef.current.city} with ${lastPlanRef.current.stops.length} stops. What would you like to change? (e.g. "Remove the restaurant", "Add a museum", "Start at 10am instead")`,
         );
     }
 

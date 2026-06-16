@@ -265,22 +265,20 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
       )}
       </AnimatePresence>
 
-      {/* Quick prompts — show only at start */}
-      {msgs.length <= 1 && (
-        <div className="px-5 pb-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
-        {QUICK_PROMPTS.map(({ icon, label, action }) => (
-          <button
-          key={label}
-          onClick={action}
-          disabled={loading}
-          className="press shrink-0 flex items-center gap-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50"
-          >
-          {icon}
-          {label}
-          </button>
-        ))}
-        </div>
-      )}
+      {/* Quick prompts — show always */}
+      <div className="px-5 pb-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+      {QUICK_PROMPTS.map(({ icon, label, action }) => (
+        <button
+        key={label}
+        onClick={action}
+        disabled={loading}
+        className="press shrink-0 flex items-center gap-1.5 bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold px-3 py-1.5 rounded-full disabled:opacity-50"
+        >
+        {icon}
+        {label}
+        </button>
+      ))}
+      </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-3 space-y-3 no-scrollbar">

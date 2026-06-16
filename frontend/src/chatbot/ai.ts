@@ -75,6 +75,8 @@ function cleanDisplay(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     // Clean unmatched single asterisk italic
     .replace(/\*([^*\n]+)\*/g, '$1')
+    // Remove any leftover single or double asterisks entirely
+    .replace(/\*/g, '')
     // Remove trailing open tags
     .replace(/<[a-zA-Z_]+>$/g, '')
     .trim();
