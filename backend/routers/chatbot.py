@@ -116,8 +116,10 @@ async def chat(
                         .order("order_index")\
                         .execute()
                     if itin_res.data:
-                        stops = [f"- {it.get('place_name')} ({it.get('place_type')}, {it.get('start_time', '')})" for it in itin_res.data]
+                        stops = [f"- {it.get('place_name')} ({it.get('place_type')}, {it.get('start_time', '')})" for it in itin_res.data[:12]]
                         itinerary_context = "Itinerary:\n" + "\n".join(stops)
+                        if len(itin_res.data) > 12:
+                            itinerary_context += f"\n- (+{len(itin_res.data) - 12} destinasi lainnya)"
                 except Exception as e:
                     print(f"[Chatbot] Failed to load itinerary context: {e}")
 
@@ -135,6 +137,8 @@ async def chat(
 
         # Kalau ada context dari frontend (itinerary lokal), pakai itu
         frontend_context = data.context or ""
+        if len(frontend_context) > 1000:
+            frontend_context = frontend_context[:1000] + "..."
 
         user_name = ""
         if current_user:

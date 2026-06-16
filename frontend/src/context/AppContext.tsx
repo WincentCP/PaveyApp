@@ -367,7 +367,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                   trip_id: newUuid,
                   amount: expenseAmountInIdr,
                   category: exp.category,
-                  description: exp.title || exp.description || '',
+                  description: exp.title || exp.note || '',
                 }).catch((e) => console.error("Failed to sync expense during sync:", e));
               });
 
@@ -826,7 +826,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
 
         const meta: DayPlan[] = planDays.map((_, idx) => ({
-          dayIndex: idx,
+          destIdx: 0,
           kind: 'normal',
         }));
 

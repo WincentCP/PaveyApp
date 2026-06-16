@@ -31,6 +31,7 @@ def setup_recommender():
             "photo_link_1": "https://Gmaps.com/Photos/CaseSensitiveToken123",
             "latitude": 3.149,
             "longitude": 101.693,
+            "total_reviews": 100,
             "combined_features": "This place is located in Kuala Lumpur..."
         }
     ])

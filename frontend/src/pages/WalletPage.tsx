@@ -1033,7 +1033,7 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
       const res = await apiScanReceipt(formData);
 
       if (res.error) {
-        show(res.error, 'error');
+        show(res.error, 'warn');
         setStep('entry');
         return;
       }
@@ -1061,7 +1061,7 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
     } catch (err: any) {
       console.error('[SplitBillSheet] Backend error:', err?.message);
       const msg = err?.message || 'Gagal scan struk — coba lagi';
-      show(msg, 'error');
+      show(msg, 'warn');
       setStep('entry');
     }
   };

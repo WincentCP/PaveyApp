@@ -71,6 +71,8 @@ class SemanticRecommender:
           - Satu baris saja                  → nilai 1.0, beta penuh
           - NaN / non-numerik (setelah preprocessing seharusnya tidak ada) → diperlakukan 0
         """
+        if "total_reviews" not in df_city.columns:
+            return pd.Series(0.0, index=df_city.index)
         reviews = pd.to_numeric(df_city["total_reviews"], errors="coerce").fillna(0)
         max_reviews = reviews.max()
 

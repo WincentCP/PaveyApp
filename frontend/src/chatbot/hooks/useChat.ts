@@ -238,8 +238,8 @@ export function useChat(tripId?: string, itineraryContext?: string) {
 
                 historyRef.current = [
                     ...history,
-                    { role: 'user', content: userText },
-                    { role: 'assistant', content: fullRaw },
+                    { role: 'user' as const, content: userText },
+                    { role: 'assistant' as const, content: fullRaw },
                 ].slice(-20);
 
                 await processIntent(assistantId, displayAccumulated, fullRaw);

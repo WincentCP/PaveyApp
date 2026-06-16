@@ -80,6 +80,25 @@ def build():
     # today_hours
     if 'today_hours' not in final_df.columns:
         final_df['today_hours'] = final_df['opening_time']
+
+    # photo_links (photo_link_1 to photo_link_5)
+    for i in range(1, 6):
+        col = f'photo_link_{i}'
+        if col not in final_df.columns:
+            final_df[col] = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80'
+
+    # reviews (review_1 to review_5)
+    dummy_reviews = [
+        'A wonderful place to visit, highly recommended!',
+        'Had an amazing time here with friends and family.',
+        'Great atmosphere and very friendly vibes.',
+        'A must-visit spot on your trip, absolutely loved it.',
+        'Pleasant environment, very clean and well maintained.'
+    ]
+    for i in range(1, 6):
+        col = f'review_{i}'
+        if col not in final_df.columns:
+            final_df[col] = dummy_reviews[i-1]
     # place_type: 'restaurant' or 'destination'
     if 'place_type' not in final_df.columns:
         # Check if restaurant keywords are present in features_text
