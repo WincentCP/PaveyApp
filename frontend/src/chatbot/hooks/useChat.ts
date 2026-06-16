@@ -19,7 +19,13 @@ function uid() {
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useChat(tripId?: string, itineraryContext?: string) {
-    const { isAuthenticated } = useApp();
+    const { 
+        isAuthenticated,
+        setItinerary,
+        setPerDayItineraries,
+        setPerDayMeta,
+        vibe
+    } = useApp();
     const [msgs, setMsgs] = useState<ChatMsg[]>([
         {
             id: uid(),
@@ -91,6 +97,35 @@ export function useChat(tripId?: string, itineraryContext?: string) {
                         result.hotel_name,
                     );
                     richContent = { type: 'travel_plan', plan };
+
+                    // Map plan.stops to main Place structure and sync to central state
+                    const mappedPlaces = plan.stops.map((stop, i) => ({
+                        id: `chat-${stop.step}-${Date.now()}-${i}`,
+                        city: city,
+                        name: stop.name,
+                        category: (stop.type === 'restaurant' ? 'Foodie' : 'Cultural') as any,
+                        tags: [stop.type || 'destination'],
+                        vibes: [vibe],
+                        image: stop.type === 'restaurant'
+                            ? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80'
+                            : 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
+                        cost: 0,
+                        priceRange: { min: 0, max: 0 },
+                        durationMin: stop.duration_minutes,
+                        distanceKm: stop.travel_time_to_next_minutes ? (stop.travel_time_to_next_minutes * 0.4) : 0.5,
+                        lat: stop.lat || -8.5,
+                        lng: stop.lon || 115.2,
+                        rating: 4.5,
+                        description: stop.description || 'Explore the location',
+                        openingHours: '09:00 – 21:00',
+                        indoor: false,
+                        openHour: 9,
+                        closeHour: 21,
+                    }));
+
+                    setItinerary(mappedPlaces);
+                    setPerDayItineraries([mappedPlaces]);
+                    setPerDayMeta([{ destIdx: 0, kind: 'normal' }]);
                     break;
                 }
 
