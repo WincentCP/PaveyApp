@@ -774,7 +774,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         let res: any;
         const targetCity = destinations[0]?.name || 'Bali, Indonesia';
         
-        if (isAuthenticated && activeTripId && activeTripId !== 'default-trip') {
+        if (isAuthenticated && activeTripId && activeTripId !== 'trip-default') {
           res = await apiGenerateTripItinerary(activeTripId);
         } else {
           res = await apiGeneratePlan({
