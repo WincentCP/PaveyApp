@@ -390,6 +390,51 @@ export function useChat(tripId?: string) {
             return true;
         }
 
+        // awaiting_city_for_weather
+        if (flow.type === 'awaiting_city_for_weather') {
+            pendingFlowRef.current = null;
+            appendMsg({ id: uid(), role: 'user', text: userText });
+
+            const city = userText.trim();
+            const assistantId = uid();
+            appendMsg({ id: assistantId, role: 'assistant', text: '⏳ Checking weather...', isStreaming: true });
+
+            try {
+                const weather = await fetchWeather(city);
+                const prompt = `User wants weather details for ${city}. Present the weather info friendly. You MUST respond with check_weather intent in the JSON schema.`;
+                let display = '';
+                const raw = await sendMessage(
+                    historyRef.current,
+                    prompt,
+                    (chunk) => { display += chunk; updateMsg(assistantId, { text: display }); },
+                    tripId,
+                    `Weather: ${weather.temp}°C, ${weather.description}`
+                );
+
+                if (!display) {
+                    const { display: d } = stripDataJson(raw);
+                    display = d;
+                }
+
+                pushHistory('user', prompt);
+                pushHistory('assistant', raw);
+
+                const { json } = stripDataJson(raw);
+                const result = json ? parseAIResult(json) : null;
+
+                updateMsg(assistantId, {
+                    text: result?.intro || display || `Here's the weather in ${weather.city}.`,
+                    isStreaming: false,
+                    richContent: { type: 'weather', weather }
+                });
+            } catch {
+                updateMsg(assistantId, { text: "Sorry, I couldn't fetch the weather right now.", isStreaming: false });
+            }
+
+            setLoading(false);
+            return true;
+        }
+
         // awaiting_hotel_and_city
         if (flow.type === 'awaiting_hotel_and_city') {
             pendingFlowRef.current = null;
@@ -400,7 +445,7 @@ export function useChat(tripId?: string) {
 
             try {
                 // Extract hotel + city from user reply
-                const prompt = `The user is staying at: "${userText}". Build a 1-day hotel-anchored travel itinerary. Extract the hotel name and city from the user message. Give 5 real nearby attractions and restaurants. First stop and last stop must be closest to the hotel.`;
+                const prompt = `The user is staying at: "${userText}". Build a 1-day hotel-anchored travel itinerary. Extract the hotel name and city from the user message. Give 5 real nearby attractions and restaurants. First stop and last stop must be closest to the hotel. You MUST use the "travel_plan" intent in the JSON schema.`;
 
                 const weather_city = userText.split(',').slice(-1)[0]?.trim() || userText.trim();
                 const weather = await fetchWeather(weather_city);
@@ -431,14 +476,15 @@ export function useChat(tripId?: string) {
                 const result = json ? parseAIResult(json) : null;
                 let richContent: RichContent | undefined;
 
-                if (result?.intent === 'travel_plan' && result.places?.length) {
+                if (result?.places?.length) {
                     const raw2: ChatPlace[] = result.places.map((p) => ({
                         ...p,
                         type: (p.type as ChatPlace['type']) || 'destination',
                     }));
                     const city = result.city ?? weather_city;
                     const enriched = await enrichPlaces(raw2, city);
-                    const plan = await generateTravelPlan(city, enriched, result.start_time ?? '09:00', result.hotel_name);
+                    const hotelNameFromText = userText.split(',')[0]?.trim();
+                    const plan = await generateTravelPlan(city, enriched, result.start_time ?? '09:00', result.hotel_name ?? hotelNameFromText);
                     lastPlanRef.current = plan;
                     richContent = { type: 'travel_plan', plan };
                 }
@@ -610,9 +656,8 @@ export function useChat(tripId?: string) {
 
     const triggerCheckWeather = useCallback(() => {
         if (loading) return;
-        pendingFlowRef.current = null;
+        pendingFlowRef.current = { type: 'awaiting_city_for_weather' };
         addAssistant("Sure! Which city would you like the weather for? 🌤️");
-        // Next message from user will be handled as normal send → LLM detects intent check_weather
     }, [loading]);
 
     return {

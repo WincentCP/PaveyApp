@@ -103,5 +103,6 @@ export interface ChatMsg {
 export type PendingFlow =
 | { type: 'awaiting_city_for_plan' }
 | { type: 'awaiting_hotel_and_city' }
+| { type: 'awaiting_city_for_weather' }
 | { type: 'awaiting_edit_instruction'; plan: TravelPlan }
 | null;
