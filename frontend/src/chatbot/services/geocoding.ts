@@ -1,97 +1,141 @@
-import type { LatLng, Place } from '../types'
+/**
+ * geocoding.ts — Nominatim (OSM) geocoding + Overpass place search
+ * 100% open source, no API key required.
+ */
 
-const NOMINATIM = 'https://nominatim.openstreetmap.org'
+import type { ChatPlace } from '../types';
 
-export async function geocodeCity(query: string): Promise<LatLng | null> {
+// ─── Nominatim: name → coords ─────────────────────────────────────────────────
+
+export async function geocodeName(
+    name: string,
+    cityContext: string,
+): Promise<{ lat: number; lon: number } | null> {
+    const query = `${name} ${cityContext}`;
     try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 2000)
-
         const res = await fetch(
-            `${NOMINATIM}/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
-            { 
-                headers: { 'Accept-Language': 'en,id', 'User-Agent': 'PaveyChatbot/1.0' },
-                signal: controller.signal
-            }
-        )
-        clearTimeout(timeoutId)
-        if (!res.ok) return null
-        const data = await res.json()
-        if (!data[0]) return null
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`,
+                                { headers: { 'Accept-Language': 'en', 'User-Agent': 'PaveyApp/1.0' } },
+        );
+        const data = await res.json();
+        if (!data[0]) return null;
+
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+
+        // Sanity check: city center lookup
+        const center = await getCityCenter(cityContext);
+        if (center) {
+            const dist = haversineKm(lat, lon, center.lat, center.lon);
+            if (dist > 200) return null; // Cross-continent misfire protection
+        }
+
+        return { lat, lon };
     } catch {
-        return null
+        return null;
     }
 }
 
-export async function reverseGeocode(coords: LatLng): Promise<string> {
+/** Get approximate center coords of a city name. */
+export async function getCityCenter(
+    city: string,
+): Promise<{ lat: number; lon: number } | null> {
     try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 2000)
-
         const res = await fetch(
-            `${NOMINATIM}/reverse?lat=${coords.lat}&lon=${coords.lng}&format=json`,
-            { 
-                headers: { 'Accept-Language': 'en,id', 'User-Agent': 'PaveyChatbot/1.0' },
-                signal: controller.signal
-            }
-        )
-        clearTimeout(timeoutId)
-        const data = await res.json()
-        return data.address?.city || data.address?.town || data.address?.county || 'Your Location'
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,
+                                { headers: { 'Accept-Language': 'en', 'User-Agent': 'PaveyApp/1.0' } },
+        );
+        const data = await res.json();
+        if (!data[0]) return null;
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
     } catch {
-        return 'Your Location'
+        return null;
     }
 }
 
-/** Search tourism places via Overpass API (OSM) — no key required */
-export async function searchPlacesOSM(
-    center: LatLng,
-    radius = 4000
-): Promise<Place[]> {
+// ─── Overpass: hotel search ────────────────────────────────────────────────────
+
+export async function searchHotelsOSM(city: string): Promise<ChatPlace[]> {
+    const center = await getCityCenter(city);
+    if (!center) return [];
+
+    const radius = 15000; // 15 km
     const query = `
-    [out:json][timeout:15];
+    [out:json][timeout:20];
     (
-        node["tourism"~"attraction|museum|artwork|viewpoint|theme_park"](around:${radius},${center.lat},${center.lng});
-        node["leisure"~"park|garden"](around:${radius},${center.lat},${center.lng});
-        node["amenity"~"restaurant|cafe"](around:${radius / 2},${center.lat},${center.lng});
+        node["tourism"="hotel"](around:${radius},${center.lat},${center.lon});
+        node["tourism"="hostel"](around:${radius},${center.lat},${center.lon});
+        node["tourism"="guest_house"](around:${radius},${center.lat},${center.lon});
+        node["tourism"="motel"](around:${radius},${center.lat},${center.lon});
+        node["tourism"="apartment"](around:${radius},${center.lat},${center.lon});
     );
-    out body 20;
-    `
-    try {
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 4000)
+    out body 10;
+    `.trim();
 
+    try {
         const res = await fetch('https://overpass-api.de/api/interpreter', {
             method: 'POST',
             body: `data=${encodeURIComponent(query)}`,
-            signal: controller.signal
-        })
-        clearTimeout(timeoutId)
-        if (!res.ok) return []
-        const data = await res.json()
-        return (data.elements || [])
-            .filter((e: any) => e.lat && e.lon && e.tags?.name)
-            .slice(0, 15)
-            .map((e: any, i: number): Place => ({
-                id: `osm-${e.id || i}`,
-                name: e.tags.name,
-                type: guessType(e.tags),
-                category: e.tags.tourism || e.tags.amenity || e.tags.leisure,
-                lat: e.lat,
-                lng: e.lon,
-                address: [e.tags['addr:street'], e.tags['addr:city']].filter(Boolean).join(', '),
-                description: e.tags.description || '',
-                openHours: e.tags.opening_hours || '',
-                rating: e.tags['stars'] ? parseFloat(e.tags['stars']) : undefined,
-            }))
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        });
+        const data = await res.json();
+
+        return (data.elements as Record<string, unknown>[])
+        .filter((el) => el.tags && (el.tags as Record<string, string>).name)
+        .slice(0, 8)
+        .map((el) => {
+            const tags = el.tags as Record<string, string>;
+            return {
+                name: tags.name,
+                type: 'hotel' as const,
+                category: tags.tourism ?? 'hotel',
+                address: [tags['addr:street'], tags['addr:housenumber'], tags['addr:city']]
+                .filter(Boolean)
+                .join(' ') || city,
+             lat: el.lat as number,
+             lon: el.lon as number,
+             website: tags.website,
+             phone: tags.phone,
+            };
+        });
     } catch {
-        return []
+        return [];
     }
 }
 
-function guessType(tags: any): Place['type'] {
-    if (tags.amenity === 'restaurant' || tags.amenity === 'cafe') return 'restaurant'
-    if (tags.tourism === 'hotel' || tags.tourism === 'hostel') return 'hotel'
-    return 'destination'
+// ─── Bulk geocode enrichment ──────────────────────────────────────────────────
+
+/**
+ * Enrich a list of places with real coordinates from Nominatim.
+ * Always appends city name to avoid cross-continent misfire.
+ */
+export async function enrichPlaces(
+    places: ChatPlace[],
+    cityContext: string,
+): Promise<ChatPlace[]> {
+    const results: ChatPlace[] = [];
+    for (const p of places) {
+        const coords = await geocodeName(p.name, cityContext);
+        results.push(coords ? { ...p, ...coords } : p);
+        // 300ms sleep delay to satisfy OSM Nominatim rate limits (max 1 req/sec)
+        await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+    return results;
+}
+
+// ─── Haversine distance ───────────────────────────────────────────────────────
+
+export function haversineKm(
+    lat1: number, lon1: number,
+    lat2: number, lon2: number,
+): number {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }

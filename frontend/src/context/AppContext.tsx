@@ -30,7 +30,7 @@ import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
-import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken, apiSaveOnboarding } from '../lib/api';
+import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken, apiSaveOnboarding, apiSavePlace, apiDeleteSavedPlace, apiGetSavedPlaces, apiGetUserPreferences, apiGeneratePlan, apiGenerateTripItinerary } from '../lib/api';
 
 // Re-export planning types so existing imports from '../context/AppContext' keep working.
 export { PACE_STOPS, allocateDays };
@@ -85,7 +85,8 @@ interface AppState {
   perDayItineraries: Place[][];
   setPerDayItineraries: (p: Place[][]) => void;
   perDayMeta: DayPlan[];
-  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string) => void;
+  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string) => Promise<void>;
+  loadingPlan: boolean;
   reorderStop: (from: number, to: number) => void;
   removeStop: (id: string) => void;
   replaceStop: (id: string, withPlace: Place) => void;
@@ -271,6 +272,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [rainyDayMode, setRainyDayMode] = useState(false);
   const [visitedPlaceIds, setVisitedPlaceIds] = useState<Set<string>>(new Set(persisted?.visitedPlaceIds ?? []));
   const [pace, setPace] = useState<TripPace>(persisted?.pace ?? 'balanced');
+  const [loadingPlan, setLoadingPlan] = useState(false);
 
   // Initialize API token synchronously on render
   if (persisted?.accessToken) {
@@ -294,6 +296,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(false);
       });
   }, []); 
+
+  // Load saved places and user preferences on login
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
+    // Fetch saved places from Supabase
+    apiGetSavedPlaces()
+      .then((res) => {
+        if (res.places) {
+          setSavedPlaces(res.places);
+        }
+      })
+      .catch((err) => console.error("Failed to load saved places:", err));
+
+    // Fetch preferences (vibe, budget, etc.)
+    apiGetUserPreferences()
+      .then((res) => {
+        if (res.has_history && res.preferences) {
+          const pref = res.preferences;
+          if (pref.vibe) setVibe(pref.vibe);
+          if (pref.budget_min) setBudget(pref.budget_min);
+        }
+      })
+      .catch((err) => console.error("Failed to load user preferences:", err));
+  }, [isAuthenticated, accessToken]);
 
   // Synchronize local trips to backend and pull backend trips on login
   useEffect(() => {
@@ -673,7 +700,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } catch { return null; }
     })();
 
-    if (token) {
+    if (token && data.destinations && data.destinations.length > 0) {
       apiSaveOnboarding({
         name: data.name,
         vibe: data.vibe,
@@ -740,23 +767,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
     perDayItineraries,
     setPerDayItineraries,
     perDayMeta,
-    // Thin wrapper around the pure planning engine. When migrating to a backend,
-    // replace the `generateItinerary` call with `await api.plan(...)`.
-    buildFullItinerary: (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
-      const { days: planDays, meta } = generateItinerary({
-        destinations,
-        activeDestIdx,
-        totalDays: days,
-        pace,
-        vibe,
-        budget,
-        rainyDayMode,
-        arrivalTime,
-        departureTime,
-      });
-      setPerDayItineraries(planDays);
-      setPerDayMeta(meta);
-      setItinerary(planDays.flat());
+    loadingPlan,
+    buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
+      setLoadingPlan(true);
+      try {
+        let res: any;
+        const targetCity = destinations[0]?.name || 'Bali, Indonesia';
+        
+        if (isAuthenticated && activeTripId && activeTripId !== 'default-trip') {
+          res = await apiGenerateTripItinerary(activeTripId);
+        } else {
+          res = await apiGeneratePlan({
+            city: targetCity,
+            vibe,
+            budget,
+            days,
+            arrival_time: arrivalTime,
+            departure_time: departureTime,
+          });
+        }
+
+        const rawItinerary = res.itinerary || [];
+        const daysMap: Record<number, Place[]> = {};
+        
+        rawItinerary.forEach((item: any) => {
+          const d = item.day_number || 1;
+          if (!daysMap[d]) daysMap[d] = [];
+          
+          const p: Place = {
+            id: `ai-${item.step || Math.random().toString(36).slice(2, 6)}-${d}-${Date.now()}`,
+            city: targetCity,
+            name: item.name || 'AI Destination',
+            category: item.type === 'restaurant' ? 'Foodie' : 'Cultural',
+            tags: [item.type || 'destination'],
+            vibes: [vibe],
+            image: item.type === 'restaurant'
+              ? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80'
+              : 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
+            cost: item.price ?? 0,
+            priceRange: { min: item.price ?? 0, max: item.price ?? 0 },
+            durationMin: item.duration_spent_minutes || 60,
+            distanceKm: item.travel_time_to_next_minutes ? (item.travel_time_to_next_minutes * 0.4) : 0.5,
+            lat: item.latitude || -8.5,
+            lng: item.longitude || 115.2,
+            rating: item.rating || 4.5,
+            description: item.activity_todo || 'Explore the location',
+            openingHours: '09:00 – 21:00',
+            indoor: false,
+            openHour: 9,
+            closeHour: 21,
+          };
+          daysMap[d].push(p);
+        });
+
+        const planDays: Place[][] = [];
+        for (let d = 1; d <= days; d++) {
+          planDays.push(daysMap[d] || []);
+        }
+
+        const meta: DayPlan[] = planDays.map((_, idx) => ({
+          dayIndex: idx,
+          kind: 'normal',
+        }));
+
+        setPerDayItineraries(planDays);
+        setPerDayMeta(meta);
+        setItinerary(planDays.flat());
+      } catch (err) {
+        console.error("Failed to generate plan:", err);
+        throw err;
+      } finally {
+        setLoadingPlan(false);
+      }
     },
     reorderStop: (from, to) => {
       setItinerary((cur) => {
@@ -908,8 +990,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     markVisited: (id) => setVisited((cur) => new Set(cur).add(id)),
 
     savedPlaces,
-    savePlace: (p) => setSavedPlaces((cur) => cur.find((x) => x.id === p.id) ? cur : [...cur, p]),
-    removeSavedPlace: (id) => setSavedPlaces((cur) => cur.filter((p) => p.id !== id)),
+    savePlace: (p) => {
+      setSavedPlaces((cur) => {
+        if (cur.find((x) => x.id === p.id)) return cur;
+        const next = [...cur, p];
+        if (isAuthenticated && accessToken) {
+          apiSavePlace(p).catch((err) => console.error("Failed to save place to database:", err));
+        }
+        return next;
+      });
+    },
+    removeSavedPlace: (id) => {
+      setSavedPlaces((cur) => {
+        const item = cur.find((p) => p.id === id);
+        const next = cur.filter((p) => p.id !== id);
+        if (item && isAuthenticated && accessToken) {
+          apiDeleteSavedPlace(item.name).catch((err) => console.error("Failed to delete place from database:", err));
+        }
+        return next;
+      });
+    },
     isSaved: (id) => savedPlaces.some((p) => p.id === id),
     journeyStart,
     setJourneyStart,

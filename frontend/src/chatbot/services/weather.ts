@@ -1,87 +1,79 @@
-import type { WeatherData, LatLng } from '../types'
+/**
+ * weather.ts — OpenWeatherMap integration
+ * Falls back to dummy data when API key is missing (dev/preview mode).
+ */
 
-const OWM_BASE = 'https://api.openweathermap.org/data/2.5'
+import type { WeatherData } from '../types';
 
-function getKey(): string {
-    return import.meta.env.VITE_OPENWEATHER_KEY || ''
-}
+const OWM_KEY = import.meta.env.VITE_OPENWEATHER_KEY as string | undefined;
+const OWM_BASE = 'https://api.openweathermap.org/data/2.5';
 
-export async function getWeatherByCity(city: string): Promise<WeatherData | null> {
-    const key = getKey()
-    if (!key) {
-        console.warn('[Weather] No VITE_OPENWEATHER_KEY set — returning mock data. Add it to .env to get real weather.')
-        return getMockWeather(city, { lat: 0, lng: 0 })
-    }
+// ─── Geocode city name to coords (Nominatim) ──────────────────────────────────
+
+export async function geocodeCity(city: string): Promise<{ lat: number; lon: number } | null> {
     try {
         const res = await fetch(
-            `${OWM_BASE}/weather?q=${encodeURIComponent(city)}&appid=${key}&units=metric&lang=en`
-        )
-        if (!res.ok) {
-            console.error(`[Weather] OWM responded ${res.status} for city "${city}"`)
-            return getMockWeather(city, { lat: 0, lng: 0 })
-        }
-        return parseOWMResponse(await res.json())
-    } catch (err) {
-        console.error('[Weather] fetch failed:', err)
-        return getMockWeather(city, { lat: 0, lng: 0 })
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`,
+                                { headers: { 'Accept-Language': 'en' } },
+        );
+        const data = await res.json();
+        if (!data[0]) return null;
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+    } catch {
+        return null;
     }
 }
 
-export async function getWeatherByCoords(coords: LatLng): Promise<WeatherData | null> {
-    const key = getKey()
-    if (!key) {
-        console.warn('[Weather] No VITE_OPENWEATHER_KEY set — returning mock data.')
-        return getMockWeather('Your Location', coords)
+// ─── Fetch weather ────────────────────────────────────────────────────────────
+
+export async function fetchWeather(city: string): Promise<WeatherData> {
+    if (!OWM_KEY) {
+        return makeDummy(city);
     }
+
     try {
         const res = await fetch(
-            `${OWM_BASE}/weather?lat=${coords.lat}&lon=${coords.lng}&appid=${key}&units=metric&lang=en`
-        )
-        if (!res.ok) {
-            console.error(`[Weather] OWM responded ${res.status} for coords`)
-            return getMockWeather('Your Location', coords)
-        }
-        return parseOWMResponse(await res.json())
-    } catch (err) {
-        console.error('[Weather] fetch failed:', err)
-        return getMockWeather('Your Location', coords)
+            `${OWM_BASE}/weather?q=${encodeURIComponent(city)}&appid=${OWM_KEY}&units=metric&lang=en`,
+        );
+        if (!res.ok) throw new Error(`OWM ${res.status}`);
+        const d = await res.json();
+
+        const temp       = Math.round(d.main.temp);
+        const feels_like = Math.round(d.main.feels_like);
+        const humidity   = d.main.humidity as number;
+        const wind_speed = Math.round((d.wind.speed as number) * 3.6); // m/s → km/h
+        const description: string = d.weather[0].description;
+        const icon: string        = d.weather[0].icon;
+        const rain: number | undefined = d.rain?.['1h'];
+
+        const isRainy   = description.includes('rain') || description.includes('drizzle') || !!rain;
+        const isExtreme = temp >= 38 || temp <= -10 || (d.wind.speed as number) > 20 || isRainy && !!rain && rain > 10;
+
+        return {
+            city: d.name as string,
+            temp, feels_like, humidity, wind_speed,
+            description, icon,
+            rain,
+            isRainy,
+            isExtreme,
+        };
+    } catch {
+        return makeDummy(city);
     }
 }
 
-function parseOWMResponse(data: any): WeatherData {
-    const rain = data.rain?.['3h'] ?? data.rain?.['1h'] ?? 0
-    const weatherId = data.weather[0].id
-    const isRainy = rain > 0 || (weatherId >= 500 && weatherId < 700)
-    const isExtreme = (weatherId >= 200 && weatherId < 300) || rain > 10 || data.wind.speed > 15
-    return {
-        city: data.name,
-        temp: Math.round(data.main.temp),
-        feels_like: Math.round(data.main.feels_like),
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        humidity: data.main.humidity,
-        wind_speed: Math.round(data.wind.speed * 3.6), // m/s → km/h
-        rain,
-        lat: data.coord.lat,
-        lng: data.coord.lon,
-        isRainy,
-        isExtreme,
-    }
-}
+// ─── Dummy fallback ───────────────────────────────────────────────────────────
 
-function getMockWeather(city: string, coords: LatLng): WeatherData {
+function makeDummy(city: string): WeatherData {
     return {
         city,
-        temp: 22,
-        feels_like: 21,
-        description: 'partly cloudy (demo — add VITE_OPENWEATHER_KEY for real data)',
+        temp: 28,
+        feels_like: 31,
+        humidity: 72,
+        wind_speed: 14,
+        description: 'partly cloudy',
         icon: '02d',
-        humidity: 65,
-        wind_speed: 12,
-        rain: 0,
-        lat: coords.lat,
-        lng: coords.lng,
         isRainy: false,
         isExtreme: false,
-    }
+    };
 }

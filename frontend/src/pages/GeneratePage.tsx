@@ -60,7 +60,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -404,7 +404,8 @@ export default function GeneratePage() {
     if (!isManualMode && !isEditMode) {
       const days = daysParam > 1 ? daysParam : journeyStart.days;
       if (days > 1) {
-        buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00');
+        buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+          .catch(() => setGenerationError(true));
       } else {
         setItinerary(buildItinerary());
       }
@@ -422,14 +423,18 @@ export default function GeneratePage() {
   useEffect(() => {
     if (phase !== 'loading') return;
     const t1 = setInterval(() => setStepIdx((s) => (s + 1) % loadingSteps.length), 700);
-    const t2 = setTimeout(() => {
-      setPhase('reveal');
-      if (!isManualMode && !isEditMode && itinerary.length === 0) {
+    return () => clearInterval(t1);
+  }, [phase, loadingSteps.length]);
+
+  useEffect(() => {
+    if (phase === 'loading' && !loadingPlan && !isManualMode && !isEditMode) {
+      if (itinerary.length > 0) {
+        setPhase('reveal');
+      } else {
         setGenerationError(true);
       }
-    }, 2200);
-    return () => { clearInterval(t1); clearTimeout(t2); };
-  }, [phase]); // eslint-disable-line
+    }
+  }, [loadingPlan, phase, itinerary.length, isManualMode, isEditMode]);
 
   // Load review deck queue when reveal phase starts
   useEffect(() => {
@@ -561,7 +566,8 @@ export default function GeneratePage() {
     setDeckIndex(0);
     setSwipeHistory([]);
     if (isMultiDay) {
-      buildFullItinerary(perDayItineraries.length, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00');
+      buildFullItinerary(perDayItineraries.length, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+        .catch(() => setGenerationError(true));
     } else {
       setItinerary(buildItinerary());
     }
@@ -715,7 +721,17 @@ export default function GeneratePage() {
                         <div className="font-bold text-ink-900 text-lg font-display">Couldn't generate a plan</div>
                         <div className="text-sm text-ink-500">Check your vibe and budget settings and try again.</div>
                         <button
-                          onClick={() => { setGenerationError(false); setPhase('loading'); setItinerary(buildItinerary()); }}
+                          onClick={() => {
+                            setGenerationError(false);
+                            setPhase('loading');
+                            const days = daysParam > 1 ? daysParam : journeyStart.days;
+                            if (days > 1) {
+                              buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+                                .catch(() => setGenerationError(true));
+                            } else {
+                              setItinerary(buildItinerary());
+                            }
+                          }}
                           className="h-12 px-6 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center gap-2"
                         >
                           <RefreshCw className="w-4 h-4" /> Try Again
@@ -774,7 +790,8 @@ export default function GeneratePage() {
                                   setPace('relaxed');
                                   const days = daysParam > 1 ? daysParam : journeyStart.days;
                                   if (days > 1) {
-                                    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00');
+                                    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+                                      .catch(() => setGenerationError(true));
                                   } else {
                                     setItinerary(buildItinerary());
                                   }

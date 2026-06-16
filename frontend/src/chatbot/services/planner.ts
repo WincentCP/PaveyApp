@@ -1,151 +1,143 @@
-import type { Place, TravelPlan, ItineraryStop, WeatherData } from '../types'
-import { haversineKm, sortByHotelProximity } from './routing'
+/**
+ * planner.ts — Travel plan builder
+ *
+ * Takes AI-suggested places + geocoded coords, then:
+ *   1. Geocodes hotel if provided (Nominatim)
+ *   2. Sorts stops with Pythagorean hotel-anchor pattern
+ *      (closest → farthest → closest pattern around hotel)
+ *   3. Estimates travel time via haversine (avg 25 km/h city speed)
+ *   4. Assigns arrival times starting from start_time
+ *   5. Caps travel time at 60 min, filters outliers > 200 km from city center
+ */
 
-const DEFAULT_DURATIONS: Record<Place['type'], number> = {
-    destination: 90,
-    restaurant: 60,
-    hotel: 30,
-    attraction: 75,
+import type { ChatPlace, ItineraryStop, TravelPlan } from '../types';
+import { haversineKm, getCityCenter, geocodeName } from './geocoding';
+
+const AVG_CITY_SPEED_KMH = 25;
+const MAX_TRAVEL_MIN     = 60;
+const MAX_DIST_FROM_CITY = 200; // km — outlier filter
+
+// ─── Time helpers ─────────────────────────────────────────────────────────────
+
+function parseTime(t: string): number {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + (m || 0);
 }
 
-const ACTIVITY_MAP: Record<string, string> = {
-    museum: 'Explore the exhibits and galleries — grab photos at the best spots.',
-    restaurant: "Enjoy authentic local cuisine. Don't skip the house specials!",
-    cafe: 'Grab a coffee and soak in the local atmosphere.',
-    attraction: 'Take your time exploring — great opportunity for photos and cultural immersion.',
-    park: 'Relax, stroll, or cycle through the greenery.',
-    viewpoint: 'Capture the panoramic view. Best light: early morning or golden hour.',
-    beach: 'Swim, sunbathe, or just take a long walk along the shore.',
-    temple: 'Explore the architecture and history. Dress modestly out of respect.',
-    mall: 'Browse local products and grab a quick snack while you\'re here.',
-    default: 'Take your time exploring at your own pace.',
+function formatTime(minutes: number): string {
+    const h = Math.floor(minutes / 60) % 24;
+    const m = minutes % 60;
+    // Round to nearest 5 min for human-friendly output
+    const mRounded = Math.round(m / 5) * 5;
+    return `${String(h).padStart(2, '0')}:${String(mRounded % 60).padStart(2, '0')}`;
 }
 
-// Max reasonable travel time between stops in a 1-day itinerary
-const MAX_TRAVEL_MIN = 60
+function travelMinutes(distKm: number): number {
+    return Math.min(MAX_TRAVEL_MIN, Math.round((distKm / AVG_CITY_SPEED_KMH) * 60));
+}
 
-export function generateTravelPlan(
-    places: Place[],
-    hotel: Place | null,
-    startTime: string,
-    weather: WeatherData | null,
-    date: string
-): TravelPlan {
-    // Filter out any place that landed suspiciously far from the city center
-    // City center = average of all place coords (or hotel if available)
-    const refLat = hotel?.lat ?? (places.reduce((s, p) => s + p.lat, 0) / places.length)
-    const refLng = hotel?.lng ?? (places.reduce((s, p) => s + p.lng, 0) / places.length)
-    const ref = { lat: refLat, lng: refLng }
+// ─── Hotel-anchored sort ──────────────────────────────────────────────────────
 
-    // Drop any place more than 200km from the reference center — wrong continent
-    const sane = places.filter((p) => haversineKm(ref, { lat: p.lat, lng: p.lng }) < 200)
-    // If filtering killed everything, fall back to all places (better than empty)
-    let orderedPlaces = sane.length >= 2 ? sane : places
+/**
+ * Pythagorean routing: nearest place first (check-in / drop bags),
+ * farthest places in the middle of day, nearest again at end (easy return).
+ */
+function sortByHotelProximity(
+    places: ChatPlace[],
+    hotel: { lat: number; lon: number },
+): ChatPlace[] {
+    const withDist = places.map((p) => ({
+        place: p,
+        dist: p.lat != null && p.lon != null
+        ? haversineKm(hotel.lat, hotel.lon, p.lat, p.lon)
+        : 999,
+    }));
 
-    if (hotel) {
-        const hotelCoord = { lat: hotel.lat, lng: hotel.lng }
-        const sortedIndices = sortByHotelProximity(hotelCoord, orderedPlaces)
-        const sorted = sortedIndices.map((i) => orderedPlaces[i])
-        const mid = Math.ceil(sorted.length / 2)
-        orderedPlaces = [...sorted.slice(0, mid), ...sorted.slice(mid).reverse()]
+    withDist.sort((a, b) => a.dist - b.dist);
+    const n = withDist.length;
+    if (n <= 2) return withDist.map((x) => x.place);
+
+    // Interleave: near, far, ..., near
+    const sorted: ChatPlace[] = [];
+    let lo = 0, hi = n - 1;
+    let takeFromLow = true;
+    while (lo <= hi) {
+        if (takeFromLow) sorted.push(withDist[lo++].place);
+        else             sorted.push(withDist[hi--].place);
+        takeFromLow = !takeFromLow;
+    }
+    return sorted;
+}
+
+// ─── Main generator ───────────────────────────────────────────────────────────
+
+export async function generateTravelPlan(
+    city: string,
+    places: ChatPlace[],
+    startTime: string = '09:00',
+    hotelName?: string | null,
+): Promise<TravelPlan> {
+    const center = await getCityCenter(city);
+
+    // Filter places too far from city center (cross-continent geocode misfire)
+    const nearby = center
+    ? places.filter((p) => {
+        if (p.lat == null || p.lon == null) return true; // ungeocoded — keep
+        return haversineKm(center.lat, center.lon, p.lat, p.lon) <= MAX_DIST_FROM_CITY;
+    })
+    : places;
+
+    // Geocode hotel if provided
+    let hotel: { name: string; lat: number; lon: number } | undefined;
+    if (hotelName) {
+        const coords = await geocodeName(hotelName, city);
+        if (coords) {
+            hotel = { name: hotelName, ...coords };
+        }
     }
 
-    const stops: ItineraryStop[] = []
-    const [startH, startM] = startTime.split(':').map(Number)
-    let currentMinutes = startH * 60 + (startM || 0)
+    // Sort stops around hotel
+    const sorted = hotel ? sortByHotelProximity(nearby, hotel) : nearby;
 
-    for (let i = 0; i < orderedPlaces.length; i++) {
-        const place = orderedPlaces[i]
-        const next = orderedPlaces[i + 1]
+    // Build timeline
+    let cursor = parseTime(startTime);
+    const stops: ItineraryStop[] = sorted.map((p, i) => {
+        const arrival_time = formatTime(cursor);
 
-        const fromCoord =
-        i === 0 && hotel
-        ? { lat: hotel.lat, lng: hotel.lng }
-        : { lat: orderedPlaces[i - 1]?.lat ?? place.lat, lng: orderedPlaces[i - 1]?.lng ?? place.lng }
+        // Duration by type
+        const durationMap: Record<string, number> = {
+            restaurant: 60,
+            hotel: 30,
+            attraction: 75,
+            destination: 90,
+        };
+        const duration_minutes = durationMap[p.type] ?? 75;
 
-        const rawTravel = i === 0 ? 0 : estimateTravelMin(fromCoord, { lat: place.lat, lng: place.lng })
-        // Cap so a bad geocode can never produce 28797min
-        const travelMin = Math.min(rawTravel, MAX_TRAVEL_MIN)
-        currentMinutes += travelMin
-
-        const duration = DEFAULT_DURATIONS[place.type] ?? 60
-
-        const rawTravelToNext = next
-        ? estimateTravelMin({ lat: place.lat, lng: place.lng }, { lat: next.lat, lng: next.lng })
-        : 0
-        const travelToNext = Math.min(rawTravelToNext, MAX_TRAVEL_MIN)
-
-        const distFromHotel = hotel
-        ? haversineKm({ lat: hotel.lat, lng: hotel.lng }, { lat: place.lat, lng: place.lng })
-        : undefined
-
-        stops.push({
-            step: i + 1,
-            place: { ...place, distanceFromHotel: distFromHotel },
-            arrival_time: minsToTime(currentMinutes),
-                   duration_minutes: duration,
-                   travel_time_to_next_minutes: travelToNext,
-                   activity: getActivity(place),
-                   note:
-                   hotel && i === 0
-                   ? '⚡ Starting close to your hotel — perfect to drop off bags first!'
-        : hotel && i === orderedPlaces.length - 1
-        ? '🏨 Last stop is near your hotel — easy walk back to rest.'
-        : undefined,
-        weather_warning: buildWeatherNote(weather),
-        })
-
-        currentMinutes += duration
-    }
-
-    const mapCenter = hotel
-    ? { lat: hotel.lat, lng: hotel.lng }
-    : orderedPlaces[0]
-    ? { lat: orderedPlaces[0].lat, lng: orderedPlaces[0].lng }
-    : { lat: 0, lng: 0 }
-
-    return {
-        title: `Travel Plan · ${date}`,
-        date,
-        hotel: hotel ?? undefined,
-        stops,
-        totalDurationMinutes: currentMinutes - startH * 60 - (startM || 0),
-        weatherSummary: weather ?? undefined,
-        mapCenter,
-        mapZoom: 13,
-    }
-}
-
-function estimateTravelMin(
-    a: { lat: number; lng: number },
-    b: { lat: number; lng: number }
-): number {
-    const dist = haversineKm(a, b)
-    return Math.max(5, Math.ceil((dist / 25) * 60))
-}
-
-function minsToTime(mins: number): string {
-    const h = Math.floor(mins / 60) % 24
-    const m = mins % 60
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
-}
-
-function getActivity(place: Place): string {
-    for (const [key, val] of Object.entries(ACTIVITY_MAP)) {
-        if (key === 'default') continue
-            if (
-                place.category?.toLowerCase().includes(key) ||
-                place.name.toLowerCase().includes(key)
-            ) {
-                return val
+        // Travel to next
+        let travel_time_to_next_minutes = 15; // default
+        if (i < sorted.length - 1) {
+            const next = sorted[i + 1];
+            if (p.lat != null && p.lon != null && next.lat != null && next.lon != null) {
+                const dist = haversineKm(p.lat, p.lon, next.lat, next.lon);
+                travel_time_to_next_minutes = travelMinutes(dist);
             }
-    }
-    return place.description || ACTIVITY_MAP.default
-}
+        }
 
-function buildWeatherNote(weather: WeatherData | null): string | undefined {
-    if (!weather) return undefined
-        if (weather.isExtreme) return '⚠️ Extreme weather — consider indoor alternatives'
-            if (weather.isRainy) return '🌧️ Rain expected — bring an umbrella'
-                return undefined
+        cursor += duration_minutes + travel_time_to_next_minutes;
+
+        return {
+            step: i + 1,
+            name: p.name,
+            type: p.type,
+            arrival_time,
+            duration_minutes,
+            travel_time_to_next_minutes: i < sorted.length - 1 ? travel_time_to_next_minutes : 0,
+            description: p.description,
+            lat: p.lat,
+            lon: p.lon,
+            address: p.address,
+        };
+    });
+
+    return { city, hotel, stops };
 }

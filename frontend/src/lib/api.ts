@@ -191,3 +191,45 @@ export async function apiGetChatHistory(tripId: string) {
   // Gunakan apiFetchSafe karena chat history bisa diakses saat guest/auth opsional
   return apiFetchSafe(`/chatbot/history/${tripId}`);
 }
+
+export async function apiSavePlace(place: any) {
+  return apiFetch('/saved-places/', {
+    method: 'POST',
+    body: JSON.stringify({ place }),
+  });
+}
+
+export async function apiGetSavedPlaces() {
+  return apiFetch('/saved-places/');
+}
+
+export async function apiDeleteSavedPlace(name: string) {
+  return apiFetch(`/saved-places/name/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function apiGetUserPreferences() {
+  return apiFetch('/trips/preferences/history');
+}
+
+export async function apiGeneratePlan(data: {
+  city: string;
+  vibe: string;
+  budget: number;
+  days: number;
+  arrival_time?: string;
+  departure_time?: string;
+}) {
+  return apiFetch('/trips/generate-plan', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function apiGenerateTripItinerary(tripId: string) {
+  return apiFetch(`/trips/${tripId}/generate`, {
+    method: 'POST',
+  });
+}
+
