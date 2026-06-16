@@ -42,14 +42,27 @@ export async function getCityCenter(
     }
 }
 
-/** Sequential geocoding — respects Nominatim 1 req/sec limit */
 export async function enrichPlaces(
     places: ChatPlace[],
     cityContext: string,
 ): Promise<ChatPlace[]> {
     const results: ChatPlace[] = [];
-    for (const p of places) {
-        const coords = await geocodeName(p.name, cityContext);
+    const center = await getCityCenter(cityContext);
+
+    for (let i = 0; i < places.length; i++) {
+        const p = places[i];
+        let coords = await geocodeName(p.name, cityContext);
+
+        if (!coords && center) {
+            // Fallback: distribute places in a circle around the city center if geocoding fails.
+            const angle = (i * 2 * Math.PI) / Math.max(1, places.length);
+            const r = 0.006 + (i * 0.0015); // distribute radially
+            coords = {
+                lat: center.lat + r * Math.sin(angle),
+                lon: center.lon + r * Math.cos(angle),
+            };
+        }
+
         results.push(coords ? { ...p, ...coords } : p);
         await sleep(350); // stay under 1 req/sec
     }
