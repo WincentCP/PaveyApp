@@ -1,8 +1,3 @@
-/**
- * WeatherWidget.tsx — Weather display card
- * Matches Pavey's color system: brand-500 = #3B5BFF, ink-*, etc.
- */
-
 import { Wind, Droplets, Thermometer, AlertTriangle } from 'lucide-react';
 import type { WeatherData } from '../types';
 
@@ -41,7 +36,6 @@ export default function WeatherWidget({ data, compact = false }: Props) {
 
     return (
         <div className={`rounded-2xl border p-4 ${bgClass}`}>
-        {/* Header */}
         <div className="flex items-center justify-between">
         <div>
         <p className="text-ink-400 text-[10px] uppercase tracking-widest font-semibold">Weather Now</p>
@@ -50,19 +44,17 @@ export default function WeatherWidget({ data, compact = false }: Props) {
         <img src={iconUrl} alt={data.description} className="w-14 h-14 object-contain" />
         </div>
 
-        {/* Temp */}
         <div className="flex items-end gap-2 mt-1">
         <span className="text-4xl font-bold text-ink-900 font-display">{data.temp}°</span>
         <span className="text-ink-500 text-sm mb-1">feels like {data.feels_like}°C</span>
         </div>
         <p className="text-brand-600 capitalize text-sm mt-0.5">{data.description}</p>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mt-3">
         {[
             { icon: <Droplets className="w-3.5 h-3.5" />, label: 'Humidity', val: `${data.humidity}%` },
-            { icon: <Wind className="w-3.5 h-3.5" />,     label: 'Wind',     val: `${data.wind_speed} km/h` },
-            { icon: <Thermometer className="w-3.5 h-3.5" />, label: 'Rain',  val: data.rain ? `${data.rain}mm` : 'None' },
+            { icon: <Wind className="w-3.5 h-3.5" />, label: 'Wind', val: `${data.wind_speed} km/h` },
+            { icon: <Thermometer className="w-3.5 h-3.5" />, label: 'Rain', val: data.rain ? `${data.rain}mm` : 'None' },
         ].map((s) => (
             <div key={s.label} className="bg-white rounded-xl p-2 text-center">
             <span className="text-brand-500 flex justify-center">{s.icon}</span>
@@ -72,7 +64,6 @@ export default function WeatherWidget({ data, compact = false }: Props) {
         ))}
         </div>
 
-        {/* Alerts */}
         {data.isExtreme && (
             <div className="mt-3 flex items-center gap-2 bg-red-100 rounded-xl px-3 py-2 text-red-700 text-xs border border-red-200">
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />

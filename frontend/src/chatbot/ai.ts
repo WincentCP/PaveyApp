@@ -1,86 +1,114 @@
 /**
- * ai.ts — LLM gateway for TinTin chatbot bridged securely to the backend
+ * ai.ts — LLM gateway for TinTin chatbot
+ *
+ * All calls go through the backend /chatbot/message which holds the Groq key.
+ * The system prompt is injected server-side (chatbot.py). This file just:
+ *   1. Calls apiChat
+ *   2. Strips the DATA_JSON block safely
+ *   3. Parses the structured result
  */
 
 import type { AIResult } from './types';
 import { apiChat } from '../lib/api';
-
-export const SYSTEM_PROMPT = '';
-
-/** Strip the DATA_JSON block from the visible text, return both parts. */
-export function stripDataJson(raw: string): { display: string; json: string | null } {
-    const trimmed = raw.trim();
-
-    // 1. Try matching the DATA_JSON block format
-    let match = trimmed.match(/DATA_JSON>\s*([\s\S]*?)\s*<DATA_JSON/);
-    if (match) {
-        const display = trimmed.replace(/DATA_JSON>[\s\S]*?<DATA_JSON/, '').trim();
-        return { display, json: match[1].trim() };
-    }
-    
-    // 2. Try matching <DATA_JSON>...</DATA_JSON>
-    match = trimmed.match(/<DATA_JSON>\s*([\s\S]*?)\s*<\/DATA_JSON>/i);
-    if (match) {
-        const display = trimmed.replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/gi, '').trim();
-        return { display, json: match[1].trim() };
-    }
-
-    // 3. Try matching ```json ... ```
-    match = trimmed.match(/```json\s*([\s\S]*?)\s*```/i);
-    if (match) {
-        const display = trimmed.replace(/```json[\s\S]*?```/gi, '').trim();
-        return { display, json: match[1].trim() };
-    }
-
-    // 4. Try matching raw JSON if the entire response is a JSON object
-    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            if (parsed.intent) {
-                return { display: parsed.intro || '', json: trimmed };
-            }
-        } catch {}
-    }
-
-    return { display: trimmed, json: null };
-}
-
-/** Parse the extracted JSON string into AIResult, with safety fallback. */
-export function parseAIResult(jsonStr: string): AIResult | null {
-    try {
-        // Remove markdown code fences if the model misbehaved
-        const clean = jsonStr.replace(/^```(?:json)?|```$/gm, '').trim();
-        const parsed = JSON.parse(clean) as AIResult;
-        if (!parsed.intent || !parsed.intro) return null;
-        return parsed;
-    } catch {
-        return null;
-    }
-}
 
 export interface HistoryMsg {
     role: 'user' | 'assistant' | 'system';
     content: string;
 }
 
-/**
- * Send a message to the AI via secure backend router.
- */
-export async function sendMessage(
-    history: HistoryMsg[],
-    userMessage: string,
-    onChunk?: (chunk: string) => void,
-    tripId?: string,
-    context?: string,
-): Promise<string> {
-    const res = await apiChat(userMessage, tripId, context);
-    const reply = res.reply || '';
-    if (onChunk && reply) {
-        // No streaming chunk-by-chunk over standard HTTP JSON response,
-        // so we just return it as a single chunk
-        const { display } = stripDataJson(reply);
-        onChunk(display);
+// ─── Strip DATA_JSON from raw response ───────────────────────────────────────
+
+export function stripDataJson(raw: string): { display: string; json: string | null } {
+    const trimmed = raw.trim();
+
+    // Format 1: DATA_JSON> {...} <DATA_JSON
+    let m = trimmed.match(/DATA_JSON>\s*([\s\S]*?)\s*<DATA_JSON/);
+    if (m) {
+        const display = trimmed.replace(/DATA_JSON>[\s\S]*?<DATA_JSON/, '').trim();
+        return { display: cleanDisplay(display), json: m[1].trim() };
     }
-    return reply;
+
+    // Format 2: <DATA_JSON>...</DATA_JSON>
+    m = trimmed.match(/<DATA_JSON>\s*([\s\S]*?)\s*<\/DATA_JSON>/i);
+    if (m) {
+        const display = trimmed.replace(/<DATA_JSON>[\s\S]*?<\/DATA_JSON>/gi, '').trim();
+        return { display: cleanDisplay(display), json: m[1].trim() };
+    }
+
+    // Format 3: ```json ... ```
+    m = trimmed.match(/```json\s*([\s\S]*?)\s*```/i);
+    if (m) {
+        const display = trimmed.replace(/```json[\s\S]*?```/gi, '').trim();
+        return { display: cleanDisplay(display), json: m[1].trim() };
+    }
+
+    // Format 4: entire response is JSON
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            if (parsed.intent) {
+                return { display: cleanDisplay(parsed.intro || ''), json: trimmed };
+            }
+        } catch { /* not json */ }
+    }
+
+    return { display: cleanDisplay(trimmed), json: null };
 }
 
+/**
+ * Clean display text:
+ * - Remove any trailing open DATA_JSON tags
+ * - Remove raw JSON blobs that leaked into text
+ * - Clean markdown bold/italic artifacts if unmatched
+ */
+function cleanDisplay(text: string): string {
+    return text
+    // Remove any orphan DATA_JSON tags
+    .replace(/DATA_JSON>[\s\S]*/gi, '')
+    .replace(/<\/?DATA_JSON>/gi, '')
+    // Remove raw JSON blobs { ... }
+    .replace(/\{[\s\S]{0,2000}?\}/g, (match) => {
+        try { const p = JSON.parse(match); if (p.intent) return ''; } catch { /* not json */ }
+        return match;
+    })
+    // Clean unmatched markdown asterisks (bold **)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    // Clean unmatched single asterisk italic
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    // Remove trailing open tags
+    .replace(/<[a-zA-Z_]+>$/g, '')
+    .trim();
+}
+
+// ─── Parse AIResult ───────────────────────────────────────────────────────────
+
+export function parseAIResult(jsonStr: string): AIResult | null {
+    try {
+        const clean = jsonStr.replace(/^```(?:json)?|```$/gm, '').trim();
+        const parsed = JSON.parse(clean) as AIResult;
+        if (!parsed.intent || typeof parsed.intro !== 'string') return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+// ─── Send message ─────────────────────────────────────────────────────────────
+
+export async function sendMessage(
+    _history: HistoryMsg[],
+    userMessage: string,
+    onChunk?: (chunk: string) => void,
+                                  tripId?: string,
+                                  context?: string,
+): Promise<string> {
+    const res = await apiChat(userMessage, tripId, context);
+    const reply: string = res.reply || '';
+
+    if (onChunk && reply) {
+        const { display } = stripDataJson(reply);
+        if (display) onChunk(display);
+    }
+
+    return reply;
+}

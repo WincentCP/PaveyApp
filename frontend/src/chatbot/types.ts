@@ -1,4 +1,4 @@
-// ─── Weather ────────────────────────────────────────────────────────────────
+// ─── Weather ─────────────────────────────────────────────────────────────────
 
 export interface WeatherData {
     city: string;
@@ -13,7 +13,7 @@ export interface WeatherData {
     isExtreme: boolean;
 }
 
-// ─── Places / Geocoding ──────────────────────────────────────────────────────
+// ─── Places ───────────────────────────────────────────────────────────────────
 
 export interface ChatPlace {
     name: string;
@@ -29,7 +29,7 @@ export interface ChatPlace {
     phone?: string;
 }
 
-// ─── Itinerary ───────────────────────────────────────────────────────────────
+// ─── Itinerary ────────────────────────────────────────────────────────────────
 
 export interface ItineraryStop {
     step: number;
@@ -51,13 +51,16 @@ export interface TravelPlan {
     stops: ItineraryStop[];
 }
 
-// ─── AI Response ─────────────────────────────────────────────────────────────
+// ─── AI Response ──────────────────────────────────────────────────────────────
 
 export type ChatIntent =
 | 'recommend_places'
 | 'travel_plan'
 | 'check_weather'
 | 'search_hotels'
+| 'edit_plan'
+| 'ask_hotel'
+| 'ask_city'
 | 'general';
 
 export interface AIResult {
@@ -76,7 +79,7 @@ export interface AIResult {
     start_time?: string;
 }
 
-// ─── Chat Messages ───────────────────────────────────────────────────────────
+// ─── Chat ─────────────────────────────────────────────────────────────────────
 
 export type MsgRole = 'user' | 'assistant';
 
@@ -94,3 +97,11 @@ export interface ChatMsg {
     isStreaming?: boolean;
     richContent?: RichContent;
 }
+
+// ─── Chat flow state ──────────────────────────────────────────────────────────
+
+export type PendingFlow =
+| { type: 'awaiting_city_for_plan' }
+| { type: 'awaiting_hotel_and_city' }
+| { type: 'awaiting_edit_instruction'; plan: TravelPlan }
+| null;

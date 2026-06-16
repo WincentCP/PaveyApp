@@ -1,98 +1,52 @@
-/**
- * MapView.tsx — Leaflet map dengan numbered pin markers
- *
- * Leaflet dimuat via CDN di index.html. Kita poll window.L sebelum init
- * agar tidak crash jika script belum selesai parse.
- */
-
 import { useEffect, useRef } from 'react';
 import type { ChatPlace, ItineraryStop } from '../types';
 
-// ─── Type shim for window.L ───────────────────────────────────────────────────
 declare global {
     interface Window {
         L: typeof import('leaflet');
     }
 }
 
-// ─── Color per type ───────────────────────────────────────────────────────────
 const TYPE_COLOR: Record<string, string> = {
     destination: '#3B5BFF',
-    restaurant:  '#F97316',
-    hotel:       '#8B5CF6',
-    attraction:  '#10B981',
+    restaurant: '#F97316',
+    hotel: '#8B5CF6',
+    attraction: '#10B981',
 };
 
-function markerHtml(index: number, color: string, label: string): string {
-    return `
-    <div style="
-    background:${color};
-    color:#fff;
-    width:28px;height:28px;
-    border-radius:50% 50% 50% 0;
-    transform:rotate(-45deg);
-    display:flex;align-items:center;justify-content:center;
-    border:2px solid #fff;
-    box-shadow:0 2px 8px rgba(0,0,0,.35);
-    ">
-    <span style="transform:rotate(45deg);font-size:11px;font-weight:700">${label}</span>
-    </div>
-    `;
-}
-
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 type PlaceItem = ChatPlace | ItineraryStop;
-
-interface MapViewProps {
-    places: PlaceItem[];
-    className?: string;
-}
 
 function getCoords(p: PlaceItem): { lat: number; lon: number } | null {
     if ('lat' in p && p.lat != null && p.lon != null) return { lat: p.lat, lon: p.lon };
     return null;
 }
 
-function getName(p: PlaceItem): string {
-    return p.name;
-}
-
-function getType(p: PlaceItem): string {
-    return p.type ?? 'destination';
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export default function MapView({ places, className = '' }: MapViewProps) {
+export default function MapView({ places, className = '' }: { places: PlaceItem[]; className?: string }) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const mapRef       = useRef<ReturnType<typeof window.L.map> | null>(null);
+    const mapRef = useRef<ReturnType<typeof window.L.map> | null>(null);
 
     useEffect(() => {
-        const placesWithCoords = places.filter((p) => getCoords(p) !== null);
-        if (placesWithCoords.length === 0) return;
+        const withCoords = places.filter((p) => getCoords(p) !== null);
+        if (withCoords.length === 0) return;
 
-        let pollInterval: ReturnType<typeof setInterval>;
-        let cancelled = false;
+        let poll: ReturnType<typeof setInterval>;
+        let dead = false;
 
-        function initMap() {
-            if (cancelled || !containerRef.current) return;
-
+        function init() {
+            if (dead || !containerRef.current) return;
             try {
                 const L = window.L;
-
-                // Destroy previous instance
                 if (mapRef.current) {
-                    try { mapRef.current.remove(); } catch { /* ignore */ }
+                    try { mapRef.current.remove(); } catch { /* ok */ }
                     mapRef.current = null;
                 }
 
-                const coords = placesWithCoords.map((p) => getCoords(p)!);
-                const centerLat = coords.reduce((s, c) => s + c.lat, 0) / coords.length;
-                const centerLon = coords.reduce((s, c) => s + c.lon, 0) / coords.length;
+                const coords = withCoords.map((p) => getCoords(p)!);
+                const cLat = coords.reduce((s, c) => s + c.lat, 0) / coords.length;
+                const cLon = coords.reduce((s, c) => s + c.lon, 0) / coords.length;
 
                 const map = L.map(containerRef.current, {
-                    center: [centerLat, centerLon],
+                    center: [cLat, cLon],
                     zoom: 13,
                     zoomControl: true,
                     scrollWheelZoom: false,
@@ -100,77 +54,55 @@ export default function MapView({ places, className = '' }: MapViewProps) {
                 mapRef.current = map;
 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+                    attribution: '© OpenStreetMap © CARTO',
                     maxZoom: 19,
                 }).addTo(map);
 
-                const latlngs: [number, number][] = [];
+                const lls: [number, number][] = [];
 
-                placesWithCoords.forEach((p, i) => {
+                withCoords.forEach((p, i) => {
                     const c = getCoords(p)!;
-                    const color = TYPE_COLOR[getType(p)] ?? '#3B5BFF';
-                    const label = String(i + 1);
-
-                    const icon = L.divIcon({
-                        html: markerHtml(i, color, label),
-                                           className: '',
-                                           iconSize: [28, 28],
-                                           iconAnchor: [14, 28],
-                                           popupAnchor: [0, -30],
-                    });
-
-                    L.marker([c.lat, c.lon], { icon })
-                    .addTo(map)
-                    .bindPopup(
-                        `<div style="font-family:sans-serif;min-width:140px">
-                        <div style="font-weight:700;font-size:13px">${getName(p)}</div>
-                        <div style="font-size:11px;color:#666;text-transform:capitalize;margin-top:2px">${getType(p)}</div>
-                        </div>`,
-                    );
-
-                    latlngs.push([c.lat, c.lon]);
+                    const color = TYPE_COLOR[p.type ?? 'destination'] ?? '#3B5BFF';
+                const icon = L.divIcon({
+                    html: `<div style="background:${color};color:#fff;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"><span style="transform:rotate(45deg);font-size:10px;font-weight:700">${i + 1}</span></div>`,
+                                       className: '',
+                                       iconSize: [26, 26],
+                                       iconAnchor: [13, 26],
+                                       popupAnchor: [0, -28],
+                });
+                L.marker([c.lat, c.lon], { icon })
+                .addTo(map)
+                .bindPopup(`<div style="font-family:sans-serif;min-width:120px"><b style="font-size:12px">${p.name}</b><div style="font-size:10px;color:#666;margin-top:2px;text-transform:capitalize">${p.type ?? ''}</div></div>`);
+                lls.push([c.lat, c.lon]);
                 });
 
-                // Draw route polyline
-                if (latlngs.length > 1) {
-                    L.polyline(latlngs, { color: '#3B5BFF', weight: 2.5, opacity: 0.6, dashArray: '6 4' }).addTo(map);
+                if (lls.length > 1) {
+                    L.polyline(lls, { color: '#3B5BFF', weight: 2.5, opacity: 0.55, dashArray: '6 4' }).addTo(map);
+                    map.fitBounds(L.latLngBounds(lls), { padding: [28, 28] });
                 }
-
-                // Fit bounds
-                if (latlngs.length > 1) {
-                    map.fitBounds(L.latLngBounds(latlngs), { padding: [32, 32] });
-                }
-            } catch (err) {
-                console.error('[MapView] init error', err);
+            } catch (e) {
+                console.error('[MapView]', e);
             }
         }
 
-        // Poll until window.L is ready (CDN async load)
-        pollInterval = setInterval(() => {
-            if (window.L) {
-                clearInterval(pollInterval);
-                initMap();
-            }
+        poll = setInterval(() => {
+            if (window.L) { clearInterval(poll); init(); }
         }, 100);
 
         return () => {
-            cancelled = true;
-            clearInterval(pollInterval);
-            if (mapRef.current) {
-                try { mapRef.current.remove(); } catch { /* ignore */ }
-                mapRef.current = null;
-            }
+            dead = true;
+            clearInterval(poll);
+            if (mapRef.current) { try { mapRef.current.remove(); } catch { /* ok */ } mapRef.current = null; }
         };
     }, [places]);
 
     const hasCoords = places.some((p) => getCoords(p) !== null);
-
     if (!hasCoords) return null;
 
     return (
         <div
         ref={containerRef}
-        className={`rounded-2xl overflow-hidden ${className}`}
+        className={`rounded-2xl overflow-hidden border border-ink-100 ${className}`}
         style={{ height: 220, minHeight: 220 }}
         />
     );
