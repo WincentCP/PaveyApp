@@ -45,6 +45,9 @@ export function useChat(tripId?: string) {
     // Last generated plan (for edit flow)
     const lastPlanRef = useRef<TravelPlan | null>(null);
 
+    // Last active/detected city to preserve context across messages for guest sessions
+    const lastCityRef = useRef<string>('');
+
     const historyRef = useRef<HistoryMsg[]>([]);
 
     const pushHistory = (role: 'user' | 'assistant', content: string) => {
@@ -120,6 +123,10 @@ export function useChat(tripId?: string) {
             return;
         }
 
+        if (result.city) {
+            lastCityRef.current = result.city;
+        }
+
         let richContent: RichContent | undefined;
 
         try {
@@ -158,7 +165,8 @@ export function useChat(tripId?: string) {
                 case 'search_hotels': {
                     const city = result.city ?? '';
                     const hotels = await searchHotels(city);
-                    richContent = { type: 'hotels', places: hotels };
+                    const enriched = city ? await enrichPlaces(hotels, city) : hotels;
+                    richContent = { type: 'hotels', places: enriched };
                     break;
                 }
 
@@ -193,6 +201,7 @@ export function useChat(tripId?: string) {
             }
 
             updateMsg(detectingId, { text: `📍 Got it — you're in ${loc.city}. Let me check the weather first...` });
+            lastCityRef.current = loc.city;
 
             // Fetch weather
             const weather = await fetchWeatherByCoords(loc.lat, loc.lon);
@@ -318,6 +327,7 @@ export function useChat(tripId?: string) {
             appendMsg({ id: uid(), role: 'user', text: userText });
 
             const city = userText.trim();
+            lastCityRef.current = city;
             const assistantId = uid();
             appendMsg({ id: assistantId, role: 'assistant', text: '⏳ Checking weather and planning your day...', isStreaming: true });
 
@@ -396,6 +406,7 @@ export function useChat(tripId?: string) {
             appendMsg({ id: uid(), role: 'user', text: userText });
 
             const city = userText.trim();
+            lastCityRef.current = city;
             const assistantId = uid();
             appendMsg({ id: assistantId, role: 'assistant', text: '⏳ Checking weather...', isStreaming: true });
 
@@ -448,6 +459,7 @@ export function useChat(tripId?: string) {
                 const prompt = `The user is staying at: "${userText}". Build a 1-day hotel-anchored travel itinerary. Extract the hotel name and city from the user message. Give 5 real nearby attractions and restaurants. First stop and last stop must be closest to the hotel. You MUST use the "travel_plan" intent in the JSON schema.`;
 
                 const weather_city = userText.split(',').slice(-1)[0]?.trim() || userText.trim();
+                lastCityRef.current = weather_city;
                 const weather = await fetchWeather(weather_city);
                 const weatherHint = weather.isRainy
                 ? 'It is raining. Prioritize indoor venues.'
@@ -608,6 +620,7 @@ export function useChat(tripId?: string) {
             updateMsg(assistantId, { text: display });
         },
         tripId,
+        lastCityRef.current ? `User is currently interested in or located in: ${lastCityRef.current}` : undefined,
     );
 
     if (!display) {
