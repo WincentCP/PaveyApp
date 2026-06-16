@@ -77,6 +77,8 @@ function cleanDisplay(text: string): string {
     .replace(/\*([^*\n]+)\*/g, '$1')
     // Remove any leftover single or double asterisks entirely
     .replace(/\*/g, '')
+    // Clean markdown headers (e.g. ### Header -> Header)
+    .replace(/^(?:#+)\s*/gm, '')
     // Remove trailing open tags
     .replace(/<[a-zA-Z_]+>$/g, '')
     .trim();
