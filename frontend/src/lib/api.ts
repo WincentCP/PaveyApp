@@ -221,7 +221,9 @@ export async function apiGeneratePlan(data: {
   arrival_time?: string;
   departure_time?: string;
 }) {
-  return apiFetch('/trips/generate-plan', {
+  // Use apiFetchSafe — generate-plan is accessible to guests (no auth required).
+  // Using apiFetch would redirect guests to /onboarding on 401.
+  return apiFetchSafe('/trips/generate-plan', {
     method: 'POST',
     body: JSON.stringify(data),
   });

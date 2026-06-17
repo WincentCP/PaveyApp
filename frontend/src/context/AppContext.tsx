@@ -774,9 +774,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLoadingPlan(true);
       try {
         let res: any;
-        const targetCity = destinations[0]?.name || 'Bali, Indonesia';
+        // Use the first destination name, then activeTrip destination, then empty string.
+        // Do NOT fall back to 'Bali, Indonesia' — that would generate wrong-city results.
+        const targetCity = destinations[0]?.name || activeTrip?.destination || '';
         
-        if (isAuthenticated && activeTripId && activeTripId !== 'trip-default') {
+        // If we have an explicit targetCity from the intent sheet, always use
+        // apiGeneratePlan so the AI generates places for the correct city.
+        // Only use apiGenerateTripItinerary when viewing a saved trip (no new city input).
+        if (targetCity) {
+          res = await apiGeneratePlan({
+            city: targetCity,
+            vibe,
+            budget,
+            days,
+            arrival_time: arrivalTime,
+            departure_time: departureTime,
+          });
+        } else if (isAuthenticated && accessToken && activeTripId && activeTripId !== 'trip-default') {
           res = await apiGenerateTripItinerary(activeTripId);
         } else {
           res = await apiGeneratePlan({
@@ -810,8 +824,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
             priceRange: { min: item.price ?? 0, max: item.price ?? 0 },
             durationMin: item.duration_spent_minutes || 60,
             distanceKm: item.travel_time_to_next_minutes ? (item.travel_time_to_next_minutes * 0.4) : 0.5,
-            lat: item.latitude || -8.5,
-            lng: item.longitude || 115.2,
+            lat: typeof item.latitude === 'number' && item.latitude !== 0 ? item.latitude : (item.latitude ? parseFloat(item.latitude) : 0),
+            lng: typeof item.longitude === 'number' && item.longitude !== 0 ? item.longitude : (item.longitude ? parseFloat(item.longitude) : 0),
             rating: item.rating || 4.5,
             description: item.activity_todo || 'Explore the location',
             openingHours: '09:00 – 21:00',

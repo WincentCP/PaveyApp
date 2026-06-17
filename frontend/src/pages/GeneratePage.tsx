@@ -402,13 +402,12 @@ export default function GeneratePage() {
       if (pace !== paceParam) setPace(paceParam);
     }
     if (!isManualMode && !isEditMode) {
-      const days = daysParam > 1 ? daysParam : journeyStart.days;
-      if (days > 1) {
-        buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
-          .catch(() => setGenerationError(true));
-      } else {
-        setItinerary(buildItinerary());
-      }
+      // Always use AI (buildFullItinerary) regardless of trip duration.
+      // buildItinerary() only reads static local PLACES (Bali/Bangkok/etc)
+      // and would show wrong city data for user's actual destination.
+      const days = Math.max(1, daysParam > 1 ? daysParam : journeyStart.days);
+      buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+        .catch(() => setGenerationError(true));
     }
   }, []); // eslint-disable-line
 
@@ -568,12 +567,10 @@ export default function GeneratePage() {
     setReviewQueue([]);
     setDeckIndex(0);
     setSwipeHistory([]);
-    if (isMultiDay) {
-      buildFullItinerary(perDayItineraries.length, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
-        .catch(() => setGenerationError(true));
-    } else {
-      setItinerary(buildItinerary());
-    }
+    // Always use AI for regeneration — consistent with initial generation.
+    const days = Math.max(1, isMultiDay ? perDayItineraries.length : (daysParam > 1 ? daysParam : journeyStart.days));
+    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+      .catch(() => setGenerationError(true));
     setUserEdited(false);
     show('Re-rolled itinerary', 'info');
   };
@@ -727,13 +724,9 @@ export default function GeneratePage() {
                           onClick={() => {
                             setGenerationError(false);
                             setPhase('loading');
-                            const days = daysParam > 1 ? daysParam : journeyStart.days;
-                            if (days > 1) {
-                              buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
-                                .catch(() => setGenerationError(true));
-                            } else {
-                              setItinerary(buildItinerary());
-                            }
+                            const days = Math.max(1, daysParam > 1 ? daysParam : journeyStart.days);
+                            buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+                              .catch(() => setGenerationError(true));
                           }}
                           className="h-12 px-6 rounded-2xl bg-brand-500 text-white font-bold press shadow-glow flex items-center gap-2"
                         >
@@ -791,13 +784,9 @@ export default function GeneratePage() {
                               <button
                                 onClick={() => {
                                   setPace('relaxed');
-                                  const days = daysParam > 1 ? daysParam : journeyStart.days;
-                                  if (days > 1) {
-                                    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
-                                      .catch(() => setGenerationError(true));
-                                  } else {
-                                    setItinerary(buildItinerary());
-                                  }
+                                  const days = Math.max(1, daysParam > 1 ? daysParam : journeyStart.days);
+                                  buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+                                    .catch(() => setGenerationError(true));
                                   show('Switched to Relaxed pace', 'success');
                                 }}
                                 className="text-xs font-bold bg-amber-500 text-white px-2.5 py-1 rounded-lg press"
