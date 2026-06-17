@@ -21,10 +21,11 @@ export interface HistoryMsg {
 export function stripDataJson(raw: string): { display: string; json: string | null } {
     const trimmed = raw.trim();
 
-    // Format 1: DATA_JSON> {...} <DATA_JSON
-    let m = trimmed.match(/DATA_JSON>\s*([\s\S]*?)\s*<DATA_JSON/);
+    // Format 1: DATA_JSON> {...} <DATA_JSON / <DATA_JSON> / </DATA_JSON>
+    let m = trimmed.match(/DATA_JSON>\s*([\s\S]*?)\s*<\/DATA_JSON>?/i) ||
+            trimmed.match(/DATA_JSON>\s*([\s\S]*?)\s*<DATA_JSON>?/i);
     if (m) {
-        const display = trimmed.replace(/DATA_JSON>[\s\S]*?<DATA_JSON/, '').trim();
+        const display = trimmed.replace(/DATA_JSON>[\s\S]*?(?:<\/DATA_JSON>?|<DATA_JSON>?)/i, '').trim();
         return { display: cleanDisplay(display), json: m[1].trim() };
     }
 
