@@ -29,7 +29,7 @@ function LocationPopup({ onAllow, onDismiss }: { onAllow: () => void; onDismiss:
     initial={{ opacity: 0, y: 8, scale: 0.95 }}
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: 8, scale: 0.95 }}
-    className="absolute inset-x-4 top-20 z-60 bg-white rounded-2xl shadow-card border border-ink-100 p-4"
+    className="absolute inset-x-4 top-20 z-[2000] bg-white rounded-2xl shadow-card border border-ink-100 p-4"
     >
     <div className="flex items-start gap-3">
     <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-200 flex items-center justify-center shrink-0">
