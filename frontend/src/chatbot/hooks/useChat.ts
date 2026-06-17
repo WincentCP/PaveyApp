@@ -193,14 +193,18 @@ export function useChat(tripId?: string) {
 
             if (!loc) {
                 updateMsg(detectingId, {
-                    text: "I couldn't access your GPS 📍 No worries — which city are you currently in?",
+                    text: "I couldn't detect your location 📍 Which city are you currently in?",
                 });
                 pendingFlowRef.current = { type: 'awaiting_city_for_places' };
                 setLoading(false);
                 return;
             }
 
-            updateMsg(detectingId, { text: `📍 Got it — you're in ${loc.city}. Let me check the weather first...` });
+            const locNote = loc.fromIP
+                ? `📍 Got it — using approximate location: **${loc.city}**. GPS wasn't available so this might not be exact. Let me check what's nearby...`
+                : `📍 Got it — you're in **${loc.city}**. Let me check the weather first...`;
+
+            updateMsg(detectingId, { text: locNote });
             lastCityRef.current = loc.city;
 
             // Fetch weather

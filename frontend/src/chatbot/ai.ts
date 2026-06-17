@@ -57,19 +57,28 @@ export function stripDataJson(raw: string): { display: string; json: string | nu
 
 /**
  * Clean display text:
- * - Remove DATA_JSON artifacts and leaked JSON blobs
- * - Preserve markdown formatting (bold, lists, headers) for the UI renderer
+ * - Remove any trailing open DATA_JSON tags
+ * - Remove raw JSON blobs that leaked into text
+ * - Strip markdown formatting so text looks clean (rich content comes from RichBlock cards)
  */
 function cleanDisplay(text: string): string {
     return text
     // Remove any orphan DATA_JSON tags
     .replace(/DATA_JSON>[\s\S]*/gi, '')
     .replace(/<\/?DATA_JSON>/gi, '')
-    // Remove raw JSON blobs { ... } that have an 'intent' field (structured AI output)
+    // Remove raw JSON blobs { ... } that have an 'intent' field
     .replace(/\{[\s\S]{0,2000}?\}/g, (match) => {
         try { const p = JSON.parse(match); if (p.intent) return ''; } catch { /* not json */ }
         return match;
     })
+    // Clean markdown bold (**)
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    // Clean italic (*)
+    .replace(/\*([^*\n]+)\*/g, '$1')
+    // Remove leftover asterisks
+    .replace(/\*/g, '')
+    // Clean markdown headers (### Header → Header)
+    .replace(/^(?:#+)\s*/gm, '')
     // Remove trailing open tags
     .replace(/<[a-zA-Z_]+>$/g, '')
     .trim();
