@@ -127,3 +127,18 @@ input[type="range"].time-slider::-moz-range-thumb {
   top: 64px !important;
   right: 12px !important;
 }
+
+/* ── Leaflet z-index overrides ──
+   Leaflet defaults use z-index 200-1000+ which covers our UI overlays.
+   Constrain all Leaflet layers to z-index 0-9 so our modals (z-40+),
+   toasts (z-[9999]), and buddy (z-[2000]) always appear above the map. */
+.leaflet-pane          { z-index: 1 !important; }
+.leaflet-tile-pane     { z-index: 1 !important; }
+.leaflet-overlay-pane  { z-index: 2 !important; }
+.leaflet-shadow-pane   { z-index: 3 !important; }
+.leaflet-marker-pane   { z-index: 4 !important; }
+.leaflet-tooltip-pane  { z-index: 5 !important; }
+.leaflet-popup-pane    { z-index: 6 !important; }
+.leaflet-top,
+.leaflet-bottom        { z-index: 7 !important; }
+.leaflet-control       { z-index: 7 !important; }

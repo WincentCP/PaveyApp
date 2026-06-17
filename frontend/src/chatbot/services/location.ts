@@ -39,7 +39,15 @@ function tryGPS(): Promise<UserLocation | null> {
                 clearTimeout(timeout);
                 const { latitude: lat, longitude: lon } = pos.coords;
                 // Reverse geocode with Nominatim to get city name
-                const city = await reverseCityName(lat, lon);
+                let city = await reverseCityName(lat, lon);
+                
+                // Fallback: If Nominatim fails or returns 'your location', fetch city name from IP
+                if (city === 'your location') {
+                    const ipGeo = await tryIPGeo();
+                    if (ipGeo && ipGeo.city) {
+                        city = ipGeo.city;
+                    }
+                }
                 resolve({ lat, lon, city });
             },
             () => {
@@ -62,7 +70,11 @@ async function reverseCityName(lat: number, lon: number): Promise<string> {
             d.address?.city ||
             d.address?.town ||
             d.address?.village ||
+            d.address?.municipality ||
+            d.address?.suburb ||
+            d.address?.city_district ||
             d.address?.county ||
+            d.address?.state ||
             'your location'
         );
     } catch {

@@ -20,7 +20,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <C.Provider value={{ show }}>
       {children}
-      <div className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center gap-2 pt-20 px-4">
+      <div className="pointer-events-none fixed inset-0 z-[9999] flex flex-col items-center gap-2 pt-20 px-4">
         <AnimatePresence>
           {items.map((t) => {
             const Icon = t.tone === 'success' ? CheckCircle2 : t.tone === 'warn' ? AlertTriangle : Info;
