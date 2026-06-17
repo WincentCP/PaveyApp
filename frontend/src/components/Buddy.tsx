@@ -2,7 +2,7 @@
  * Buddy.tsx — TinTin AI travel companion (drop-in replacement)
  *
  * Quick prompts:
- *   1. Places Near Me    → detect GPS / IP fallback, weather-first
+ *   1. Places Near Me    → GPS only (no IP fallback), weather-first
  *   2. Plan My Day       → ask city in chat
  *   3. Check Weather     → ask city in chat
  *   4. Find Hotels       → normal send → LLM intent
@@ -12,7 +12,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Send, X, Map, Calendar, CloudSun, Hotel, Navigation, PenLine, MapPin } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useChat } from '../chatbot/hooks/useChat';
 import { useApp } from '../context/AppContext';
 import WeatherWidget from '../chatbot/components/WeatherWidget';
@@ -61,6 +61,102 @@ function LocationPopup({ onAllow, onDismiss }: { onAllow: () => void; onDismiss:
   );
 }
 
+// ─── Markdown renderer ───────────────────────────────────────────────────────
+
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+function MarkdownText({ text, isUser }: { text: string; isUser?: boolean }) {
+  const lines = text.split('\n');
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Bullet list
+    if (/^[-*\u2022]\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*\u2022]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^[-*\u2022]\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${i}`} className="list-none space-y-1 my-1.5">
+          {items.map((item, j) => (
+            <li key={j} className="flex items-start gap-2">
+              <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${isUser ? 'bg-white/70' : 'bg-brand-400'}`} />
+              <span>{renderInline(item)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // Numbered list
+    if (/^\d+\.\s+/.test(line)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ol key={`ol-${i}`} className="space-y-1.5 my-1.5">
+          {items.map((item, j) => (
+            <li key={j} className="flex items-start gap-2">
+              <span className={`shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center mt-0.5 ${
+                isUser ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-700'
+              }`}>{j + 1}</span>
+              <span className="flex-1">{renderInline(item)}</span>
+            </li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    // Markdown header (##, ###)
+    const hMatch = line.match(/^(#{1,3})\s+(.+)/);
+    if (hMatch) {
+      elements.push(
+        <p key={`h-${i}`} className={`font-bold mt-2 mb-0.5 ${
+          hMatch[1].length === 1 ? 'text-base' : 'text-sm'
+        } ${isUser ? 'text-white' : 'text-ink-900'}`}>
+          {renderInline(hMatch[2])}
+        </p>
+      );
+      i++;
+      continue;
+    }
+
+    // Empty line → small gap
+    if (line.trim() === '') {
+      elements.push(<div key={`sp-${i}`} className="h-1" />);
+      i++;
+      continue;
+    }
+
+    // Normal paragraph
+    elements.push(
+      <p key={`p-${i}`} className="leading-snug">{renderInline(line)}</p>
+    );
+    i++;
+  }
+
+  return <>{elements}</>;
+}
+
 // ─── Rich content block ───────────────────────────────────────────────────────
 
 function RichBlock({ msg }: { msg: ChatMsg }) {
@@ -101,7 +197,7 @@ function MsgBubble({ msg }: { msg: ChatMsg }) {
     >
     <div className={`max-w-[86%] ${isMe ? '' : 'w-full'}`}>
     <div
-    className={`px-4 py-2.5 rounded-2xl text-sm leading-snug whitespace-pre-wrap ${
+    className={`px-4 py-2.5 rounded-2xl text-sm leading-snug ${
       isMe
       ? 'bg-brand-500 text-white rounded-br-md'
       : 'bg-ink-50 text-ink-800 rounded-bl-md'
@@ -118,8 +214,10 @@ function MsgBubble({ msg }: { msg: ChatMsg }) {
         />
       ))}
       </div>
-    ) : (
+    ) : isMe ? (
       msg.text
+    ) : (
+      <MarkdownText text={msg.text} isUser={false} />
     )}
     </div>
     {!isMe && <RichBlock msg={msg} />}

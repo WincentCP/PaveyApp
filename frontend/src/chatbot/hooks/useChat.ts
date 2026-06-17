@@ -193,9 +193,9 @@ export function useChat(tripId?: string) {
 
             if (!loc) {
                 updateMsg(detectingId, {
-                    text: "I couldn't detect your location automatically. Could you tell me which city you're in?",
+                    text: "I couldn't access your GPS 📍 No worries — which city are you currently in?",
                 });
-                pendingFlowRef.current = { type: 'awaiting_city_for_plan' };
+                pendingFlowRef.current = { type: 'awaiting_city_for_places' };
                 setLoading(false);
                 return;
             }
@@ -320,6 +320,83 @@ export function useChat(tripId?: string) {
         if (!flow) return false;
 
         setLoading(true);
+
+    // awaiting_city_for_places — GPS failed, user typed their city
+        if (flow.type === 'awaiting_city_for_places') {
+            pendingFlowRef.current = null;
+            appendMsg({ id: uid(), role: 'user', text: userText });
+
+            const city = userText.trim();
+            lastCityRef.current = city;
+            const assistantId = uid();
+            appendMsg({ id: assistantId, role: 'assistant', text: `📍 Got it — looking for places in ${city}...`, isStreaming: true });
+
+            try {
+                const weather = await fetchWeather(city);
+                const weatherHint = weather.isRainy
+                ? 'It is currently raining. Prioritize indoor places like museums, cafes, and malls.'
+                : weather.isExtreme
+                ? 'Weather is extreme. Recommend indoor or shaded spots.'
+                : 'Weather is clear. Recommend a mix of outdoor and indoor places.';
+
+                const userText2 = `Recommend tourist attractions and interesting places in ${city}. ${weatherHint} Give 5 real, specific places.`;
+
+                let display = '';
+                const raw = await sendMessage(
+                    historyRef.current,
+                    userText2,
+                    (chunk) => { display += chunk; updateMsg(assistantId, { text: display }); },
+                    tripId,
+                    `City: ${city}. ${weatherHint}`,
+                );
+
+                if (!display) {
+                    const { display: d } = stripDataJson(raw);
+                    display = d;
+                }
+
+                pushHistory('user', userText2);
+                pushHistory('assistant', raw);
+
+                const { json } = stripDataJson(raw);
+                const result = json ? parseAIResult(json) : null;
+                let richContent: RichContent | undefined;
+
+                if (result?.intent === 'recommend_places' && result.places?.length) {
+                    const raw2: ChatPlace[] = result.places.map((p) => ({
+                        ...p,
+                        type: (p.type as ChatPlace['type']) || 'destination',
+                    }));
+                    const enriched = await enrichPlaces(raw2, city);
+                    richContent = { type: 'places', places: enriched };
+                }
+
+                // Also show weather card
+                setMsgs((prev) => {
+                    const weatherMsg: ChatMsg = {
+                        id: uid(),
+                        role: 'assistant',
+                        text: `Current weather in ${weather.city}:`,
+                        richContent: { type: 'weather', weather },
+                    };
+                    const idx = prev.findIndex((m) => m.id === assistantId);
+                    const next = [...prev];
+                    next.splice(idx, 0, weatherMsg);
+                    return next;
+                });
+
+                updateMsg(assistantId, {
+                    text: result?.intro || display,
+                    isStreaming: false,
+                    richContent,
+                });
+            } catch {
+                updateMsg(assistantId, { text: "Sorry, something went wrong. Please try again!", isStreaming: false });
+            }
+
+            setLoading(false);
+            return true;
+        }
 
         // awaiting_city_for_plan
         if (flow.type === 'awaiting_city_for_plan') {

@@ -1,9 +1,12 @@
 /**
  * location.ts — Get user location
  *
- * Priority:
- *   1. navigator.geolocation (HTTPS + user allow)
- *   2. IP geolocation via ip-api.com (HTTP-safe, no key needed)
+ * Only uses browser GPS (navigator.geolocation).
+ * IP geolocation is intentionally removed — it is unreliable in Indonesia
+ * (ISP routing causes wrong city detection, e.g. South Tangerang for users elsewhere).
+ *
+ * If GPS is denied/unavailable, returns null and the calling flow will
+ * ask the user to type their city manually.
  *
  * Returns { lat, lon, city } or null.
  */
@@ -14,14 +17,9 @@ export interface UserLocation {
     city: string;
 }
 
-/** Try GPS first, fallback to IP geolocation */
+/** GPS only — returns null if unavailable/denied so UI can ask for city */
 export async function detectUserLocation(): Promise<UserLocation | null> {
-    // 1. Try GPS
-    const gps = await tryGPS();
-    if (gps) return gps;
-
-    // 2. Fallback: IP geolocation
-    return tryIPGeo();
+    return tryGPS();
 }
 
 function tryGPS(): Promise<UserLocation | null> {
@@ -69,22 +67,4 @@ async function reverseCityName(lat: number, lon: number): Promise<string> {
     }
 }
 
-async function tryIPGeo(): Promise<UserLocation | null> {
-    try {
-        // ip-api.com works over HTTP too
-        const res = await fetch('http://ip-api.com/json/?fields=status,city,lat,lon');
-        const d = await res.json();
-        if (d.status !== 'success') return null;
-        return { lat: d.lat, lon: d.lon, city: d.city };
-    } catch {
-        // Try alternate: ipapi.co (HTTPS)
-        try {
-            const res = await fetch('https://ipapi.co/json/');
-            const d = await res.json();
-            if (d.city && d.latitude) {
-                return { lat: d.latitude, lon: d.longitude, city: d.city };
-            }
-        } catch { /* ignore */ }
-        return null;
-    }
-}
+
