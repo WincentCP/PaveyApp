@@ -31,10 +31,67 @@ import {
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
 import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken, apiSaveOnboarding, apiSavePlace, apiDeleteSavedPlace, apiGetSavedPlaces, apiGetUserPreferences, apiGeneratePlan, apiGenerateTripItinerary } from '../lib/api';
+import { getCityCenter, haversineKm } from '../chatbot/services/geocoding';
+
 
 // Re-export planning types so existing imports from '../context/AppContext' keep working.
 export { PACE_STOPS, allocateDays };
 export type { TripPace, DayKind, DayPlan };
+
+/** Geocode itinerary places that have missing/zero/wrong coordinates via Nominatim OSM.
+ *  Reuses the same pipeline as the chatbot `enrichPlaces()` so both produce consistent,
+ *  accurate coordinates shown on Leaflet maps. */
+async function geocodeItineraryPlaces(places: Place[], city: string): Promise<Place[]> {
+  if (!city) return places;
+  const center = await getCityCenter(city);
+  const results: Place[] = [];
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  for (let i = 0; i < places.length; i++) {
+    const p = places[i];
+    const needsGeocode = !p.lat || !p.lng || (p.lat === 0 && p.lng === 0)
+      || (center && haversineKm(p.lat, p.lng, center.lat, center.lon) > 200);
+
+    if (!needsGeocode) {
+      results.push(p);
+      continue;
+    }
+
+    try {
+      const query = `${p.name}, ${city}`;
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'PaveyApp/1.0' } },
+      );
+      const data = await res.json();
+      if (data[0]) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+        // Sanity check: must be within 200km of city center
+        if (!center || haversineKm(lat, lng, center.lat, center.lon) <= 200) {
+          results.push({ ...p, lat, lng });
+          await sleep(350); // Nominatim rate limit: max 1 req/sec
+          continue;
+        }
+      }
+    } catch { /* silent fail, use fallback below */ }
+
+    // Radial fallback: distribute around city center if Nominatim fails
+    if (center) {
+      const angle = (i * 2 * Math.PI) / Math.max(1, places.length);
+      const r = 0.006 + (i * 0.0015);
+      results.push({
+        ...p,
+        lat: center.lat + r * Math.sin(angle),
+        lng: center.lon + r * Math.cos(angle),
+      });
+    } else {
+      results.push(p);
+    }
+  }
+  return results;
+}
+
 
 export type TransitMode = 'flight' | 'train' | 'bus' | 'drive' | 'ferry';
 
@@ -841,14 +898,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
           planDays.push(daysMap[d] || []);
         }
 
-        const meta: DayPlan[] = planDays.map((_, idx) => ({
+        // ── Geocode all places via Nominatim OSM (same as chatbot) ──
+        // This gives real coordinates for every stop regardless of what the
+        // backend returned — fixing wrong/zero coordinates on the Leaflet map.
+        const allRaw = planDays.flat();
+        const allGeocoded = await geocodeItineraryPlaces(allRaw, targetCity);
+
+        // Rebuild planDays preserving day grouping, with geocoded coords.
+        // Also compute real haversine distanceKm between consecutive stops.
+        let gIdx = 0;
+        const geocodedDays: Place[][] = planDays.map((dayPlaces) => {
+          const geocodedDay: Place[] = [];
+          for (let i = 0; i < dayPlaces.length; i++) {
+            const gp = allGeocoded[gIdx++] ?? dayPlaces[i];
+            const next = allGeocoded[gIdx] ?? null;
+            const distKm = (next && gp.lat && gp.lng && next.lat && next.lng)
+              ? haversineKm(gp.lat, gp.lng, next.lat, next.lng)
+              : gp.distanceKm;
+            geocodedDay.push({ ...gp, distanceKm: distKm });
+          }
+          return geocodedDay;
+        });
+
+        const meta: DayPlan[] = geocodedDays.map(() => ({
           destIdx: 0,
           kind: 'normal',
         }));
 
-        setPerDayItineraries(planDays);
+        setPerDayItineraries(geocodedDays);
         setPerDayMeta(meta);
-        setItinerary(planDays.flat());
+        setItinerary(geocodedDays.flat());
+
       } catch (err) {
         console.error("Failed to generate plan:", err);
         throw err;
