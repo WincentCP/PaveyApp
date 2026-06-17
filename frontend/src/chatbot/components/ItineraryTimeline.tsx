@@ -70,7 +70,10 @@ export default function ItineraryTimeline({ plan }: { plan: TravelPlan }) {
                                 <div className="flex flex-col items-center pt-1 shrink-0">
                                     <div
                                         className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold ring-2 ring-offset-2 transition-transform group-hover:scale-110"
-                                        style={{ background: colors.dot, ringColor: colors.dot + '40' }}
+                                        style={{ 
+                                        background: colors.dot, 
+                                        boxShadow: `0 0 0 2px #white, 0 0 0 4px ${colors.dot}40` 
+                                        }}
                                     >
                                         {stop.step ?? i + 1}
                                     </div>

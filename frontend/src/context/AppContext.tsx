@@ -1006,12 +1006,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const allStops = planDays.flat();
         if (allStops.length > 0 && days > 1) {
           const emptyDays = planDays.filter(d => d.length === 0).length;
-          if (emptyDays > 0) {
-            // Redistribute: split all stops evenly across days
-            const stopsPerDay = Math.ceil(allStops.length / days);
+          const unevenDistribution = planDays.some(d => d.length === 0) || 
+            (planDays.filter(d => d.length > 0).length > 0 && 
+            Math.max(...planDays.map(d => d.length)) - Math.min(...planDays.filter(d => d.length > 0).map(d => d.length)) > 2);
+
+          if (emptyDays > 0 || unevenDistribution) {
+            // Distribusi merata: setiap hari dapat stops yang sama
+            const base = Math.floor(allStops.length / days);
+            const remainder = allStops.length % days;
             planDays = [];
+            let idx = 0;
             for (let d = 0; d < days; d++) {
-              planDays.push(allStops.slice(d * stopsPerDay, (d + 1) * stopsPerDay));
+              const count = base + (d < remainder ? 1 : 0);
+              planDays.push(allStops.slice(idx, idx + count));
+              idx += count;
             }
           }
         }

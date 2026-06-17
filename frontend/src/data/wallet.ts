@@ -39,13 +39,19 @@ export const CURRENCY_RATES_TO_IDR: Record<Currency, number> = {
 };
 
 // Auto-suggest currency by destination keyword
+// Di wallet.ts, update DESTINATION_CURRENCY_HINTS:
 export const DESTINATION_CURRENCY_HINTS: Record<string, Currency> = {
-  bali: 'IDR', indonesia: 'IDR', jakarta: 'IDR', yogyakarta: 'IDR', lombok: 'IDR',
+  bali: 'IDR', indonesia: 'IDR', jakarta: 'IDR', yogyakarta: 'IDR',
+  lombok: 'IDR', bandung: 'IDR', medan: 'IDR', surabaya: 'IDR',
   japan: 'JPY', tokyo: 'JPY', osaka: 'JPY', kyoto: 'JPY',
-  france: 'EUR', paris: 'EUR', germany: 'EUR', spain: 'EUR', italy: 'EUR',
-  usa: 'USD', 'new york': 'USD', 'los angeles': 'USD', america: 'USD',
+  france: 'EUR', paris: 'EUR', germany: 'EUR', spain: 'EUR',
+  italy: 'EUR', amsterdam: 'EUR', barcelona: 'EUR', rome: 'EUR',
+  usa: 'USD', 'new york': 'USD', 'los angeles': 'USD', london: 'GBP',
   singapore: 'SGD',
   australia: 'AUD', sydney: 'AUD', melbourne: 'AUD',
+  thailand: 'THB', bangkok: 'THB',
+  malaysia: 'MYR', 'kuala lumpur': 'MYR',
+  korea: 'KRW', seoul: 'KRW', busan: 'KRW',
 };
 
 export function suggestCurrency(destination: string): Currency {
@@ -60,14 +66,14 @@ export function formatCurrencyAmount(amount: number, currency: Currency): string
   const sym = CURRENCY_SYMBOLS[currency];
   switch (currency) {
     case 'IDR':
-      if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(1)}jt`;
-      if (amount >= 1_000) return `Rp ${Math.round(amount / 1_000)}K`;
-      return `Rp ${Math.round(amount)}`;
+      if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(2)}jt`; 
+      if (amount >= 1_000) return `Rp ${(amount / 1_000).toFixed(1)}K`;           
+      return `Rp ${amount}`;                                                      
     case 'JPY':
     case 'KRW':
-      return `${sym}${Math.round(amount).toLocaleString()}`;
+      return `${sym}${amount.toLocaleString()}`;                                    
     default:
-      return `${sym}${amount < 1 ? amount.toFixed(2) : amount.toFixed(0)}`;
+      return `${sym}${amount.toFixed(2)}`;                                     
   }
 }
 

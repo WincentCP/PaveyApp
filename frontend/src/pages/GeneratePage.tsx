@@ -16,10 +16,11 @@ import { MAX_TRIP_DAYS, exceedsMaxDuration } from '../lib/planValidation';
 import { COPY } from '../lib/copy';
 import { dayIsTight } from '../lib/density';
 import { formatCost } from '../lib/format';
-import { suggestCurrency } from '../data/wallet';
+import { suggestCurrency, type Currency } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import TimePicker from '../components/TimePicker';
 import { tripDurationDays, todayISO } from '../lib/dateUtils';
+
 
 function formatDateRange(startISO: string, days: number): string {
   const start = new Date(startISO);
@@ -66,9 +67,9 @@ export default function GeneratePage() {
 
   // Fix #3: derive currency directly from current destination — don't trust activeTrip.currency
   // which might be the DEFAULT_TRIP stale value.
-  const effectiveCurrency = destinations[0]
-    ? suggestCurrency(destinations[0].name)
-    : activeTrip.currency;
+  const effectiveCurrency: Currency = destinations[0]
+  ? suggestCurrency(destinations[0].name)
+  : activeTrip.currency;
 
   const isEditMode = searchParams.get('edit') === '1';
   const isPostOnboarding = searchParams.get('after') === 'onboarding';
@@ -590,6 +591,7 @@ export default function GeneratePage() {
       .then(() => {
         // After rebuild, reload the deck with fresh places
         setReviewQueue([]);
+        setDeckIndex(0);
       })
       .catch(() => { setGenerationError(true); });
     setUserEdited(false);
@@ -874,7 +876,8 @@ export default function GeneratePage() {
                                 showConnector={i < displayItinerary.length - 1}
                                 nextDistanceKm={displayItinerary[i + 1]?.distanceKm}
                                 connectorFromTime={getTime(p.id, i)}
-                                connectorDurationMin={p.durationMin}
+                                connectorDurationMin={p.durationMin} 
+                                effectiveCurrency={effectiveCurrency}
                               />
                             );
                           });
@@ -1025,6 +1028,7 @@ export default function GeneratePage() {
                             nextDistanceKm={manualStops[i + 1]?.distanceKm}
                             connectorFromTime={getTime(p.id, i)}
                             connectorDurationMin={p.durationMin}
+                            effectiveCurrency={effectiveCurrency}
                           />
                         );
                       })}
@@ -1207,12 +1211,13 @@ export default function GeneratePage() {
                     depth={depth}
                     dayIndex={getPlaceDayNumber(place.id)}
                     onSwipeLeft={() => {
-                      handleSwipe('keep', place); // swipe left = keep (as user described)
+                      handleSwipe('discard', place); // swipe left = keep (as user described)
                     }}
                     onSwipeRight={() => {
-                      handleSwipe('discard', place); // swipe right = discard
+                      handleSwipe('keep', place); // swipe right = discard
                     }}
                     dragX={deckDragX}
+                    effectiveCurrency={effectiveCurrency}
                   />
                 );
               })}
@@ -1221,9 +1226,9 @@ export default function GeneratePage() {
             {/* Controls */}
             <div className="px-5 pt-4 pb-8 flex flex-col items-center gap-4 bg-white border-t border-ink-50 shrink-0">
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-[10px] text-brand-600 font-bold flex items-center gap-1">← Keep</span>
+                <span className="text-[10px] text-red-500 font-bold">← Remove</span>
                 <span className="text-[10px] text-ink-300">·</span>
-                <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">Remove →</span>
+                <span className="text-[10px] text-brand-600 font-bold">Keep →</span>
               </div>
               <div className="flex items-center justify-center gap-6">
                 {/* Keep Button on LEFT (matches swipe-left = keep) */}
@@ -1304,6 +1309,7 @@ export default function GeneratePage() {
         excludeIds={itinerary.map((p) => p.id)} title="Replace stop"
         onPick={(p) => { if (replaceFor) replaceStop(replaceFor, p); setReplaceFor(null); show('Stop replaced', 'success'); }}
         alternatives={alternatives}
+        effectiveCurrency={effectiveCurrency}
       />
 
       {/* Undo snackbar */}
@@ -1337,6 +1343,7 @@ export default function GeneratePage() {
         excludeIds={itinerary.map((p) => p.id)} title="Add a stop"
         onPick={(p) => { addStop(p); setShowAdd(false); show(`${p.name} added`, 'success'); }}
         alternatives={alternatives}
+        effectiveCurrency={effectiveCurrency}
       />
 
       {/* UI5 — What-if comparison modal */}
@@ -2019,7 +2026,7 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
 
 
 function StopCard({
-  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, dragControls,
+  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, dragControls, effectiveCurrency,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
@@ -2028,6 +2035,7 @@ function StopCard({
   editable?: boolean;
   onFixTime?: (newTime: string) => void;
   dragControls?: any;
+  effectiveCurrency: Currency;
 }) {
   const { activeTrip, isSaved, savePlace, removeSavedPlace } = useApp();
   const { show } = useToast();
@@ -2197,6 +2205,7 @@ function ItineraryItem({
   nextDistanceKm,
   connectorFromTime,
   connectorDurationMin,
+  effectiveCurrency,
 }: {
   place: Place;
   index: number;
@@ -2215,6 +2224,7 @@ function ItineraryItem({
   nextDistanceKm?: number;
   connectorFromTime?: string;
   connectorDurationMin?: number;
+  effectiveCurrency: Currency;
 }) {
   const dragControls = useDragControls();
 
@@ -2241,6 +2251,7 @@ function ItineraryItem({
         onFixTime={onFixTime}
         isManual={isManual}
         dragControls={dragControls}
+        effectiveCurrency={effectiveCurrency}
       />
       {showConnector && nextDistanceKm !== undefined && (
         <StopConnector
@@ -2293,9 +2304,10 @@ function CustomPlaceForm({ onAdd }: { onAdd: (p: Place) => void }) {
 }
 
 /* ── Alternatives Sheet ── */
-function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternatives }: {
+function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternatives, effectiveCurrency }: {
   open: boolean; onClose: () => void; excludeIds: string[]; title: string;
   onPick: (p: Place) => void; alternatives: (ids: string[]) => Place[];
+  effectiveCurrency: Currency;
 }) {
   const { activeTrip } = useApp();
   const [query, setQuery] = useState('');
@@ -2429,9 +2441,10 @@ interface SwipeCardProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   dragX: any;
+  effectiveCurrency: Currency;
 }
 
-function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, dragX }: SwipeCardProps) {
+function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, dragX, effectiveCurrency }: SwipeCardProps) {
   const { activeTrip } = useApp();
 
   const scale = 1 - depth * 0.05;
