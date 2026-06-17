@@ -107,9 +107,15 @@ class SemanticRecommender:
         """
 
         # ------------------------------------------------------------------
-        # 1. Filter wilayah kota (Case-Insensitive)
+        # 1. Filter wilayah kota (Case-Insensitive with synonym mapping)
         # ------------------------------------------------------------------
-        city_mask         = self.df["city"].str.lower().str.strip() == city_name.lower().strip()
+        norm_city = city_name.lower().strip()
+        if "," in norm_city:
+            norm_city = norm_city.split(",")[0].strip()
+        if "yogyakarta" in norm_city or "jogja" in norm_city:
+            norm_city = "jogjakarta"
+
+        city_mask         = self.df["city"].str.lower().str.strip() == norm_city
         city_filtered_df  = self.df[city_mask].copy()
 
         if city_filtered_df.empty:

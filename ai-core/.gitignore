@@ -10,10 +10,11 @@ venv/
 .venv/
 env/
 
-# MLOps Artifacts & Tracking Data (JANGAN DI-PUSH, berat dan bikin Git penuh)
+# MLOps Artifacts & Tracking Data
 mlruns/
-artifacts/
 outputs/
+artifacts/models/
+artifacts/similarity_matrix.npy
 
 # Dataset lokal (Dataset harus diunduh manual/terpisah oleh tim, jangan masuk Git)
 data/processed/*.csv

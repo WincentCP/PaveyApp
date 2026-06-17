@@ -1,4 +1,28 @@
 services:
+  pavey-cache:
+    image: redis:7-alpine
+    container_name: pavey_redis_cache
+    ports:
+      - "6379:6379"
+    restart: always
+
+  ai-core:
+    build: ./ai-core
+    container_name: pavey_ai_core
+    env_file:
+      - ./ai-core/.env
+    environment:
+      - REDIS_URL=redis://pavey-cache:6379/0
+      - OSRM_BASE_URL=http://router.project-osrm.org
+    volumes:
+      - ./ai-core/artifacts:/app/artifacts
+      - ./ai-core/src/data:/app/src/data
+      - ./ai-core/mlruns:/app/mlruns
+      - ./ai-core/logs:/app/logs
+    depends_on:
+      - pavey-cache
+    restart: always
+
   backend:
     build: ./backend
     container_name: pavey_backend
@@ -6,17 +30,11 @@ services:
       - "8000:8000"
     env_file:
       - ./backend/.env
+    environment:
+      - AI_CORE_URL=http://ai-core:8000  
     depends_on:
       - ai-core
-    restart: always
-
-  ai-core:
-    build: ./ai-core
-    container_name: pavey_ai_core
-    ports:
-      - "8080:8000"
-    env_file:
-      - ./ai-core/.env
+      - pavey-cache
     restart: always
 
   frontend:
@@ -24,6 +42,27 @@ services:
     container_name: pavey_frontend
     ports:
       - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
     depends_on:
       - backend
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pavey_prometheus
+    volumes:
+      - ./ai-core/config:/etc/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - ai-core
+    restart: always
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pavey_grafana
+    ports:
+      - "3001:3000"  
+    depends_on:
+      - prometheus
     restart: always
