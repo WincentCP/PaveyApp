@@ -1176,26 +1176,26 @@ export default function GeneratePage() {
 
             {/* Stack Area */}
             <div className="flex-1 relative flex items-center justify-center p-6 select-none bg-ink-50/20 overflow-hidden">
-              {/* Left Side = Keep cue (swipe left = keep) */}
+              {/* Left Side = Discard cue (swipe left = discard) */}
               <motion.div
                 style={{ opacity: leftCueOpacity, scale: leftCueScale }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
-              >
-                <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
-                  <Check className="w-7 h-7 stroke-[3px]" />
-                </div>
-                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">Keep</span>
-              </motion.div>
-
-              {/* Right Side = Discard cue (swipe right = discard) */}
-              <motion.div
-                style={{ opacity: rightCueOpacity, scale: rightCueScale }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
               >
                 <div className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
                   <X className="w-7 h-7 stroke-[3px]" />
                 </div>
                 <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">Remove</span>
+              </motion.div>
+
+              {/* Right Side = Keep cue (swipe right = keep) */}
+              <motion.div
+                style={{ opacity: rightCueOpacity, scale: rightCueScale }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
+              >
+                <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                  <Check className="w-7 h-7 stroke-[3px]" />
+                </div>
+                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">Keep</span>
               </motion.div>
 
               {reviewQueue.slice(deckIndex, deckIndex + 3).reverse().map((place, offsetIdx, sliceArr) => {
@@ -1211,10 +1211,10 @@ export default function GeneratePage() {
                     depth={depth}
                     dayIndex={getPlaceDayNumber(place.id)}
                     onSwipeLeft={() => {
-                      handleSwipe('discard', place); // swipe left = keep (as user described)
+                      handleSwipe('discard', place); // swipe left = discard
                     }}
                     onSwipeRight={() => {
-                      handleSwipe('keep', place); // swipe right = discard
+                      handleSwipe('keep', place); // swipe right = keep
                     }}
                     dragX={deckDragX}
                     effectiveCurrency={effectiveCurrency}
@@ -1231,13 +1231,13 @@ export default function GeneratePage() {
                 <span className="text-[10px] text-brand-600 font-bold">Keep →</span>
               </div>
               <div className="flex items-center justify-center gap-6">
-                {/* Keep Button on LEFT (matches swipe-left = keep) */}
+                {/* Discard Button on LEFT (matches swipe-left = discard) */}
                 <button
-                  onClick={() => handleButtonSwipe('keep')}
-                  className="w-14 h-14 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center shadow-sm hover:shadow-md border border-brand-200 text-brand-600 transition-all active:scale-95 press"
-                  aria-label="Keep stop"
+                  onClick={() => handleButtonSwipe('discard')}
+                  className="w-14 h-14 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center shadow-sm hover:shadow-md border border-red-200 text-red-500 transition-all active:scale-95 press"
+                  aria-label="Discard stop"
                 >
-                  <Check className="w-6 h-6" />
+                  <X className="w-6 h-6" />
                 </button>
 
                 {/* Undo Button (center) */}
@@ -1250,13 +1250,13 @@ export default function GeneratePage() {
                   <RefreshCw className="w-4 h-4" />
                 </button>
 
-                {/* Discard Button on RIGHT (matches swipe-right = discard) */}
+                {/* Keep Button on RIGHT (matches swipe-right = keep) */}
                 <button
-                  onClick={() => handleButtonSwipe('discard')}
-                  className="w-14 h-14 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center shadow-sm hover:shadow-md border border-red-200 text-red-500 transition-all active:scale-95 press"
-                  aria-label="Discard stop"
+                  onClick={() => handleButtonSwipe('keep')}
+                  className="w-14 h-14 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center shadow-sm hover:shadow-md border border-brand-200 text-brand-600 transition-all active:scale-95 press"
+                  aria-label="Keep stop"
                 >
-                  <X className="w-6 h-6" />
+                  <Check className="w-6 h-6" />
                 </button>
               </div>
 
@@ -1838,16 +1838,31 @@ export default function GeneratePage() {
                       return;
                     }
 
-                    const updatedPerDay = [...perDayItineraries];
-                    if (newDays > updatedPerDay.length) {
-                      while (updatedPerDay.length < newDays) {
-                        updatedPerDay.push([]);
+                    const allStops = perDayItineraries.flat();
+                    if (allStops.length > 0 && newDays > 0) {
+                      const redistributed: Place[][] = [];
+                      const base = Math.floor(allStops.length / newDays);
+                      const remainder = allStops.length % newDays;
+                      let idx = 0;
+                      for (let d = 0; d < newDays; d++) {
+                        const count = base + (d < remainder ? 1 : 0);
+                        redistributed.push(allStops.slice(idx, idx + count));
+                        idx += count;
                       }
-                    } else if (newDays < updatedPerDay.length) {
-                      updatedPerDay.splice(newDays);
+                      setPerDayItineraries(redistributed);
+                      setItinerary(redistributed.flat());
+                    } else {
+                      const updatedPerDay = [...perDayItineraries];
+                      if (newDays > updatedPerDay.length) {
+                        while (updatedPerDay.length < newDays) {
+                          updatedPerDay.push([]);
+                        }
+                      } else if (newDays < updatedPerDay.length) {
+                        updatedPerDay.splice(newDays);
+                      }
+                      setPerDayItineraries(updatedPerDay);
+                      setItinerary(updatedPerDay.flat());
                     }
-                    setPerDayItineraries(updatedPerDay);
-                    setItinerary(updatedPerDay.flat());
 
                     setTripName(editTripName.trim() || activeTrip.name);
                     setJourneyStart({
@@ -2452,9 +2467,9 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
   const zIndex = 10 - depth;
   const rotate = useTransform(dragX, [-200, 200], [-12, 12]);
 
-  // Swipe LEFT = Keep, Swipe RIGHT = Discard
-  const keepStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);   // shows on left drag
-  const discardStampOpacity = useTransform(dragX, [25, 100], [0, 1]); // shows on right drag
+  // Swipe LEFT = Discard/Remove, Swipe RIGHT = Keep/Accept
+  const removeStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);   // shows on left drag
+  const keepStampOpacity = useTransform(dragX, [25, 100], [0, 1]);     // shows on right drag
 
   return (
     <motion.div
@@ -2512,20 +2527,20 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
 
         {isTop && (
           <>
-            {/* Keep stamp on LEFT (swipe left = keep) */}
+            {/* Remove stamp on LEFT (swipe left = discard) */}
             <motion.div
-              style={{ opacity: keepStampOpacity }}
-              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
-            >
-              Keep
-            </motion.div>
-
-            {/* Remove stamp on RIGHT (swipe right = discard) */}
-            <motion.div
-              style={{ opacity: discardStampOpacity }}
-              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+              style={{ opacity: removeStampOpacity }}
+              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
             >
               Remove
+            </motion.div>
+
+            {/* Keep stamp on RIGHT (swipe right = keep) */}
+            <motion.div
+              style={{ opacity: keepStampOpacity }}
+              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+            >
+              Keep
             </motion.div>
           </>
         )}

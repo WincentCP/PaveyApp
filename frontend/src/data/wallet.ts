@@ -63,17 +63,19 @@ export function suggestCurrency(destination: string): Currency {
 }
 
 export function formatCurrencyAmount(amount: number, currency: Currency): string {
-  const sym = CURRENCY_SYMBOLS[currency];
+  const sym = CURRENCY_SYMBOLS[currency] || 'Rp';
+  if (currency === 'IDR') {
+    return `Rp ${Math.round(amount).toLocaleString('id-ID')}`;
+  }
   switch (currency) {
-    case 'IDR':
-      if (amount >= 1_000_000) return `Rp ${(amount / 1_000_000).toFixed(2)}jt`; 
-      if (amount >= 1_000) return `Rp ${(amount / 1_000).toFixed(1)}K`;           
-      return `Rp ${amount}`;                                                      
     case 'JPY':
     case 'KRW':
-      return `${sym}${amount.toLocaleString()}`;                                    
+      return `${sym}${Math.round(amount).toLocaleString()}`;
     default:
-      return `${sym}${amount.toFixed(2)}`;                                     
+      if (Number.isInteger(amount)) {
+        return `${sym}${amount.toLocaleString()}`;
+      }
+      return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 }
 

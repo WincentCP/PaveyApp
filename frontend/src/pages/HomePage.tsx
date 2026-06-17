@@ -435,27 +435,27 @@ export default function HomePage() {
     setDestinations(newDests);
     setActiveDestIdx(0);
 
-    // Auto-mint a wallet trip on first plan confirmation. After that, the user creates trips manually.
-    const hasUserTrip = trips.some((t) => t.id !== DEFAULT_TRIP.id);
-    if (!hasUserTrip && intentSheet === 'ai') {
-      const cities = [intentDest].filter(Boolean);
-      const firstCity = cities[0]?.split(',')[0] ?? intentDest;
-      const tripName = cities.length > 1 ? `${firstCity} + ${cities.length - 1} more` : `${firstCity} Trip`;
-      const dailyBudget = intentBudget || budget;
-      createTrip({
-        name: tripName,
-        destination: cities.join(' → '),
-        currency: suggestCurrency(cities[0] ?? intentDest),
-        budget: dailyBudget * Math.max(1, days),
-        daysTotal: days,
-        daysRemaining: days,
-        linkedToPlan: true,
-        destinations: newDests,
-      });
-      // Round 11 — silent create. The toast for an unrequested action felt
-      // intrusive; the wallet now surfaces itself when the user opens the
-      // tab (see WalletPage empty-state copy).
-    }
+    // Always create a new wallet trip when a new plan is confirmed so "plan another trip" doesn't get stuck.
+    const cities = [intentDest].filter(Boolean);
+    const firstCity = cities[0]?.split(',')[0] ?? intentDest;
+    const tripName = cities.length > 1 ? `${firstCity} + ${cities.length - 1} more` : `${firstCity} Trip`;
+    const dailyBudget = intentBudget || budget;
+    const suggestedCur = suggestCurrency(cities[0] ?? intentDest);
+    createTrip({
+      name: tripName,
+      destination: cities.join(' → '),
+      currency: suggestedCur,
+      budget: dailyBudget * Math.max(1, days),
+      daysTotal: days,
+      daysRemaining: days,
+      linkedToPlan: true,
+      destinations: newDests,
+      journeyStart: { date: intentDate, time: intentStartTime, days, endTime: intentEndDate ? intentEndTime : undefined },
+      vibe: intentVibe || vibe,
+      pace: intentPace,
+      perDayItineraries: [],
+      itinerary: [],
+    });
 
     const mode = intentSheet;
     // Persist intent fields so the "Edit trip" link on GeneratePage can
