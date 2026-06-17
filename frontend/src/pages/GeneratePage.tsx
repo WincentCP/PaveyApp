@@ -17,7 +17,6 @@ import { COPY } from '../lib/copy';
 import { dayIsTight } from '../lib/density';
 import { formatCost } from '../lib/format';
 import { useToast } from '../components/Toast';
-import { getCulturalIntel, type CulturalIntel } from '../data/cultural';
 import TimePicker from '../components/TimePicker';
 import { tripDurationDays, todayISO } from '../lib/dateUtils';
 
@@ -215,8 +214,7 @@ export default function GeneratePage() {
     index: number;
   }[]>([]);
 
-  // Active cultural tip bottom sheet state
-  const [activeCulturalIntel, setActiveCulturalIntel] = useState<CulturalIntel | null>(null);
+
 
   // Drag state for Tinder-style review deck (useMotionValue to prevent parent re-renders)
   const deckDragX = useMotionValue(0);
@@ -822,7 +820,6 @@ export default function GeneratePage() {
                       <AnimatePresence>
                         {(() => {
                           return displayItinerary.map((p, i) => {
-                            const intel = getCulturalIntel(p.id, p.category);
                             const timeStr = getTime(p.id, i);
                             const conflict = hasConflict(p, timeStr);
                             return (
@@ -843,7 +840,6 @@ export default function GeneratePage() {
                                   setUserEdited(true);
                                   setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
                                 }}
-                                onTipClick={intel ? () => setActiveCulturalIntel(intel) : undefined}
                                 showConnector={i < displayItinerary.length - 1}
                                 nextDistanceKm={displayItinerary[i + 1]?.distanceKm}
                                 connectorFromTime={getTime(p.id, i)}
@@ -976,7 +972,6 @@ export default function GeneratePage() {
                   >
                     <AnimatePresence>
                       {manualStops.map((p, i) => {
-                        const intel = getCulturalIntel(p.id, p.category);
                         return (
                           <ItineraryItem
                             key={p.id}
@@ -995,8 +990,6 @@ export default function GeneratePage() {
                               setUserEdited(true);
                               setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
                             }}
-                            intelPrompt={intel?.prompt}
-                            onTipClickIntel={intel ? () => setActiveCulturalIntel(intel) : undefined}
                             showConnector={i < manualStops.length - 1}
                             nextDistanceKm={manualStops[i + 1]?.distanceKm}
                             connectorFromTime={getTime(p.id, i)}
@@ -1734,55 +1727,7 @@ export default function GeneratePage() {
         )}
       </AnimatePresence>
 
-      {/* Cultural Intel Sheet */}
-      <AnimatePresence>
-        {activeCulturalIntel && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setActiveCulturalIntel(null)}
-              className="absolute inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-8 px-5 pt-4"
-            >
-              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mb-4" />
-              <div className="flex items-center justify-between mb-4 border-b border-ink-50 pb-2">
-                <h3 className="text-base font-bold text-ink-900 font-display flex items-center gap-1.5">
-                  💡 Cultural Insight
-                </h3>
-                <button
-                  onClick={() => setActiveCulturalIntel(null)}
-                  className="w-8 h-8 rounded-full bg-ink-50 hover:bg-ink-100 flex items-center justify-center press text-ink-500"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
 
-              <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1 no-scrollbar">
-                <div className="text-xs font-semibold text-ink-500">{activeCulturalIntel.prompt}</div>
-                <div className="space-y-3">
-                  {activeCulturalIntel.tips.map((tip, i) => (
-                    <div key={i} className="flex items-start gap-2 bg-brand-50/20 border border-brand-100/50 p-3 rounded-2xl">
-                      <span className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold text-ink-900">{tip.title}</div>
-                        <div className="text-xs text-ink-500 mt-1 leading-relaxed">{tip.body}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* ── Edit Trip Details Modal ── */}
       <AnimatePresence>
@@ -2047,9 +1992,8 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
 
 
 
-/* ── Stop Card ── */
 function StopCard({
-  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, onTipClick, dragControls,
+  index, place, scheduledTime, hasConflict, onTimeEdit, onRemove, onReplace, isManual, editable = true, onFixTime, dragControls,
 }: {
   index: number; total: number; place: Place;
   scheduledTime: string; hasConflict?: boolean; onTimeEdit: () => void;
@@ -2057,7 +2001,6 @@ function StopCard({
   isManual?: boolean;
   editable?: boolean;
   onFixTime?: (newTime: string) => void;
-  onTipClick?: () => void;
   dragControls?: any;
 }) {
   const { activeTrip, isSaved, savePlace, removeSavedPlace } = useApp();
@@ -2191,19 +2134,6 @@ function StopCard({
                 )}
               </div>
             )}
-            
-            {onTipClick && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTipClick();
-                }}
-                className="flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-amber-100 transition-colors press shrink-0"
-              >
-                <Lightbulb className="w-2.5 h-2.5 text-amber-500" />
-                <span>Tip</span>
-              </button>
-            )}
           </div>
 
           {/* Bookmark Action */}
@@ -2236,14 +2166,11 @@ function ItineraryItem({
   onMoveUp,
   onMoveDown,
   onFixTime,
-  onTipClick,
   isManual,
   showConnector,
   nextDistanceKm,
   connectorFromTime,
   connectorDurationMin,
-  intelPrompt,
-  onTipClickIntel,
 }: {
   place: Place;
   index: number;
@@ -2257,14 +2184,11 @@ function ItineraryItem({
   onMoveUp: () => void;
   onMoveDown: () => void;
   onFixTime: (t: string) => void;
-  onTipClick?: () => void;
   isManual?: boolean;
   showConnector?: boolean;
   nextDistanceKm?: number;
   connectorFromTime?: string;
   connectorDurationMin?: number;
-  intelPrompt?: string;
-  onTipClickIntel?: () => void;
 }) {
   const dragControls = useDragControls();
 
@@ -2289,20 +2213,9 @@ function ItineraryItem({
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onFixTime={onFixTime}
-        onTipClick={onTipClick}
         isManual={isManual}
         dragControls={dragControls}
       />
-      {intelPrompt && onTipClickIntel && (
-        <div className="mt-1.5 flex items-center justify-end px-1.5">
-          <button
-            onClick={onTipClickIntel}
-            className="flex items-center gap-1 bg-brand-50 text-brand-600 text-[10px] font-bold px-2.5 py-0.5 rounded-full hover:bg-brand-100 transition-colors press"
-          >
-            💡 Tip: {intelPrompt}
-          </button>
-        </div>
-      )}
       {showConnector && nextDistanceKm !== undefined && (
         <StopConnector
           distanceKm={nextDistanceKm}

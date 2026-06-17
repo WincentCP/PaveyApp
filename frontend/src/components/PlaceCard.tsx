@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { Place } from '../data/places';
 import type { Currency } from '../data/wallet';
 import { formatCost } from '../lib/format';
-import { getCulturalIntel } from '../data/cultural';
+
 
 function nineColon(i: number, addMin = 0) {
   const start = 10 * 60 + 30 + i * 150 + addMin;
@@ -27,8 +27,7 @@ export default function PlaceCard({ place, index, prevPlace, onClose, onNavigate
   place: Place; index: number; prevPlace?: Place; onClose: () => void; onNavigate: () => void;
   isSaved: boolean; onSave: () => void; currency: Currency; onBuddy: () => void;
 }) {
-  const [culturalExpanded, setCulturalExpanded] = useState(false);
-  const intel = getCulturalIntel(place.id, place.category);
+
 
   return (
     <>
@@ -92,46 +91,7 @@ export default function PlaceCard({ place, index, prevPlace, onClose, onNavigate
             <span className="px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-medium">{place.durationMin} min visit</span>
           </div>
 
-          {intel && (
-            <div className="mb-3 rounded-xl border overflow-hidden" style={{ borderColor: intel.accentColor + '40' }}>
-              <button
-                onClick={() => setCulturalExpanded((v) => !v)}
-                className="w-full flex items-center justify-between px-3 py-2.5 text-left"
-                style={{ background: intel.accentColor + '12' }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-base">{intel.tips[0].icon}</span>
-                  <div>
-                    <div className="text-xs font-bold" style={{ color: intel.accentColor }}>{intel.prompt}</div>
-                    <div className="text-[10px] text-ink-500">{intel.tips.length} tip{intel.tips.length > 1 ? 's' : ''}</div>
-                  </div>
-                </div>
-                <motion.div animate={{ rotate: culturalExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="w-4 h-4 text-ink-400" />
-                </motion.div>
-              </button>
-              <AnimatePresence>
-                {culturalExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-3 pb-3 pt-2 space-y-2">
-                      {intel.tips.map((tip, i) => (
-                        <div key={i} className="flex gap-2.5">
-                          <span className="text-base shrink-0 leading-none mt-0.5">{tip.icon}</span>
-                          <div>
-                            <div className="text-xs font-semibold text-ink-900">{tip.title}</div>
-                            <div className="text-[11px] text-ink-500 leading-snug mt-0.5">{tip.body}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+
 
           <div className="grid grid-cols-2 gap-2">
             <button

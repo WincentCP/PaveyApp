@@ -3,7 +3,7 @@ import {
   Search, SlidersHorizontal, CloudSun, Bookmark,
   X, Star, MapPin, Pencil,
   ChevronRight, Plus, Navigation, RefreshCw,
-  ArrowRight, Compass, Zap, Link2, AlertTriangle,
+  ArrowRight, Compass, Zap, AlertTriangle,
   Trees, Coffee, Landmark, Scale, ArrowLeft, Clock,
   Settings2,
 } from 'lucide-react';
@@ -124,16 +124,7 @@ export default function HomePage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterCats, setFilterCats] = useState<Category[]>([]);
   const [filterMinRating, setFilterMinRating] = useState(0);
-  const [socialUrl, setSocialUrl] = useState('');
-  const [socialParsing, setSocialParsing] = useState(false);
-  const [socialResult, setSocialResult] = useState<{
-    platform: string;
-    places: { name: string; type: string; description: string; tips?: string }[];
-    destination?: string;
-    raw_summary?: string;
-  } | null>(null);
-  const [socialError, setSocialError] = useState<string | false>(false);
-  const socialInputRef = useRef<HTMLInputElement>(null);
+
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
   const [addDestSheet, setAddDestSheet] = useState(false);
   const [newDestName, setNewDestName] = useState('');
@@ -362,41 +353,7 @@ export default function HomePage() {
     return () => clearInterval(id);
   }, [intentSheet, intentDest]);
 
-  const parseSocialLink = async () => {
-    if (!socialUrl.trim()) return;
-    const lower = socialUrl.toLowerCase();
-    const isValid =
-      lower.includes('tiktok.com') || lower.includes('instagram.com') ||
-      lower.includes('ig.me') || lower.includes('instagr.am') ||
-      lower.includes('youtube.com') || lower.includes('youtu.be') ||
-      lower.includes('twitter.com') || lower.includes('x.com');
-    if (!isValid) {
-      setSocialError('Paste a valid TikTok, Instagram, YouTube, or Twitter link');
-      return;
-    }
-    setSocialError(false);
-    setSocialParsing(true);
-    setSocialResult(null);
-    try {
-      const { apiSocialParse } = await import('../lib/api');
-      const res = await apiSocialParse(socialUrl);
-      if (!res?.parsed_result) throw new Error('Empty response from server');
-      const parsed = res.parsed_result;
-      if (parsed.error) throw new Error(parsed.error);
-      if (!parsed.places || parsed.places.length === 0)
-        throw new Error('Tidak ada tempat yang ditemukan dalam link ini');
-      setSocialResult({
-        platform: res.platform || 'Social Media',
-        places: parsed.places,
-        destination: parsed.destination,
-        raw_summary: parsed.raw_summary,
-      });
-    } catch (err: any) {
-      setSocialError(err?.message || 'Gagal mengekstrak link — coba link yang berbeda');
-    } finally {
-      setSocialParsing(false);
-    }
-  };
+
 
   // Open add-dest sheet with smart defaults: pre-fill dates from trip-level intent if known
   const openAddDestSheet = () => {
@@ -1161,196 +1118,6 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Social Media Parser */}
-      <div className="px-5 mt-8 pb-8">
-        <motion.div
-          whileHover={{ y: -2 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-purple-50 border border-brand-100 rounded-3xl p-5 shadow-card"
-        >
-          {/* Decorative floating shapes */}
-          <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-brand-500/5 blur-xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-24 h-24 rounded-full bg-purple-500/5 blur-xl pointer-events-none" />
-          
-          <div className="mb-4">
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-ink-900 font-display">Import Your Social Finds</h3>
-              <p className="text-xs text-ink-500 leading-relaxed max-w-[85%]">
-                Spotted an amazing place on TikTok or Instagram? Paste the link below and let TinTin import it directly into your itinerary!
-              </p>
-            </div>
-          </div>
-
-          {/* Social Platform Badges */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center gap-1 bg-[#FE2C55]/10 text-[#FE2C55] rounded-xl px-2.5 py-1 text-[11px] font-bold">
-              <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15.3a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.59a8.19 8.19 0 0 0 4.79 1.54V6.68a4.85 4.85 0 0 1-1.02.01z"/></svg>
-              TikTok
-            </div>
-            <div className="flex items-center gap-1 bg-[#E1306C]/10 text-[#E1306C] rounded-xl px-2.5 py-1 text-[11px] font-bold">
-              <svg className="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              Instagram
-            </div>
-            <span className="text-[10px] text-ink-400 font-medium">links supported</span>
-          </div>
-
-          {/* Input field and parser button */}
-          <div className="flex gap-2">
-            <div className="flex-1 bg-white rounded-2xl px-3.5 py-3 flex items-center gap-2 border border-brand-100/60 shadow-sm focus-within:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/10 transition-all">
-              <Link2 className="w-4 h-4 text-brand-500 shrink-0" />
-              <input
-                ref={socialInputRef}
-                value={socialUrl}
-                onChange={(e) => { setSocialUrl(e.target.value); setSocialResult(null); setSocialError(false); }}
-                placeholder="Paste TikTok or Instagram link here…"
-                className="flex-1 bg-transparent outline-none text-sm text-ink-800 placeholder:text-ink-400"
-              />
-              {socialUrl && (
-                <button onClick={() => { setSocialUrl(''); setSocialResult(null); }} className="press p-1 hover:bg-ink-50 rounded-full">
-                  <X className="w-3.5 h-3.5 text-ink-400" />
-                </button>
-              )}
-            </div>
-            <button
-              onClick={parseSocialLink}
-              disabled={!socialUrl.trim() || socialParsing}
-              className="shrink-0 h-12 px-5 rounded-2xl bg-brand-500 disabled:bg-ink-200 disabled:text-ink-400 text-white text-sm font-bold press shadow-glow hover:bg-brand-600 transition-colors"
-            >
-              {socialParsing ? (
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}>
-                  <RefreshCw className="w-4 h-4" />
-                </motion.div>
-              ) : (
-                'Import'
-              )}
-            </button>
-          </div>
-
-          {socialError && (
-            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-red-500 mt-2.5 flex items-center gap-1 font-medium">
-              <AlertTriangle className="w-3.5 h-3.5" /> {typeof socialError === 'string' ? socialError : 'Please paste a valid social media link'}
-            </motion.p>
-          )}
-
-          <AnimatePresence>
-            {socialParsing && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 overflow-hidden">
-                <div className="flex items-center gap-2 text-xs text-brand-600 font-semibold mb-2">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  </motion.div>
-                  TinTin is reading the link…
-                </div>
-                <div className="space-y-1.5">
-                  <div className="h-2 rounded-full shimmer w-3/4" />
-                  <div className="h-2 rounded-full shimmer w-1/2" />
-                </div>
-              </motion.div>
-            )}
-
-            {socialResult && !socialParsing && (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-2.5">
-                {socialResult.raw_summary && (
-                  <p className="text-[11px] text-ink-500 italic leading-relaxed px-1">
-                    "{socialResult.raw_summary}"
-                  </p>
-                )}
-                {socialResult.places.slice(0, 3).map((place, idx) => (
-                  <div key={idx} className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden">
-                    <div className="flex items-start gap-3 p-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                        <MapPin className="w-4.5 h-4.5 text-brand-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[9px] font-extrabold text-brand-600 bg-brand-50 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                            {socialResult.platform}
-                          </span>
-                          <span className="text-[9px] text-ink-400 capitalize">{place.type}</span>
-                        </div>
-                        <div className="font-bold text-ink-900 text-sm truncate">{place.name}</div>
-                        {place.description && (
-                          <div className="text-xs text-ink-500 mt-0.5 line-clamp-2 leading-relaxed">{place.description}</div>
-                        )}
-                        {place.tips && (
-                          <div className="text-xs text-amber-600 mt-1 font-medium">💡 {place.tips}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 px-3.5 pb-3.5">
-                      <button
-                        onClick={() => {
-                          const p: Place = {
-                            id: `social-${Date.now()}-${idx}`,
-                            city: socialResult.destination ?? '',
-                            name: place.name,
-                            category: 'Hidden Gem',
-                            tags: ['Social Import', socialResult.platform],
-                            vibes: ['nature', 'cafe', 'activities', 'cultural'],
-                            image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
-                            cost: 50000,
-                            priceRange: { min: 0, max: 100000 },
-                            durationMin: 60,
-                            distanceKm: 1.0,
-                            lat: -8.5055,
-                            lng: 115.2620,
-                            rating: 4.5,
-                            description: place.description ?? '',
-                            openingHours: 'Check onsite',
-                            indoor: false,
-                            openHour: 0,
-                            closeHour: 24,
-                          };
-                          addStop(p);
-                          show(`${place.name} added to plan`, 'success');
-                          if (idx === socialResult.places.length - 1) {
-                            setSocialResult(null);
-                            setSocialUrl('');
-                            nav('/map');
-                          }
-                        }}
-                        className="h-9 rounded-xl bg-brand-500 text-white text-xs font-bold press flex items-center justify-center gap-1.5 shadow-glow"
-                      >
-                        <MapPin className="w-3.5 h-3.5" /> Add to Plan
-                      </button>
-                      <button
-                        onClick={() => {
-                          const p: Place = {
-                            id: `social-${Date.now()}-${idx}`,
-                            city: socialResult.destination ?? '',
-                            name: place.name,
-                            category: 'Hidden Gem',
-                            tags: ['Social Import', socialResult.platform],
-                            vibes: ['nature', 'cafe', 'activities', 'cultural'],
-                            image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
-                            cost: 50000,
-                            priceRange: { min: 0, max: 100000 },
-                            durationMin: 60,
-                            distanceKm: 1.0,
-                            lat: -8.5055,
-                            lng: 115.2620,
-                            rating: 4.5,
-                            description: place.description ?? '',
-                            openingHours: 'Check onsite',
-                            indoor: false,
-                            openHour: 0,
-                            closeHour: 24,
-                          };
-                          savePlace(p);
-                          show(`${place.name} saved for later`, 'success');
-                        }}
-                        className="h-9 rounded-xl bg-ink-50 text-ink-800 text-xs font-semibold press flex items-center justify-center gap-1.5"
-                      >
-                        <Bookmark className="w-3.5 h-3.5" /> Save for Later
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </div>
       </div>
 
 

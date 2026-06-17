@@ -124,14 +124,6 @@ export async function apiChat(message: string, tripId?: string, context?: string
   });
 }
 
-export async function apiSocialParse(url: string, tripId?: string) {
-  // Pakai apiFetchSafe — kalau tidak login, tetap bisa parse (backend handle optional auth)
-  return apiFetchSafe('/social/parse', {
-    method: 'POST',
-    body: JSON.stringify({ url, trip_id: tripId }),
-  });
-}
-
 export async function apiGetMe() {
   return apiFetch('/auth/me');
 }
