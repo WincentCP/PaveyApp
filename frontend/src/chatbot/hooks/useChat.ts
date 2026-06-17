@@ -200,20 +200,7 @@ export function useChat(tripId?: string) {
                 return;
             }
 
-            const locNote = loc.fromIP
-                ? `📍 I couldn’t access GPS — your approximate location is ${loc.city} (from network). Is that right? If not, just tell me your actual city!`
-                : `📍 Got it — you’re in ${loc.city}. Let me check the weather first...`;
-
-            updateMsg(detectingId, { text: locNote });
-
-            // If using IP geo (inaccurate), let user confirm/correct city first
-            if (loc.fromIP) {
-                lastCityRef.current = loc.city; // store so confirmation can use it
-                pendingFlowRef.current = { type: 'awaiting_city_for_places' };
-                setLoading(false);
-                return;
-            }
-
+            updateMsg(detectingId, { text: `Got it! You're in ${loc.city}. Let me check what's nearby...` });
             lastCityRef.current = loc.city;
 
             // Fetch weather
