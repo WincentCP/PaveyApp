@@ -1,0 +1,10 @@
+{
+    "embedding_model": "ibm-granite/granite-embedding-30m-english",
+    "dataset_version": "v3_enriched",
+    "similarity": "cosine",
+    "tuned_hyperparameters": {
+        "alpha_rating_bias": 0.2,
+        "beta_popularity_bias": 0.1,
+        "min_threshold": 0.55
+    }
+}

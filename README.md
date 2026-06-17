@@ -1,3 +1,13 @@
+---
+title: Pavey Aicore
+emoji: 👁
+colorFrom: green
+colorTo: pink
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # Pavey AI Core Engine (`ai-core`)
 
 [![Framework](https://img.shields.io/badge/Framework-FastAPI-teal.svg)](#)
