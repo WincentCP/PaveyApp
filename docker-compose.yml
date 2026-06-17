@@ -1,0 +1,51 @@
+services:
+  # 1. Main Core API (Aplikasi Pavey Travel Rec)
+  ai-core-api:
+    build: .
+    container_name: pavey_ai_api
+    ports:
+      - "8080:8000"  # Menggunakan port luar 8080 untuk menghindari konflik 'port already allocated' di port 8000
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - OSRM_BASE_URL=http://router.project-osrm.org
+      - REDIS_URL=redis://pavey-cache:6379/0
+      - SENTRY_DSN=https://222c7270561683de351bf8c8ce17d896@o4511452483289088.ingest.de.sentry.io/4511454533714000
+    volumes:
+      - ./src/data:/app/src/data
+      - ./mlruns:/app/mlruns
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+    depends_on:
+      - pavey-cache
+    restart: always
+
+  # 2. Redis Caching Layer
+  pavey-cache:
+    image: redis:7-alpine
+    container_name: pavey_redis_cache
+    ports:
+      - "6379:6379"
+    restart: always
+
+  # 3. Prometheus Server (Metrics Gatherer)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pavey_prometheus
+    volumes:
+      - ./config:/etc/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - ai-core-api
+    restart: always
+
+  # 4. Grafana Visualizer Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pavey_grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: always

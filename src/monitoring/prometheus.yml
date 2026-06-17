@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s  # Evaluasi metrik dipercepat menjadi 5s untuk kebutuhan debugging/realtime
+  evaluation_interval: 5s
+
+scrape_configs:
+  # 1. Monitoring internal untuk instans Prometheus itu sendiri
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # 2. Monitoring Aplikasi Pavey AI Core API
+  - job_name: "travel-recommender-api"
+    static_configs:
+      # Jangan gunakan localhost jika berjalan di dalam jaringan Docker Bridge yang berbeda container
+      - targets: ["ai-core-api:8000"]

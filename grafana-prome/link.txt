@@ -1,0 +1,2 @@
+# Public Link Grafana Dashboard
+http://localhost:3000/public-dashboards/9c591925ad9e469d89bb8ed03410df7f
