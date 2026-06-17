@@ -18,7 +18,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from '../components/Toast';
 import { PLACES, type Category, type Vibe } from '../data/places';
 import type { Place } from '../data/places';
-import type { TripPace } from '../context/AppContext';
+import type { TripPace, Destination } from '../context/AppContext';
 import { formatCurrencyAmount } from '../data/wallet';
 import { COUNTRY_CITY_HINTS } from '../data/countryHints';
 import { countDistinctRegions } from '../data/regions';
@@ -63,6 +63,10 @@ const CATEGORIES: Category[] = ['Cafe', 'Nature', 'Cultural', 'Historic', 'Foodi
 
 const SUGGESTED_DESTINATIONS = [
   'Bali, Indonesia',
+  'Jakarta, Indonesia',
+  'Bandung, Indonesia',
+  'Medan, Indonesia',
+  'Yogyakarta, Indonesia',
   'Ubud, Bali',
   'Seminyak, Bali',
   'Canggu, Bali',
@@ -460,10 +464,24 @@ export default function HomePage() {
     const days = intentDays;
     setJourneyStart({ date: intentDate, time: intentStartTime, days, endTime: intentEndDate ? intentEndTime : undefined });
 
+    const newDests: Destination[] = [
+      {
+        id: `dest-${Date.now()}`,
+        name: intentDest,
+        days,
+        currency: suggestCurrency(intentDest),
+        itinerary: [],
+        arriveDate: intentDate,
+        departDate: intentEndDate || undefined,
+      }
+    ];
+    setDestinations(newDests);
+    setActiveDestIdx(0);
+
     // Auto-mint a wallet trip on first plan confirmation. After that, the user creates trips manually.
     const hasUserTrip = trips.some((t) => t.id !== DEFAULT_TRIP.id);
     if (!hasUserTrip && intentSheet === 'ai') {
-      const cities = (destinations.length > 0 ? destinations.map((d) => d.name) : [intentDest]).filter(Boolean);
+      const cities = [intentDest].filter(Boolean);
       const firstCity = cities[0]?.split(',')[0] ?? intentDest;
       const tripName = cities.length > 1 ? `${firstCity} + ${cities.length - 1} more` : `${firstCity} Trip`;
       const dailyBudget = intentBudget || budget;
@@ -475,6 +493,7 @@ export default function HomePage() {
         daysTotal: days,
         daysRemaining: days,
         linkedToPlan: true,
+        destinations: newDests,
       });
       // Round 11 — silent create. The toast for an unrequested action felt
       // intrusive; the wallet now surfaces itself when the user opens the
@@ -1478,7 +1497,7 @@ export default function HomePage() {
                   {!intentDest && (
                     <div className="mt-2 text-[11px] text-ink-400 leading-snug">
                       Popular:{' '}
-                      {['Bali', 'Bangkok', 'Tokyo', 'Paris', 'Seoul', 'Lisbon'].map((city, i, arr) => (
+                      {['Bali', 'Jakarta', 'Bandung', 'Medan', 'Yogyakarta', 'Tokyo', 'Seoul'].map((city, i, arr) => (
                         <span key={city}>
                           <button
                             onClick={() => { setIntentDest(city); setIntentErrors((p) => ({ ...p, dest: undefined })); }}

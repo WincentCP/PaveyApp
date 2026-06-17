@@ -440,7 +440,13 @@ Return ONLY a valid JSON object in this exact format, no other text:
 }}
 """
     try:
-        reply = chat_with_llama("Buat itinerary", prompt)
+        # Scale max_tokens dynamically based on number of days (600 tokens/day, min 2048, max 4096)
+        max_tokens = min(4096, max(2048, days * 600))
+        reply = chat_with_llama(
+            message=prompt,
+            system_prompt="You are a travel itinerary expert. Respond only with a single valid JSON block.",
+            max_tokens=max_tokens
+        )
         clean_reply = reply.strip()
         if "```" in clean_reply:
             match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', clean_reply)
@@ -469,7 +475,9 @@ Return ONLY a valid JSON object in this exact format, no other text:
                 
         return items
     except Exception as e:
-        print(f"[Fallback Planner] Error: {e}. Using safety mock data.")
+        raw_snippet = reply[:300] if 'reply' in locals() else 'None'
+        print(f"[Fallback Planner] Error: {e}. Raw reply snippet: {raw_snippet}")
+        print("[Fallback Planner] Using safety mock data.")
         items = []
         for d in range(1, days + 1):
             times = ["09:00", "12:00", "15:00", "18:00"]
