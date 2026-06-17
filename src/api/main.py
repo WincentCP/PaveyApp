@@ -47,6 +47,13 @@ from src.monitoring.telemetry import (
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://router.project-osrm.org")
+
+# Fallback model chain: if primary hits rate limit (429), try next in list
+GROQ_MODELS_FALLBACK = [
+    os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    "llama-3.1-8b-instant",
+    "gemma2-9b-it",
+]
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
 
@@ -398,17 +405,39 @@ def generate_itinerary(payload: TravelPlannerRequest):
 
     try:
         groq_client = Groq(api_key=GROQ_API_KEY)
-        groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-        chat_completion = groq_client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": user_generation_prompt}
-            ],
-            model=groq_model,
-            response_format={"type": "json_object"},
-            temperature=0.25,
-            max_tokens=2048
-        )
+
+        # --- Model fallback chain: retry with smaller models on 429 rate limit ---
+        chat_completion = None
+        groq_model = None
+        last_error = None
+        for candidate_model in GROQ_MODELS_FALLBACK:
+            try:
+                logger.info(f"[Inference] Mencoba model: {candidate_model}")
+                chat_completion = groq_client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": user_generation_prompt}
+                    ],
+                    model=candidate_model,
+                    response_format={"type": "json_object"},
+                    temperature=0.25,
+                    max_tokens=2048
+                )
+                groq_model = candidate_model
+                logger.info(f"[Inference] Berhasil menggunakan model: {groq_model}")
+                break
+            except Exception as model_err:
+                err_str = str(model_err)
+                if "429" in err_str or "rate_limit" in err_str.lower():
+                    logger.warning(f"[Inference] Rate limit pada model '{candidate_model}', mencoba fallback berikutnya... ({err_str[:120]})")
+                    last_error = model_err
+                    continue
+                else:
+                    # Non-rate-limit error: re-raise immediately
+                    raise
+
+        if chat_completion is None:
+            raise last_error or RuntimeError("Semua model Groq mencapai rate limit. Coba lagi nanti.")
 
         response_payload_text = chat_completion.choices[0].message.content
 
