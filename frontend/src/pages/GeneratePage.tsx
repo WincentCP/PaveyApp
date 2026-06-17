@@ -220,9 +220,10 @@ export default function GeneratePage() {
   const deckDragX = useMotionValue(0);
 
   // Left/Right cue circle animations transformed from motion value
-  const leftCueOpacity = useTransform(deckDragX, [-100, 0, 30], [1, 0.15, 0]);
+  // Swipe LEFT = Discard (Remove), Swipe RIGHT = Keep
+  const leftCueOpacity = useTransform(deckDragX, [-100, -20, 30], [1, 0.15, 0]);
   const leftCueScale = useTransform(deckDragX, [-100, 0, 100], [1.2, 0.95, 0.8]);
-  const rightCueOpacity = useTransform(deckDragX, [-30, 0, 100], [0, 0.15, 1]);
+  const rightCueOpacity = useTransform(deckDragX, [-30, 20, 100], [0, 0.15, 1]);
   const rightCueScale = useTransform(deckDragX, [-100, 0, 100], [0.8, 0.95, 1.2]);
 
   const getPlaceDayNumber = (placeId: string) => {
@@ -506,18 +507,20 @@ export default function GeneratePage() {
     setConfirmingPulse(true);
     setHasConfirmedTrip(true);
 
+    // Fix #5: always derive trip name from current destinations, never from stale activeTrip.name
+    const derivedTripName = destinations.length === 1
+      ? `${destinations[0].name.split(',')[0]} Trip`
+      : destinations.length > 0
+        ? `${destinations[0].name.split(',')[0]} + ${destinations.length - 1} more`
+        : 'New Trip';
+
     if (isPostOnboarding && !isEditMode) {
-      const tripName = destinations.length === 1
-        ? `${destinations[0].name.split(',')[0]} Trip`
-        : destinations.length > 0
-          ? `${destinations[0].name.split(',')[0]} + ${destinations.length - 1} more`
-          : 'New Trip';
       const tripDest = destinations.map((d) => d.name).join(' → ') || 'Custom Destination';
       const tripCurrency = destinations[0]?.currency ?? 'IDR';
       const tripDays = journeyStart.days || daysParam || 1;
 
       createTrip({
-        name: tripName,
+        name: derivedTripName,
         destination: tripDest,
         currency: tripCurrency,
         budget: budget * Math.max(1, tripDays),
@@ -525,6 +528,9 @@ export default function GeneratePage() {
         daysRemaining: tripDays,
         linkedToPlan: true,
       });
+    } else if (!isEditMode) {
+      // Fix #5: update the active trip name to match the planned destination
+      setTripName(derivedTripName);
     }
 
     if (isPostOnboarding) {
@@ -565,12 +571,14 @@ export default function GeneratePage() {
     setReviewQueue([]);
     setDeckIndex(0);
     setSwipeHistory([]);
+    setPhase('loading'); // Fix #1: show loading UI during re-roll
+    setGenerationError(false);
     // Always use AI for regeneration — consistent with initial generation.
     const days = Math.max(1, isMultiDay ? perDayItineraries.length : (daysParam > 1 ? daysParam : journeyStart.days));
     buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
-      .catch(() => setGenerationError(true));
+      .catch(() => { setGenerationError(true); setPhase('reveal'); });
     setUserEdited(false);
-    show('Re-rolled itinerary', 'info');
+    show('Re-rolling itinerary…', 'info');
   };
 
   return (
@@ -1141,7 +1149,7 @@ export default function GeneratePage() {
 
             {/* Stack Area */}
             <div className="flex-1 relative flex items-center justify-center p-6 select-none bg-ink-50/20 overflow-hidden">
-              {/* Left Side Keep Cue Circle */}
+              {/* Left Side = Discard cue (swipe left = discard) */}
               <motion.div
                 style={{
                   opacity: leftCueOpacity,
@@ -1149,15 +1157,15 @@ export default function GeneratePage() {
                 }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
               >
-                <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
-                  <Check className="w-7 h-7 stroke-[3px]" />
+                <div className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                  <X className="w-7 h-7 stroke-[3px]" />
                 </div>
-                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
-                  Keep
+                <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
+                  Remove
                 </span>
               </motion.div>
 
-              {/* Right Side Remove Cue Circle */}
+              {/* Right Side = Keep cue (swipe right = keep) */}
               <motion.div
                 style={{
                   opacity: rightCueOpacity,
@@ -1165,11 +1173,11 @@ export default function GeneratePage() {
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
               >
-                <div className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
-                  <X className="w-7 h-7 stroke-[3px]" />
+                <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                  <Check className="w-7 h-7 stroke-[3px]" />
                 </div>
-                <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
-                  Remove
+                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
+                  Keep
                 </span>
               </motion.div>
 
@@ -1186,10 +1194,10 @@ export default function GeneratePage() {
                     depth={depth}
                     dayIndex={getPlaceDayNumber(place.id)}
                     onSwipeLeft={() => {
-                      handleSwipe('keep', place);
+                      handleSwipe('discard', place); // Fix #2: swipe left = discard
                     }}
                     onSwipeRight={() => {
-                      handleSwipe('discard', place);
+                      handleSwipe('keep', place); // Fix #2: swipe right = keep
                     }}
                     dragX={deckDragX}
                   />
@@ -1199,8 +1207,13 @@ export default function GeneratePage() {
 
             {/* Controls */}
             <div className="px-5 pt-4 pb-8 flex flex-col items-center gap-4 bg-white border-t border-ink-50 shrink-0">
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-[10px] text-ink-400 font-semibold flex items-center gap-1">← Remove</span>
+                <span className="text-[10px] text-ink-300">·</span>
+                <span className="text-[10px] text-ink-400 font-semibold flex items-center gap-1">Keep →</span>
+              </div>
               <div className="flex items-center justify-center gap-6">
-                {/* Discard Button (✕) */}
+                {/* Fix #2: Discard Button on LEFT (matches swipe-left = discard) */}
                 <button
                   onClick={() => handleButtonSwipe('discard')}
                   className="w-14 h-14 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center shadow-sm hover:shadow-md border border-red-200 text-red-500 transition-all active:scale-95 press"
@@ -1209,7 +1222,7 @@ export default function GeneratePage() {
                   <X className="w-6 h-6" />
                 </button>
 
-                {/* Undo Button */}
+                {/* Undo Button (center) */}
                 <button
                   onClick={handleSwipeUndo}
                   disabled={swipeHistory.length === 0}
@@ -1219,7 +1232,7 @@ export default function GeneratePage() {
                   <RefreshCw className="w-4 h-4" />
                 </button>
 
-                {/* Keep Button (Check) */}
+                {/* Fix #2: Keep Button on RIGHT (matches swipe-right = keep) */}
                 <button
                   onClick={() => handleButtonSwipe('keep')}
                   className="w-14 h-14 rounded-full bg-brand-50 hover:bg-brand-150 flex items-center justify-center shadow-sm hover:shadow-md border border-brand-200 text-brand-600 transition-all active:scale-95 press"
@@ -2413,8 +2426,9 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
   const zIndex = 10 - depth;
   const rotate = useTransform(dragX, [-200, 200], [-12, 12]);
 
-  const keepStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);
-  const discardStampOpacity = useTransform(dragX, [25, 100], [0, 1]);
+  // Fix #2: right drag = keep stamp, left drag = remove stamp
+  const keepStampOpacity = useTransform(dragX, [25, 100], [0, 1]);
+  const discardStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);
 
   return (
     <motion.div
@@ -2472,18 +2486,20 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
 
         {isTop && (
           <>
-            <motion.div
-              style={{ opacity: keepStampOpacity }}
-              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
-            >
-              Keep
-            </motion.div>
-
+            {/* Fix #2: Remove stamp on LEFT (swipe left = remove) */}
             <motion.div
               style={{ opacity: discardStampOpacity }}
-              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
             >
               Remove
+            </motion.div>
+
+            {/* Fix #2: Keep stamp on RIGHT (swipe right = keep) */}
+            <motion.div
+              style={{ opacity: keepStampOpacity }}
+              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+            >
+              Keep
             </motion.div>
           </>
         )}

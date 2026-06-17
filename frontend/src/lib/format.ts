@@ -1,7 +1,9 @@
 export const formatRp = (n: number) => {
   const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `Rp ${(abs / 1_000_000).toFixed(abs % 1_000_000 === 0 ? 0 : 2).replace(/\.?0+$/, '')}M`;
-  if (abs >= 1000) return `Rp ${Math.round(abs / 1000)}K`;
+  // Fix #8: only abbreviate very large amounts (>=10M), show exact otherwise
+  if (abs >= 10_000_000) return `Rp ${(abs / 1_000_000).toFixed(abs % 1_000_000 === 0 ? 0 : 1).replace(/\.?0+$/, '')}jt`;
+  // Use thousands separator for amounts >= 1000
+  if (abs >= 1_000) return `Rp ${abs.toLocaleString('id-ID')}`;
   return `Rp ${abs}`;
 };
 
@@ -11,13 +13,18 @@ import { CURRENCY_RATES_TO_IDR } from '../data/wallet';
 import { CURRENCY_SYMBOLS } from '../data/wallet';
 
 // Convert a place cost (stored in IDR) to the given currency and format it.
+// Fix #8: do not round — show accurate nominal values.
 export function formatCost(amountIDR: number, currency: Currency): string {
   if (currency === 'IDR') return formatRp(amountIDR);
   const rate = CURRENCY_RATES_TO_IDR[currency] ?? 1;
   const converted = amountIDR / rate;
   const sym = CURRENCY_SYMBOLS[currency] ?? currency;
+  // JPY and KRW are whole-number currencies
   if (currency === 'JPY' || currency === 'KRW') return `${sym}${Math.round(converted).toLocaleString()}`;
-  return `${sym}${converted < 1 ? converted.toFixed(2) : converted.toFixed(0)}`;
+  // Show 2 decimal places for sub-1 values, otherwise up to 2 decimal places without trailing zeros
+  if (converted < 1) return `${sym}${converted.toFixed(2)}`;
+  if (Number.isInteger(converted)) return `${sym}${converted.toLocaleString()}`;
+  return `${sym}${converted.toFixed(2).replace(/\.?0+$/, '')}`;
 }
 
 export const formatRpFull = (n: number) =>

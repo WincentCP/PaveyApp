@@ -822,11 +822,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadingPlan,
     buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
       setLoadingPlan(true);
+      // Fix #6 & #7: clear previous itinerary so "plan another trip" starts fresh
+      setItinerary([]);
+      setPerDayItineraries([]);
       try {
         let res: any;
         // Use the first destination name, then activeTrip destination, then empty string.
         // Do NOT fall back to 'Bali, Indonesia' — that would generate wrong-city results.
         const targetCity = destinations[0]?.name || activeTrip?.destination || '';
+
+        // Fix #3: auto-suggest currency from destination and update the active trip
+        if (targetCity) {
+          const suggestedCurrency = suggestCurrency(targetCity);
+          // Update trip currency only if it differs from the current one (avoid redundant renders)
+          setTrips((prev) => prev.map((t) =>
+            t.id === activeTripId ? { ...t, currency: suggestedCurrency } : t
+          ));
+        }
         
         // If we have an explicit targetCity from the intent sheet, always use
         // apiGeneratePlan so the AI generates places for the correct city.
@@ -886,9 +898,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           daysMap[d].push(p);
         });
 
-        const planDays: Place[][] = [];
+        // Fix #7: Build planDays from daysMap, then redistribute evenly if some days are empty
+        let planDays: Place[][] = [];
         for (let d = 1; d <= days; d++) {
           planDays.push(daysMap[d] || []);
+        }
+
+        // Redistribute stops evenly across all days if the distribution is uneven
+        // (e.g. AI returns day_number=[1,1,2,2,2] for a 3-day trip, leaving Day 3 empty)
+        const allStops = planDays.flat();
+        if (allStops.length > 0 && days > 1) {
+          const emptyDays = planDays.filter(d => d.length === 0).length;
+          if (emptyDays > 0) {
+            // Redistribute: split all stops evenly across days
+            const stopsPerDay = Math.ceil(allStops.length / days);
+            planDays = [];
+            for (let d = 0; d < days; d++) {
+              planDays.push(allStops.slice(d * stopsPerDay, (d + 1) * stopsPerDay));
+            }
+          }
         }
 
         // ── Geocode all places via Nominatim OSM (same as chatbot) ──
@@ -942,7 +970,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setItinerary((cur) => cur.map((p) => (p.id === id ? withPlace : p))),
     addStop: (p) =>
       setItinerary((cur) => (cur.find((x) => x.id === p.id) ? cur : [...cur, p])),
-    alternatives: (excludeIds) => PLACES.filter((p) => !excludeIds.includes(p.id)).slice(0, 8),
+    // Fix #4: alternatives now prioritizes AI-generated places from itinerary city
+    // rather than always pulling from static local PLACES data.
+    alternatives: (excludeIds) => {
+      // Collect all AI-generated places from perDayItineraries that aren't currently shown
+      const aiPoolFromDays = perDayItineraries.flat().filter((p) => !excludeIds.includes(p.id));
+      // Also include any itinerary places not in excludeIds
+      const aiPoolFromItinerary = itinerary.filter((p) => !excludeIds.includes(p.id));
+      // Merge, deduplicate by id, take AI places first
+      const seen = new Set<string>();
+      const merged: typeof PLACES = [];
+      for (const p of [...aiPoolFromDays, ...aiPoolFromItinerary]) {
+        if (!seen.has(p.id)) { seen.add(p.id); merged.push(p as any); }
+      }
+      // Supplement with static PLACES if we don't have enough AI suggestions
+      if (merged.length < 8) {
+        for (const p of PLACES) {
+          if (!excludeIds.includes(p.id) && !seen.has(p.id)) {
+            seen.add(p.id);
+            merged.push(p);
+          }
+          if (merged.length >= 8) break;
+        }
+      }
+      return merged.slice(0, 8);
+    },
 
     // Multi-destination
     destinations,
