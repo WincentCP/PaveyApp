@@ -201,10 +201,19 @@ export function useChat(tripId?: string) {
             }
 
             const locNote = loc.fromIP
-                ? `📍 Got it — using approximate location: **${loc.city}**. GPS wasn't available so this might not be exact. Let me check what's nearby...`
-                : `📍 Got it — you're in **${loc.city}**. Let me check the weather first...`;
+                ? `📍 I couldn’t access GPS — your approximate location is ${loc.city} (from network). Is that right? If not, just tell me your actual city!`
+                : `📍 Got it — you’re in ${loc.city}. Let me check the weather first...`;
 
             updateMsg(detectingId, { text: locNote });
+
+            // If using IP geo (inaccurate), let user confirm/correct city first
+            if (loc.fromIP) {
+                lastCityRef.current = loc.city; // store so confirmation can use it
+                pendingFlowRef.current = { type: 'awaiting_city_for_places' };
+                setLoading(false);
+                return;
+            }
+
             lastCityRef.current = loc.city;
 
             // Fetch weather
@@ -325,15 +334,20 @@ export function useChat(tripId?: string) {
 
         setLoading(true);
 
-    // awaiting_city_for_places — GPS failed, user typed their city
+    // awaiting_city_for_places — GPS failed/IP used, user typed their city or confirmed IP city
         if (flow.type === 'awaiting_city_for_places') {
             pendingFlowRef.current = null;
             appendMsg({ id: uid(), role: 'user', text: userText });
 
-            const city = userText.trim();
+            // Detect confirmation words (user confirming the IP-detected city)
+            const confirmWords = /^(yes|ya|iya|ok|okay|yep|yup|correct|betul|benar|oke|bener)[\.!]?$/i;
+            const city = confirmWords.test(userText.trim())
+                ? lastCityRef.current || userText.trim()
+                : userText.trim();
+
             lastCityRef.current = city;
             const assistantId = uid();
-            appendMsg({ id: assistantId, role: 'assistant', text: `📍 Got it — looking for places in ${city}...`, isStreaming: true });
+            appendMsg({ id: assistantId, role: 'assistant', text: `📍 Looking for places in ${city}...`, isStreaming: true });
 
             try {
                 const weather = await fetchWeather(city);
@@ -533,28 +547,31 @@ export function useChat(tripId?: string) {
             appendMsg({ id: uid(), role: 'user', text: userText });
 
             const assistantId = uid();
-            appendMsg({ id: assistantId, role: 'assistant', text: '⏳ Checking weather and planning a route around your hotel...', isStreaming: true });
+            appendMsg({ id: assistantId, role: 'assistant', text: '⏳ Checking weather and planning your hotel route...', isStreaming: true });
 
             try {
-                // Extract hotel + city from user reply
-                const prompt = `The user is staying at: "${userText}". Build a 1-day hotel-anchored travel itinerary. Extract the hotel name and city from the user message. Give 5 real nearby attractions and restaurants. First stop and last stop must be closest to the hotel. You MUST use the "travel_plan" intent in the JSON schema.`;
+                // Best-effort city extraction: last comma-separated part (e.g. "The Mulia, Bali" → "Bali")
+                const weatherCity = userText.includes(',')
+                    ? userText.split(',').slice(-1)[0].trim()
+                    : userText.trim();
+                lastCityRef.current = weatherCity;
 
-                const weather_city = userText.split(',').slice(-1)[0]?.trim() || userText.trim();
-                lastCityRef.current = weather_city;
-                const weather = await fetchWeather(weather_city);
+                const weather = await fetchWeather(weatherCity);
                 const weatherHint = weather.isRainy
-                ? 'It is raining. Prioritize indoor venues.'
+                ? 'It is currently raining. Include mostly indoor venues — cafes, museums, malls.'
                 : weather.isExtreme
-                ? 'Weather is extreme. Recommend indoor/shaded spots.'
-                : 'Weather is good. Mix of outdoor and indoor.';
+                ? 'Weather is extreme. Recommend indoor or shaded spots.'
+                : 'Weather is great. Mix of outdoor and indoor places ideal.';
+
+                const prompt = `The user is staying at: "${userText}". Build a full 1-day hotel-anchored travel itinerary. Extract the hotel name and city from the user message. ${weatherHint} Include breakfast, lunch, and dinner spots plus 3–4 nearby attractions. First and last stop should be nearest to the hotel. Give real place names. You MUST use the "travel_plan" intent in the JSON schema.`;
 
                 let display = '';
                 const raw = await sendMessage(
                     historyRef.current,
                     prompt,
                     (chunk) => { display += chunk; updateMsg(assistantId, { text: display }); },
-                                              tripId,
-                                              `Weather: ${weather.temp}°C, ${weather.description}. ${weatherHint}`,
+                    tripId,
+                    `Weather in ${weatherCity}: ${weather.temp}°C, ${weather.description}. ${weatherHint}`,
                 );
 
                 if (!display) {
@@ -569,19 +586,21 @@ export function useChat(tripId?: string) {
                 const result = json ? parseAIResult(json) : null;
                 let richContent: RichContent | undefined;
 
-                if (result?.places?.length) {
+                if (result?.intent === 'travel_plan' && result.places?.length) {
                     const raw2: ChatPlace[] = result.places.map((p) => ({
                         ...p,
                         type: (p.type as ChatPlace['type']) || 'destination',
                     }));
-                    const city = result.city ?? weather_city;
-                    const enriched = await enrichPlaces(raw2, city);
+                    // Prefer LLM-extracted city, fallback to user-extracted city
+                    const planCity = result.city ?? weatherCity;
                     const hotelNameFromText = userText.split(',')[0]?.trim();
-                    const plan = await generateTravelPlan(city, enriched, result.start_time ?? '09:00', result.hotel_name ?? hotelNameFromText);
+                    const enriched = await enrichPlaces(raw2, planCity);
+                    const plan = await generateTravelPlan(planCity, enriched, result.start_time ?? '09:00', result.hotel_name ?? hotelNameFromText);
                     lastPlanRef.current = plan;
                     richContent = { type: 'travel_plan', plan };
                 }
 
+                // Show weather card first (same as Plan My Day)
                 setMsgs((prev) => {
                     const weatherMsg: ChatMsg = {
                         id: uid(),
@@ -601,7 +620,7 @@ export function useChat(tripId?: string) {
                     richContent,
                 });
             } catch {
-                updateMsg(assistantId, { text: "Sorry, something went wrong. Please try again!", isStreaming: false });
+                updateMsg(assistantId, { text: 'Sorry, something went wrong. Please try again!', isStreaming: false });
             }
 
             setLoading(false);
