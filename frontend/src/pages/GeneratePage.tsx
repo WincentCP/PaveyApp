@@ -16,6 +16,7 @@ import { MAX_TRIP_DAYS, exceedsMaxDuration } from '../lib/planValidation';
 import { COPY } from '../lib/copy';
 import { dayIsTight } from '../lib/density';
 import { formatCost } from '../lib/format';
+import { suggestCurrency } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import TimePicker from '../components/TimePicker';
 import { tripDurationDays, todayISO } from '../lib/dateUtils';
@@ -62,6 +63,12 @@ export default function GeneratePage() {
   const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
+
+  // Fix #3: derive currency directly from current destination — don't trust activeTrip.currency
+  // which might be the DEFAULT_TRIP stale value.
+  const effectiveCurrency = destinations[0]
+    ? suggestCurrency(destinations[0].name)
+    : activeTrip.currency;
 
   const isEditMode = searchParams.get('edit') === '1';
   const isPostOnboarding = searchParams.get('after') === 'onboarding';
@@ -219,8 +226,8 @@ export default function GeneratePage() {
   // Drag state for Tinder-style review deck (useMotionValue to prevent parent re-renders)
   const deckDragX = useMotionValue(0);
 
-  // Left/Right cue circle animations transformed from motion value
-  // Swipe LEFT = Discard (Remove), Swipe RIGHT = Keep
+  // Left/Right cue circle animations
+  // Swipe LEFT = Keep, Swipe RIGHT = Discard (as user described)
   const leftCueOpacity = useTransform(deckDragX, [-100, -20, 30], [1, 0.15, 0]);
   const leftCueScale = useTransform(deckDragX, [-100, 0, 100], [1.2, 0.95, 0.8]);
   const rightCueOpacity = useTransform(deckDragX, [-30, 20, 100], [0, 0.15, 1]);
@@ -428,11 +435,12 @@ export default function GeneratePage() {
     if (phase === 'loading' && !loadingPlan && !isManualMode && !isEditMode) {
       if (itinerary.length > 0) {
         setPhase('reveal');
-      } else {
+      } else if (!generationError) {
+        // Only show error if generation actually finished (not still pending)
         setGenerationError(true);
       }
     }
-  }, [loadingPlan, phase, itinerary.length, isManualMode, isEditMode]);
+  }, [loadingPlan, phase, itinerary.length, isManualMode, isEditMode, generationError]);
 
   // Load review deck queue when reveal phase starts
   useEffect(() => {
@@ -571,12 +579,19 @@ export default function GeneratePage() {
     setReviewQueue([]);
     setDeckIndex(0);
     setSwipeHistory([]);
-    setPhase('loading'); // Fix #1: show loading UI during re-roll
+    // Fix #1 (real): Don't fight with the phase effect — just call buildFullItinerary.
+    // The loadingPlan flag drives the loading UI (see render below).
+    // We only reset phase to 'loading' if it was already there; otherwise keep 'reveal'
+    // and show a loadingPlan overlay. This avoids the race where loadingPlan is still
+    // false when the phase effect fires and immediately flips back to reveal.
     setGenerationError(false);
-    // Always use AI for regeneration — consistent with initial generation.
     const days = Math.max(1, isMultiDay ? perDayItineraries.length : (daysParam > 1 ? daysParam : journeyStart.days));
     buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
-      .catch(() => { setGenerationError(true); setPhase('reveal'); });
+      .then(() => {
+        // After rebuild, reload the deck with fresh places
+        setReviewQueue([]);
+      })
+      .catch(() => { setGenerationError(true); });
     setUserEdited(false);
     show('Re-rolling itinerary…', 'info');
   };
@@ -623,7 +638,8 @@ export default function GeneratePage() {
           /* ── AI GENERATED FLOW ── */
           <motion.div key="ai" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col overflow-hidden">
             <AnimatePresence mode="wait">
-              {phase === 'loading' ? (
+              {/* Fix #1 real: show loading when loadingPlan is true (covers both initial and re-roll) */}
+              {phase === 'loading' || (loadingPlan && !isEditMode) ? (
                 <LoadingState key="loading" stepIdx={stepIdx} steps={loadingSteps} />
               ) : (
                 <motion.div
@@ -641,7 +657,14 @@ export default function GeneratePage() {
                           {isMultiDay ? `Day ${activeDay + 1} of ${perDayItineraries.length}` : `${vibe.charAt(0).toUpperCase() + vibe.slice(1)} day`}
                         </div>
                         <h2 className="font-extrabold text-white text-base sm:text-lg font-display leading-tight truncate">
-                          {activeTrip.name !== 'My Trip' ? activeTrip.name : (destinations[0] ? destinations[0].name.split(',')[0] : 'My Trip')}
+                          {/* Fix #5: always derive name from current destinations. Fallback excludes DEFAULT_TRIP names. */}
+                          {destinations.length > 0
+                            ? (destinations.length === 1
+                                ? destinations[0].name.split(',')[0]
+                                : `${destinations[0].name.split(',')[0]} + ${destinations.length - 1} more`)
+                            : (activeTrip.name !== 'My Trip' && activeTrip.name !== 'Ubud Trip' && activeTrip.destination !== 'Bali, Indonesia'
+                                ? activeTrip.name
+                                : 'My Trip')}
                         </h2>
                         {journeyStart.date && journeyStart.date !== 'today' && (
                           <p className="text-xs text-brand-100/90 mt-0.5 font-medium truncate">
@@ -680,7 +703,7 @@ export default function GeneratePage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Est. Cost</span>
-                        <span className="font-bold text-white text-base">{formatCost(totals.cost, activeTrip.currency)}</span>
+                        <span className="font-bold text-white text-base">{formatCost(totals.cost, effectiveCurrency)}</span>
                       </div>
                     </div>
                   </div>
@@ -956,7 +979,7 @@ export default function GeneratePage() {
               <div className="mx-5 mb-2 p-3 rounded-2xl bg-brand-600 text-white shrink-0 flex items-center justify-between">
                 <div>
                   <div className="text-xs font-semibold opacity-80">Itinerary</div>
-                  <div className="text-sm font-bold">{manualStops.length} stops · {formatCost(totals.cost, activeTrip.currency)}</div>
+                  <div className="text-sm font-bold">{manualStops.length} stops · {formatCost(totals.cost, effectiveCurrency)}</div>
                 </div>
                 <button onClick={importAi} className="text-xs font-semibold press flex items-center gap-1 bg-white/20 rounded-full px-3 py-1.5">
                   <img src="/mascot.svg" alt="TinTin" className="w-4.5 h-4.5 object-contain" /> Mix TinTin
@@ -1058,7 +1081,7 @@ export default function GeneratePage() {
                         <span>{p.openingHours}</span>
                       </div>
                       <div className="text-xs text-brand-600 font-semibold mt-0.5">
-                        {formatCost(p.priceRange.min, activeTrip.currency)}{p.priceRange.max !== p.priceRange.min ? ` – ${formatCost(p.priceRange.max, activeTrip.currency)}` : ''}
+                        {formatCost(p.priceRange.min, effectiveCurrency)}{p.priceRange.max !== p.priceRange.min ? ` – ${formatCost(p.priceRange.max, effectiveCurrency)}` : ''}
                       </div>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
@@ -1149,36 +1172,26 @@ export default function GeneratePage() {
 
             {/* Stack Area */}
             <div className="flex-1 relative flex items-center justify-center p-6 select-none bg-ink-50/20 overflow-hidden">
-              {/* Left Side = Discard cue (swipe left = discard) */}
+              {/* Left Side = Keep cue (swipe left = keep) */}
               <motion.div
-                style={{
-                  opacity: leftCueOpacity,
-                  scale: leftCueScale,
-                }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
-              >
-                <div className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
-                  <X className="w-7 h-7 stroke-[3px]" />
-                </div>
-                <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
-                  Remove
-                </span>
-              </motion.div>
-
-              {/* Right Side = Keep cue (swipe right = keep) */}
-              <motion.div
-                style={{
-                  opacity: rightCueOpacity,
-                  scale: rightCueScale,
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 transition-transform duration-100 ease-out"
+                style={{ opacity: leftCueOpacity, scale: leftCueScale }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
               >
                 <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
                   <Check className="w-7 h-7 stroke-[3px]" />
                 </div>
-                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">
-                  Keep
-                </span>
+                <span className="text-[10px] font-bold text-brand-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">Keep</span>
+              </motion.div>
+
+              {/* Right Side = Discard cue (swipe right = discard) */}
+              <motion.div
+                style={{ opacity: rightCueOpacity, scale: rightCueScale }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
+              >
+                <div className="w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg border-2 border-white/80">
+                  <X className="w-7 h-7 stroke-[3px]" />
+                </div>
+                <span className="text-[10px] font-bold text-red-600 tracking-wider uppercase bg-white/95 backdrop-blur px-2.5 py-0.5 rounded-full shadow-sm">Remove</span>
               </motion.div>
 
               {reviewQueue.slice(deckIndex, deckIndex + 3).reverse().map((place, offsetIdx, sliceArr) => {
@@ -1194,10 +1207,10 @@ export default function GeneratePage() {
                     depth={depth}
                     dayIndex={getPlaceDayNumber(place.id)}
                     onSwipeLeft={() => {
-                      handleSwipe('discard', place); // Fix #2: swipe left = discard
+                      handleSwipe('keep', place); // swipe left = keep (as user described)
                     }}
                     onSwipeRight={() => {
-                      handleSwipe('keep', place); // Fix #2: swipe right = keep
+                      handleSwipe('discard', place); // swipe right = discard
                     }}
                     dragX={deckDragX}
                   />
@@ -1208,18 +1221,18 @@ export default function GeneratePage() {
             {/* Controls */}
             <div className="px-5 pt-4 pb-8 flex flex-col items-center gap-4 bg-white border-t border-ink-50 shrink-0">
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-[10px] text-ink-400 font-semibold flex items-center gap-1">← Remove</span>
+                <span className="text-[10px] text-brand-600 font-bold flex items-center gap-1">← Keep</span>
                 <span className="text-[10px] text-ink-300">·</span>
-                <span className="text-[10px] text-ink-400 font-semibold flex items-center gap-1">Keep →</span>
+                <span className="text-[10px] text-red-500 font-bold flex items-center gap-1">Remove →</span>
               </div>
               <div className="flex items-center justify-center gap-6">
-                {/* Fix #2: Discard Button on LEFT (matches swipe-left = discard) */}
+                {/* Keep Button on LEFT (matches swipe-left = keep) */}
                 <button
-                  onClick={() => handleButtonSwipe('discard')}
-                  className="w-14 h-14 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center shadow-sm hover:shadow-md border border-red-200 text-red-500 transition-all active:scale-95 press"
-                  aria-label="Discard stop"
+                  onClick={() => handleButtonSwipe('keep')}
+                  className="w-14 h-14 rounded-full bg-brand-50 hover:bg-brand-100 flex items-center justify-center shadow-sm hover:shadow-md border border-brand-200 text-brand-600 transition-all active:scale-95 press"
+                  aria-label="Keep stop"
                 >
-                  <X className="w-6 h-6" />
+                  <Check className="w-6 h-6" />
                 </button>
 
                 {/* Undo Button (center) */}
@@ -1232,13 +1245,13 @@ export default function GeneratePage() {
                   <RefreshCw className="w-4 h-4" />
                 </button>
 
-                {/* Fix #2: Keep Button on RIGHT (matches swipe-right = keep) */}
+                {/* Discard Button on RIGHT (matches swipe-right = discard) */}
                 <button
-                  onClick={() => handleButtonSwipe('keep')}
-                  className="w-14 h-14 rounded-full bg-brand-50 hover:bg-brand-150 flex items-center justify-center shadow-sm hover:shadow-md border border-brand-200 text-brand-600 transition-all active:scale-95 press"
-                  aria-label="Keep stop"
+                  onClick={() => handleButtonSwipe('discard')}
+                  className="w-14 h-14 rounded-full bg-red-50 hover:bg-red-100 flex items-center justify-center shadow-sm hover:shadow-md border border-red-200 text-red-500 transition-all active:scale-95 press"
+                  aria-label="Discard stop"
                 >
-                  <Check className="w-6 h-6" />
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
@@ -1351,7 +1364,7 @@ export default function GeneratePage() {
                     <div className="flex items-center gap-1 text-[10px] text-ink-500 mb-0.5">
                       <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
                       <span className="font-semibold text-ink-700">{place.rating}</span>
-                      <span>· {formatCost(place.cost, activeTrip.currency)}</span>
+                      <span>· {formatCost(place.cost, effectiveCurrency)}</span>
                     </div>
                     <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm}km</div>
                   </div>
@@ -2079,7 +2092,7 @@ function StopCard({
                 <span className="truncate">{place.category}</span>
                 <span className="text-ink-300">·</span>
                 <span className="text-brand-600 font-bold shrink-0">
-                  {formatCost(place.priceRange.min, activeTrip.currency)}
+                  {formatCost(place.priceRange.min, effectiveCurrency)}
                 </span>
               </div>
             </div>
@@ -2343,7 +2356,7 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-sm font-bold text-brand-600">{formatCost(p.cost, activeTrip.currency)}</div>
+                    <div className="text-sm font-bold text-brand-600">{formatCost(p.cost, effectiveCurrency)}</div>
                     <div className="text-[11px] text-ink-500">{p.distanceKm} km</div>
                   </div>
                   <Plus className="w-4 h-4 text-ink-400 shrink-0" />
@@ -2426,9 +2439,9 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
   const zIndex = 10 - depth;
   const rotate = useTransform(dragX, [-200, 200], [-12, 12]);
 
-  // Fix #2: right drag = keep stamp, left drag = remove stamp
-  const keepStampOpacity = useTransform(dragX, [25, 100], [0, 1]);
-  const discardStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);
+  // Swipe LEFT = Keep, Swipe RIGHT = Discard
+  const keepStampOpacity = useTransform(dragX, [-100, -25], [1, 0]);   // shows on left drag
+  const discardStampOpacity = useTransform(dragX, [25, 100], [0, 1]); // shows on right drag
 
   return (
     <motion.div
@@ -2486,20 +2499,20 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
 
         {isTop && (
           <>
-            {/* Fix #2: Remove stamp on LEFT (swipe left = remove) */}
-            <motion.div
-              style={{ opacity: discardStampOpacity }}
-              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
-            >
-              Remove
-            </motion.div>
-
-            {/* Fix #2: Keep stamp on RIGHT (swipe right = keep) */}
+            {/* Keep stamp on LEFT (swipe left = keep) */}
             <motion.div
               style={{ opacity: keepStampOpacity }}
-              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+              className="absolute top-1/2 left-8 -translate-y-1/2 -rotate-12 border-4 border-brand-500 rounded-xl px-4 py-2 text-brand-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
             >
               Keep
+            </motion.div>
+
+            {/* Remove stamp on RIGHT (swipe right = discard) */}
+            <motion.div
+              style={{ opacity: discardStampOpacity }}
+              className="absolute top-1/2 right-8 -translate-y-1/2 rotate-12 border-4 border-red-500 rounded-xl px-4 py-2 text-red-500 font-black text-2xl uppercase tracking-widest pointer-events-none select-none bg-white/90 backdrop-blur"
+            >
+              Remove
             </motion.div>
           </>
         )}
@@ -2537,7 +2550,7 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
         <div className="pt-2.5 border-t border-ink-50 flex items-center justify-between shrink-0">
           <span className="text-[10px] font-bold text-ink-400 uppercase tracking-wider">Est. Cost</span>
           <span className="text-xs font-bold text-brand-600">
-            {formatCost(place.cost, activeTrip.currency)}
+            {formatCost(place.cost, effectiveCurrency)}
           </span>
         </div>
       </div>

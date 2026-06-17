@@ -85,6 +85,105 @@ async function geocodeItineraryPlaces(places: Place[], city: string): Promise<Pl
   return results;
 }
 
+// ── Curated place image lookup (no API key needed) ──────────────────────────
+// Maps city keyword + place type to a real Unsplash photo.
+// Falls back to type-only, then to a generic travel photo.
+const CITY_IMAGES: Record<string, Record<string, string>> = {
+  bali: {
+    temple:      'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+    beach:       'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=800&q=80',
+    restaurant:  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    market:      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',
+    cafe:        'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+  },
+  jakarta: {
+    restaurant:  'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
+    mall:        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=800&q=80',
+  },
+  yogyakarta: {
+    temple:      'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+    restaurant:  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+  },
+  lombok: {
+    beach:       'https://images.unsplash.com/photo-1562837832-7b4960bc6d10?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1562837832-7b4960bc6d10?auto=format&fit=crop&w=800&q=80',
+  },
+  singapore: {
+    restaurant:  'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    attraction:  'https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=800&q=80',
+    park:        'https://images.unsplash.com/photo-1538484661700-3af6cc41b0e4?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=800&q=80',
+  },
+  tokyo: {
+    restaurant:  'https://images.unsplash.com/photo-1557872943-16a5ac26437e?auto=format&fit=crop&w=800&q=80',
+    shrine:      'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=800&q=80',
+    market:      'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+  },
+  osaka: {
+    restaurant:  'https://images.unsplash.com/photo-1557872943-16a5ac26437e?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1590559899731-a382839e5549?auto=format&fit=crop&w=800&q=80',
+  },
+  kyoto: {
+    temple:      'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=800&q=80',
+  },
+  bangkok: {
+    temple:      'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=800&q=80',
+    restaurant:  'https://images.unsplash.com/photo-1541795795328-f073b763494e?auto=format&fit=crop&w=800&q=80',
+    market:      'https://images.unsplash.com/photo-1569596082827-c9c9b72df8a4?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=800&q=80',
+  },
+  'kuala lumpur': {
+    restaurant:  'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80',
+  },
+  paris: {
+    restaurant:  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80',
+  },
+};
+
+// Type keyword normalizer — maps AI-returned types to image key
+const TYPE_FALLBACKS: Record<string, string> = {
+  restaurant: 'restaurant', cafe: 'restaurant', food: 'restaurant',
+  temple: 'temple', shrine: 'shrine', mosque: 'temple', church: 'temple',
+  beach: 'beach', park: 'park', garden: 'park', nature: 'beach',
+  market: 'market', mall: 'mall', shopping: 'mall',
+  attraction: 'attraction', museum: 'attraction', gallery: 'attraction',
+};
+
+// Generic type fallback images (city-agnostic)
+const TYPE_IMAGES: Record<string, string> = {
+  restaurant: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+  cafe:       'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
+  temple:     'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+  beach:      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+  park:       'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=800&q=80',
+  market:     'https://images.unsplash.com/photo-1569596082827-c9c9b72df8a4?auto=format&fit=crop&w=800&q=80',
+  mall:       'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+  attraction: 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
+  museum:     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+};
+
+function getPlaceImage(city: string, type: string): string {
+  const cityKey = city.toLowerCase().split(',')[0].trim();
+  const typeKey = TYPE_FALLBACKS[type?.toLowerCase()] ?? type?.toLowerCase() ?? 'attraction';
+
+  // Try city-specific + type
+  for (const [key, map] of Object.entries(CITY_IMAGES)) {
+    if (cityKey.includes(key) || key.includes(cityKey)) {
+      if (map[typeKey]) return map[typeKey];
+      if (map.default) return map.default;
+    }
+  }
+  // Fall back to type-only
+  return TYPE_IMAGES[typeKey] ?? TYPE_IMAGES.attraction;
+}
+
 
 export type TransitMode = 'flight' | 'train' | 'bus' | 'drive' | 'ferry';
 
@@ -879,9 +978,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             category: item.type === 'restaurant' ? 'Foodie' : 'Cultural',
             tags: [item.type || 'destination'],
             vibes: [vibe],
-            image: item.type === 'restaurant'
-              ? 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80'
-              : 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
+            image: getPlaceImage(targetCity, item.type || 'attraction'),
             cost: item.price ?? 0,
             priceRange: { min: item.price ?? 0, max: item.price ?? 0 },
             durationMin: item.duration_spent_minutes || 60,
