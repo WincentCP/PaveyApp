@@ -398,12 +398,13 @@ def generate_itinerary(payload: TravelPlannerRequest):
 
     try:
         groq_client = Groq(api_key=GROQ_API_KEY)
+        groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         chat_completion = groq_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": user_generation_prompt}
             ],
-            model="llama-3.1-8b-instant",
+            model=groq_model,
             response_format={"type": "json_object"},
             temperature=0.25,
             max_tokens=2048
@@ -418,7 +419,7 @@ def generate_itinerary(payload: TravelPlannerRequest):
             TelemetryManager.log_inference_telemetry(
                 prompt_tokens=actual_prompt_tokens,
                 completion_tokens=actual_completion_tokens,
-                model_name="llama-3.1-8b-instant"
+                model_name=groq_model
             )
         except Exception as prom_err:
             logger.error(f"[Prometheus Error] Gagal melakukan push telemetri: {str(prom_err)}")
