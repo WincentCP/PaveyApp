@@ -49,13 +49,6 @@ async function geocodeItineraryPlaces(places: Place[], city: string): Promise<Pl
 
   for (let i = 0; i < places.length; i++) {
     const p = places[i];
-    const needsGeocode = !p.lat || !p.lng || (p.lat === 0 && p.lng === 0)
-      || (center && haversineKm(p.lat, p.lng, center.lat, center.lon) > 200);
-
-    if (!needsGeocode) {
-      results.push(p);
-      continue;
-    }
 
     try {
       const query = `${p.name}, ${city}`;
