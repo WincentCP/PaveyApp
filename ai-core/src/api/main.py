@@ -135,6 +135,7 @@ class TravelPlannerRequest(BaseModel):
     place_type: str = Field(default="all", example="destination", description="Filter tipe lokasi: 'destination', 'restaurant', atau 'all'")
     price_level: Optional[int] = Field(default=None, ge=0, le=5, example=0, description="Filter tingkat harga (0=Gratis, 1-5 skala Google). Kosongi untuk semua.")
     bypass_cache: Optional[bool] = Field(default=False, description="Bypass Redis cache dan acak kandidat")
+    exclude_names: Optional[List[str]] = Field(default_factory=list, description="Daftar nama tempat yang dikecualikan dari generasi")
 
 # ==========================================
 # 2. ENDPOINT ROUTE IMPLEMENTATION
@@ -189,10 +190,11 @@ def generate_itinerary(payload: TravelPlannerRequest):
     # LAYER 1: API CACHING STRATEGY (Redis)
     # ----------------------------------------------------------------------
     durations_cache_str = "-".join(map(str, validated_durations))
+    exclude_names_str = "-".join(sorted([n.lower().strip() for n in (payload.exclude_names or [])]))
     cache_key = (
-        f"itinerary:v6:{payload.city.lower().replace(' ', '_')}:"
+        f"itinerary:v7:{payload.city.lower().replace(' ', '_')}:"
         f"{hash(payload.preference)}:{payload.num_places}:{payload.start_datetime}:"
-        f"{durations_cache_str}:{req_place_type}:{req_price_level}"
+        f"{durations_cache_str}:{req_place_type}:{req_price_level}:{exclude_names_str}"
     )
 
     if redis_cache and not payload.bypass_cache:
@@ -216,12 +218,19 @@ def generate_itinerary(payload: TravelPlannerRequest):
             detail="Format skema 'start_datetime' salah. Wajib menggunakan standar ISO format (YYYY-MM-DDTHH:MM:SS)."
         )
 
+    # Dapatkan lebih banyak rekomendasi jika ada pengecualian agar tidak kekurangan kandidat
+    top_n_candidates = max(payload.num_places * 4, 35) if payload.exclude_names else payload.num_places * 4
+
     candidate_df = inference_pipeline.get_recommendations(
         city=payload.city,
         preference=payload.preference,
-        top_n=payload.num_places * 4,
+        top_n=top_n_candidates,
         user_datetime=user_datetime_obj
     )
+
+    if candidate_df is not None and not candidate_df.empty and payload.exclude_names:
+        exclude_set = {name.lower().strip() for name in payload.exclude_names if name}
+        candidate_df = candidate_df[~candidate_df["name"].str.lower().str.strip().isin(exclude_set)]
 
     if candidate_df is None or candidate_df.empty:
         raise HTTPException(
