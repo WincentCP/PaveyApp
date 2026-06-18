@@ -587,7 +587,7 @@ export default function GeneratePage() {
     // false when the phase effect fires and immediately flips back to reveal.
     setGenerationError(false);
     const days = Math.max(1, isMultiDay ? perDayItineraries.length : (daysParam > 1 ? daysParam : journeyStart.days));
-    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00', true)
       .then(() => {
         // After rebuild, reload the deck with fresh places
         setReviewQueue([]);

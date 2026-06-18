@@ -134,6 +134,7 @@ class TravelPlannerRequest(BaseModel):
     )
     place_type: str = Field(default="all", example="destination", description="Filter tipe lokasi: 'destination', 'restaurant', atau 'all'")
     price_level: Optional[int] = Field(default=None, ge=0, le=5, example=0, description="Filter tingkat harga (0=Gratis, 1-5 skala Google). Kosongi untuk semua.")
+    bypass_cache: Optional[bool] = Field(default=False, description="Bypass Redis cache dan acak kandidat")
 
 # ==========================================
 # 2. ENDPOINT ROUTE IMPLEMENTATION
@@ -194,7 +195,7 @@ def generate_itinerary(payload: TravelPlannerRequest):
         f"{durations_cache_str}:{req_place_type}:{req_price_level}"
     )
 
-    if redis_cache:
+    if redis_cache and not payload.bypass_cache:
         try:
             cached_itinerary = redis_cache.get(cache_key)
             if cached_itinerary:
@@ -280,7 +281,12 @@ def generate_itinerary(payload: TravelPlannerRequest):
             else:
                 logger.warning("[AIOps Routing] Lokasi alternatif berbasis indoor tidak memadai. Kembali menggunakan data utama.")
 
-    final_rec_df = candidate_df.head(payload.num_places)
+    if payload.bypass_cache:
+        # Ambil acak dari top 2x tempat agar bervariasi saat re-roll
+        sample_pool = candidate_df.head(payload.num_places * 2)
+        final_rec_df = sample_pool.sample(n=min(payload.num_places, len(sample_pool)))
+    else:
+        final_rec_df = candidate_df.head(payload.num_places)
 
     # ----------------------------------------------------------------------
     # LAYER 4: GEOGRAPHICAL ROUTING INJECTION (OSRM VIA DB METADATA)

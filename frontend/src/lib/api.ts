@@ -212,6 +212,7 @@ export async function apiGeneratePlan(data: {
   days: number;
   arrival_time?: string;
   departure_time?: string;
+  bypass_cache?: boolean;
 }) {
   // Use apiFetchSafe — generate-plan is accessible to guests (no auth required).
   // Using apiFetch would redirect guests to /onboarding on 401.

@@ -235,7 +235,7 @@ interface AppState {
   setPerDayItineraries: (p: Place[][]) => void;
   perDayMeta: DayPlan[];
   setPerDayMeta: (m: DayPlan[]) => void;
-  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string) => Promise<void>;
+  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string, bypassCache?: boolean) => Promise<void>;
   loadingPlan: boolean;
   reorderStop: (from: number, to: number) => void;
   removeStop: (id: string) => void;
@@ -919,7 +919,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     perDayMeta,
     setPerDayMeta,
     loadingPlan,
-    buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00') => {
+    buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00', bypassCache = false) => {
       setLoadingPlan(true);
       // Fix #6 & #7: clear previous itinerary so "plan another trip" starts fresh
       setItinerary([]);
@@ -950,6 +950,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             days,
             arrival_time: arrivalTime,
             departure_time: departureTime,
+            bypass_cache: bypassCache,
           });
         } else if (isAuthenticated && accessToken && activeTripId && activeTripId !== 'trip-default') {
           res = await apiGenerateTripItinerary(activeTripId);
@@ -961,6 +962,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             days,
             arrival_time: arrivalTime,
             departure_time: departureTime,
+            bypass_cache: bypassCache,
           });
         }
 
