@@ -1033,4 +1033,19 @@ Replace the `completeOnboarding` / `signIn` no-ops with real JWT auth. The `isAu
 
 ---
 
-*Last updated: Round 10 — Unified date picker, merged review screen, density-aware Add, beginner-first UX refinements.*
+## 27. Integrated Backend & AI Service Features
+
+Pavey has transitioned to a fully integrated backend architecture consisting of:
+- **Frontend App**: React PWA that handles user flows and respects backend-enriched data.
+- **FastAPI Backend (`backend`)**: Orchestrates data logic, connects to Supabase PostgreSQL, triggers daily generation pipelines, and enriches itinerary items concurrently with real Google Places API details (images, ratings, reviews, and IDR Rupiah pricing).
+- **FastAPI AI Core (`ai-core`)**: A microservice that runs Cosine Similarity searches on local datasets via IBM Granite Embeddings, checks weather conditions, and prompts Llama models via Groq to structure itinerary days.
+
+### Key Features Implemented:
+* **Unique Multi-Day Recommendations**: Ensures that no duplicate locations are suggested across different days of an itinerary. The backend tracks already generated stop names and sends them via the `exclude_names` array to `ai-core`, which dynamically excludes them from the recommendation pool.
+* **Cache Key Integrity (v7)**: The Redis caching layer in AI Core builds a key incorporating sorted, normalized excluded names to prevent daily cache hits that would otherwise cause deterministic duplicate outputs.
+* **Concurrent Places API Enrichment**: In both guest preview and saved trip itineraries, the backend fetches real-world coordinates, rating metrics, photos, and estimated cost levels from the Google Places API concurrently (`asyncio.gather`), mapping them directly to IDR (e.g. `PRICE_LEVEL_MODERATE` to `Rp 100,000`).
+* **Chatbot Security & Privacy Constraints**: The AI travel buddy (TinTin) prompt is reinforced to politely refuse queries regarding internal system technology (such as "using what APIs?", "what AI models?", or "who developed you?"), preventing internal system leaks.
+
+---
+
+*Last updated: Round 11 — Unique multi-day generation, Google Places API image/cost enrichment, and chatbot privacy guidelines.*
