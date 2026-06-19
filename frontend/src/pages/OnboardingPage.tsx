@@ -15,6 +15,7 @@ import { suggestCurrency, CURRENCY_SYMBOLS, CURRENCY_RATES_TO_IDR } from '../dat
 import { splashImg, welcomeImg } from '../assets/images';
 import MiniCalendar from '../components/MiniCalendar';
 import { apiLogin, apiRegister } from '../lib/api';
+import { useToast } from '../components/Toast';
 
 type AuthMode = 'signup' | 'login';
 type Step =
@@ -68,6 +69,7 @@ const GEN_STEPS = [
 export default function OnboardingPage() {
   const nav = useNavigate();
   const { completeOnboarding, onboardingComplete, everOnboarded, setItinerary } = useApp();
+  const { show } = useToast();
   const justCompletedRef = useRef(false);
 
   // Skip onboarding if already authenticated (but not if we just completed it)
@@ -154,25 +156,29 @@ export default function OnboardingPage() {
         const res = await apiLogin(email, password);
         setAccessToken(res.access_token);
         justCompletedRef.current = true;
+        const loggedInName = res.name || email.split('@')[0] || 'Traveler';
         completeOnboarding({
-          name: res.email?.split('@')[0] ?? 'Traveler',
-          email: res.email,
+          name: loggedInName,
+          email: res.email || email,
           vibe: 'balanced',
           destinations: [],
           totalDays: 3,
           budget: 500_000,
           startDate: 'today',
         });
+        show(`Welcome back, ${loggedInName}!`, 'success');
         nav('/', { replace: true });
       } else {
         await apiRegister(email, password);
         const res = await apiLogin(email, password);
         setAccessToken(res.access_token);
+        show('Account created successfully!', 'success');
         finalizeOnboarding();
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
       setAuthErrors({ email: msg });
+      show(msg, 'error');
     } finally {
       setAuthLoading(false);
     }
@@ -204,9 +210,10 @@ export default function OnboardingPage() {
       ? `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
       : 'today';
     justCompletedRef.current = true;
+    const isRealUser = !!email.trim();
     completeOnboarding({
-      name: authMode === 'signup' ? 'Guest' : (name || 'Traveler'),
-      email: authMode === 'signup' ? 'guest@pavey.app' : email,
+      name: isRealUser ? (name || email.split('@')[0] || 'Traveler') : 'Guest',
+      email: isRealUser ? email : 'guest@pavey.app',
       vibe: selectedVibe,
       destinations: destList.length > 0
         ? destList.map((d) => ({ name: d.name, days: d.days }))
@@ -216,7 +223,7 @@ export default function OnboardingPage() {
       startDate: startStr,
     });
     setItinerary(generated);
-    nav('/generate?edit=1&after=onboarding', { replace: true });
+    nav('/generate?after=onboarding', { replace: true });
   };
 
   const go = (s: Step) => setStep(s);

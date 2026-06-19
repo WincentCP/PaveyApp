@@ -1,5 +1,8 @@
-import { MapPin, Star, Clock, ExternalLink } from 'lucide-react';
+import { MapPin, Star, Clock, ExternalLink, Plus, X } from 'lucide-react';
 import type { ChatPlace } from '../types';
+import { useApp } from '../../context/AppContext';
+import { useToast } from '../../components/Toast';
+import { useState } from 'react';
 
 const TYPE_EMOJI: Record<string, string> = {
     destination: '🗺️',
@@ -29,7 +32,46 @@ export default function PlaceList({
     places: ChatPlace[];
     showIndex?: boolean;
 }) {
+    const { addStop, perDayItineraries, activeTrip, vibe } = useApp();
+    const { show } = useToast();
+    const [selectedPlaceIdx, setSelectedPlaceIdx] = useState<number | null>(null);
+
     if (!places.length) return null;
+
+    const convertChatPlaceToPlace = (cp: ChatPlace): any => {
+        const defaultImage = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
+        return {
+            id: `ai-chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            city: activeTrip?.destination?.split(' → ')[0] || '',
+            name: cp.name,
+            category: cp.type === 'restaurant' ? 'Foodie' : cp.type === 'hotel' ? 'Cozy' : 'Cultural',
+            tags: [cp.type],
+            vibes: [vibe || 'balanced'],
+            image: defaultImage,
+            cost: 0,
+            priceRange: { min: 0, max: 0 },
+            durationMin: cp.type === 'restaurant' ? 90 : cp.type === 'hotel' ? 120 : 60,
+            distanceKm: 1.0,
+            lat: cp.lat ?? 0,
+            lng: cp.lon ?? 0,
+            rating: cp.rating ?? 4.5,
+            description: cp.description ?? '',
+            openingHours: '09:00 – 21:00',
+            indoor: false,
+            openHour: 9,
+            closeHour: 21,
+        };
+    };
+
+    const handleAddClick = (idx: number, p: ChatPlace) => {
+        if (perDayItineraries.length <= 1) {
+            const place = convertChatPlaceToPlace(p);
+            addStop(place);
+            show(`${p.name} added to itinerary`, 'success');
+        } else {
+            setSelectedPlaceIdx(idx);
+        }
+    };
 
     return (
         <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 -mx-1 px-1 snap-x">
@@ -39,9 +81,45 @@ export default function PlaceList({
                 return (
                     <div
                         key={`${p.name}-${i}`}
-                        className="shrink-0 w-52 snap-start bg-white rounded-2xl overflow-hidden shadow-sm border border-ink-100 flex flex-col"
+                        className="relative shrink-0 w-52 snap-start bg-white rounded-2xl overflow-hidden shadow-sm border border-ink-100 flex flex-col"
                         style={{ boxShadow: '0 2px 12px rgba(0,0,0,.07)' }}
                     >
+                        {/* Day selector overlay */}
+                        {selectedPlaceIdx === i && (
+                            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm p-3 flex flex-col justify-between z-10 animate-in fade-in slide-in-from-bottom duration-200">
+                                <div>
+                                    <div className="flex items-center justify-between border-b border-ink-100 pb-1.5 mb-2">
+                                        <span className="text-xs font-bold text-ink-900">Select Day</span>
+                                        <button onClick={() => setSelectedPlaceIdx(null)} className="p-0.5 hover:bg-ink-100 rounded-full press">
+                                            <X className="w-3.5 h-3.5 text-ink-500" />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto no-scrollbar pr-0.5">
+                                        {perDayItineraries.map((_, dayIdx) => (
+                                            <button
+                                                key={dayIdx}
+                                                onClick={() => {
+                                                    const place = convertChatPlaceToPlace(p);
+                                                    addStop(place, dayIdx);
+                                                    show(`${p.name} added to Day ${dayIdx + 1}`, 'success');
+                                                    setSelectedPlaceIdx(null);
+                                                }}
+                                                className="bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg py-1.5 text-center text-[10px] font-bold text-brand-700 press"
+                                            >
+                                                Day {dayIdx + 1}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedPlaceIdx(null)}
+                                    className="w-full py-1.5 bg-ink-50 hover:bg-ink-100 text-ink-600 rounded-xl text-[10px] font-semibold press"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
+
                         {/* Coloured header strip */}
                         <div className={`bg-gradient-to-br ${grad} px-3 pt-3 pb-4 relative`}>
                             <div className="flex items-center justify-between">
@@ -79,17 +157,27 @@ export default function PlaceList({
                                     <p className="text-[10px] text-ink-400 leading-snug line-clamp-2">{p.address}</p>
                                 </div>
                             )}
-                            {(p.lat != null && p.lon != null) && (
-                                <a
-                                    href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-1.5 flex items-center gap-1 text-brand-600 text-[10px] font-semibold hover:underline"
+                            
+                            <div className="mt-1.5 pt-1.5 border-t border-ink-50 flex items-center justify-between gap-2">
+                                {(p.lat != null && p.lon != null) && (
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 text-brand-600 text-[10px] font-semibold hover:underline"
+                                    >
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                        Maps
+                                    </a>
+                                )}
+                                <button
+                                    onClick={() => handleAddClick(i, p)}
+                                    className="flex items-center gap-0.5 text-brand-600 text-[10px] font-semibold hover:underline"
                                 >
-                                    <ExternalLink className="w-2.5 h-2.5" />
-                                    Open in Maps
-                                </a>
-                            )}
+                                    <Plus className="w-2.5 h-2.5" />
+                                    Add to Itin
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );

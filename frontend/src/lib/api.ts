@@ -29,11 +29,14 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
   if (res.status === 401) {
-    // Hanya clear token dan redirect kalau path adalah protected route
-    // Jangan redirect kalau sedang di halaman yang memang bisa diakses tanpa login
-    localStorage.removeItem('pavey_state');
-    window.location.href = '/onboarding';
-    throw new Error('Session expired');
+    // Hanya clear token dan redirect kalau path adalah protected route.
+    // Jangan redirect kalau sedang di halaman login/register atau route auth lainnya.
+    const isAuthRoute = path.startsWith('/auth/login') || path.startsWith('/auth/register');
+    if (!isAuthRoute) {
+      localStorage.removeItem('pavey_state');
+      window.location.href = '/onboarding';
+      throw new Error('Session expired');
+    }
   }
 
   const data = await res.json();

@@ -240,7 +240,7 @@ interface AppState {
   reorderStop: (from: number, to: number) => void;
   removeStop: (id: string) => void;
   replaceStop: (id: string, withPlace: Place) => void;
-  addStop: (p: Place) => void;
+  addStop: (p: Place, dayIndex?: number) => void;
   alternatives: (excludeIds: string[]) => Place[];
 
   // Multi-destination
@@ -1075,8 +1075,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     removeStop: (id) => setItinerary((cur) => cur.filter((p) => p.id !== id)),
     replaceStop: (id, withPlace) =>
       setItinerary((cur) => cur.map((p) => (p.id === id ? withPlace : p))),
-    addStop: (p) =>
-      setItinerary((cur) => (cur.find((x) => x.id === p.id) ? cur : [...cur, p])),
+    addStop: (p, dayIndex) => {
+      setItinerary((cur) => (cur.find((x) => x.id === p.id) ? cur : [...cur, p]));
+      if (perDayItineraries.length > 0) {
+        const targetDay = (dayIndex !== undefined && dayIndex >= 0 && dayIndex < perDayItineraries.length) ? dayIndex : 0;
+        setPerDayItineraries((prev) =>
+          prev.map((day, idx) => idx === targetDay && !day.find((x) => x.id === p.id) ? [...day, p] : day)
+        );
+      }
+    },
     // Fix #4: alternatives now prioritizes AI-generated places from itinerary city
     // rather than always pulling from static local PLACES data.
     alternatives: (excludeIds) => {

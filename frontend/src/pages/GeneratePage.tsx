@@ -19,6 +19,7 @@ import { formatCost } from '../lib/format';
 import { suggestCurrency, type Currency } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import TimePicker from '../components/TimePicker';
+import { apiRegister, apiLogin } from '../lib/api';
 import { tripDurationDays, todayISO } from '../lib/dateUtils';
 
 
@@ -61,7 +62,7 @@ export default function GeneratePage() {
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
 
-  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -939,7 +940,7 @@ export default function GeneratePage() {
                                 if (check.tight) {
                                   setTightAdd({ place: altP, reason: check.reason });
                                 } else {
-                                  addStop(altP);
+                                  addStop(altP, activeDay);
                                   show(COPY.recommendations.addedToast(altP.name), 'success');
                                 }
                               }}
@@ -1341,7 +1342,7 @@ export default function GeneratePage() {
       {/* Add sheet */}
       <AlternativesSheet open={showAdd} onClose={() => setShowAdd(false)}
         excludeIds={itinerary.map((p) => p.id)} title="Add a stop"
-        onPick={(p) => { addStop(p); setShowAdd(false); show(`${p.name} added`, 'success'); }}
+        onPick={(p) => { addStop(p, activeDay); setShowAdd(false); show(`${p.name} added`, 'success'); }}
         alternatives={alternatives}
         effectiveCurrency={effectiveCurrency}
       />
@@ -1434,7 +1435,7 @@ export default function GeneratePage() {
                   onClick={() => {
                     const p = tightAdd.place;
                     setTightAdd(null);
-                    addStop(p);
+                    addStop(p, activeDay);
                     show(COPY.recommendations.packedToast, 'info');
                   }}
                   className="w-full text-left bg-amber-50 border border-amber-100 rounded-2xl px-3 py-3 press"
@@ -1737,9 +1738,21 @@ export default function GeneratePage() {
                       show('Please enter a valid email and minimum 6-character password', 'warn');
                       return;
                     }
-                    signIn(nameVal, emailVal);
-                    setSignupSheetOpen(false);
-                    proceedConfirm();
+
+                    show('Creating account...', 'info');
+                    apiRegister(emailVal, passVal)
+                      .then(() => apiLogin(emailVal, passVal))
+                      .then((res) => {
+                        setAccessToken(res.access_token);
+                        signIn(nameVal, emailVal);
+                        setSignupSheetOpen(false);
+                        proceedConfirm();
+                        show('Account created successfully!', 'success');
+                      })
+                      .catch((err) => {
+                        console.error("Failed to register on confirm sheet:", err);
+                        show(err.message || 'Failed to create account', 'error');
+                      });
                   }}
                   className="w-full h-12 rounded-xl bg-brand-500 text-white font-bold text-sm press shadow-glow flex items-center justify-center gap-1"
                 >
