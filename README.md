@@ -4,6 +4,41 @@
 
 ---
 
+## 🌐 Multi-Service Overview & Key Features
+
+This project is organized into three main active directories:
+
+### 1. 📱 Frontend Application ([frontend/](file:///d:/PaveyApp/frontend))
+The user-facing mobile-first React web application.
+* **Tech Stack**: React 19, TypeScript, Vite, Tailwind CSS, Leaflet, Framer Motion.
+* **Key Features**:
+  * **Interactive Travel Intent Sheet**: Captures user preferences (destination, vibes, budget, pacing, travel dates).
+  * **Visual Itinerary & Map Timeline**: Renders Leaflet maps and interactive step cards with reordering, replacement, and timing controls.
+  * **Built-in Expense Wallet**: Connects trip budgets directly to expense logging and currency switching banners.
+  * **TinTin AI Assistant**: Chatbot panel for travel inquiries, weather checks, and instant hotel lookups.
+
+### 2. 🔌 Backend Orchestrator ([backend/](file:///d:/PaveyApp/backend))
+The FastAPI backend that integrates databases, handles external APIs, and manages OCR parsing.
+* **Tech Stack**: Python (FastAPI, httpx, asyncio, PaddleOCR, Supabase SDK).
+* **Key Features**:
+  * **Google Places Enrichment**: Concurrently fetches real coordinates (latitude/longitude), reviews, ratings, and maps pricing level to IDR.
+  * **Duplicate-Free Generation Routing**: Tracks itinerary state and injects `exclude_names` lists to prevent duplicates.
+  * **Receipt OCR Parsing**: Uses PaddleOCR to extract receipt data and automatically parse them into wallet expenses.
+  * **Social Media Parser**: Leverages Gemini to parse itinerary links and travel promo texts directly into structured day plans.
+  * **TinTin AI Secure Router**: Protects internal credentials and API architecture context with strict system prompt limits.
+
+### 3. 🧠 AI Core Engine ([ai-core/](file:///d:/PaveyApp/ai-core))
+The recommendation and itinerary generation service running RAG pipelines.
+* **Tech Stack**: Python (FastAPI, Sentence-Transformers/IBM Granite Embeddings, Groq Llama, Redis).
+* **Key Features**:
+  * **Granite Embeddings Vector Search**: Uses Cosine Similarity on local scraped destination datasets to find relevant attractions matching the user's vibe.
+  * **Groq Llama Itinerary Construction**: Generates structured, pacing-compliant day-by-day JSON schedules.
+  * **Weather-Driven Dynamic Rerouting**: Checks live OpenWeather state and reroutes to indoor attractions when heavy rain is detected.
+  * **Redis Cache Layer v7**: Caches itinerary requests with collision-resistant key hashes including excluded destination names.
+  * **MLOps Observability**: Advanced Evidentiary data drift monitoring (KS-Test), Prometheus metrics, and Sentry tracking.
+
+---
+
 ## Table of Contents
 
 1. [Product Philosophy](#1-product-philosophy)
