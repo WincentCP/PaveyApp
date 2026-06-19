@@ -737,6 +737,44 @@ export default function HomePage() {
         </motion.div>
       </div>
 
+      {/* ── Quick Tutorial Guide for New Accounts ── */}
+      {!hasTodayPlan && (
+        <div className="px-5 mt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, type: 'spring', stiffness: 280, damping: 28 }}
+            className="bg-brand-50/40 border border-brand-100/60 rounded-3xl p-5"
+          >
+            <span className="text-[9px] font-extrabold tracking-widest text-brand-600 uppercase">Getting Started</span>
+            <h3 className="text-sm font-bold text-brand-950 font-display mt-0.5 mb-3">Welcome to Pavey! Get started with these steps:</h3>
+            <div className="space-y-3.5">
+              <div className="flex items-start gap-3">
+                <div className="w-5.5 h-5.5 rounded-lg bg-brand-500 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">1</div>
+                <div>
+                  <h4 className="text-xs font-bold text-brand-950">Plan Your First Trip</h4>
+                  <p className="text-[11px] text-brand-700/90 leading-snug mt-0.5">Tap the <strong>Plan My Journey</strong> button above. Enter your destination and preferences, and our AI core will generate a personalized itinerary.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-5.5 h-5.5 rounded-lg bg-brand-500 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">2</div>
+                <div>
+                  <h4 className="text-xs font-bold text-brand-950">Chat with TinTin AI</h4>
+                  <p className="text-[11px] text-brand-700/90 leading-snug mt-0.5">Tap the floating mascot in the bottom right corner anytime to ask travel questions, find hotels, or check the weather.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-5.5 h-5.5 rounded-lg bg-brand-500 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">3</div>
+                <div>
+                  <h4 className="text-xs font-bold text-brand-950">Manage Expenses &amp; Budget</h4>
+                  <p className="text-[11px] text-brand-700/90 leading-snug mt-0.5">Track your travel expenses and daily allowances by tapping the <strong>Wallet</strong> tab in the navigation bar.</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Currency switch banner */}
       <AnimatePresence>
         {showCurrencyBanner && (

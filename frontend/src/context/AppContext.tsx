@@ -389,9 +389,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Vibe & itinerary
   const [vibe, setVibe] = useState<Vibe>(persisted?.vibe ?? 'balanced');
   const [budget, setBudget] = useState<number>(persisted?.budget ?? 500_000);
-  const [itinerary, setItinerary] = useState<Place[]>(persisted?.itinerary ?? [
-    PLACES[0], PLACES[1], PLACES[2], PLACES[3],
-  ]);
+  const [itinerary, setItinerary] = useState<Place[]>(persisted?.itinerary ?? []);
   const [isNavigating, setIsNavigating] = useState(false);
   const [buddyOpen, setBuddyOpen] = useState(false);
   const [navIndex, setNavIndex] = useState(0);
