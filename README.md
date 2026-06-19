@@ -31,7 +31,7 @@ The FastAPI backend that integrates databases, handles external APIs, and manage
 The recommendation and itinerary generation service running RAG pipelines.
 * **Tech Stack**: Python (FastAPI, Sentence-Transformers/IBM Granite Embeddings, Groq Llama, Redis).
 * **Key Features**:
-  * **Granite Embeddings Vector Search**: Uses Cosine Similarity on local scraped destination datasets to find relevant attractions matching the user's vibe.
+  * **IBM Granite Embeddings and Recommendation System with Enhanced Cosine Similarity Algorithm**: Utilizes the IBM Granite Embedding R1.1 (30M parameters) model to transform textual data into high-dimensional semantic vectors. Applying Enhanced Cosine Similarity (by also considering the places' ratings on Google Maps) to these embeddings, the system can capture the deep contextual meaning and contextual nuances of locally scraped destination data, allowing it to recommend relevant attractions that match the user's vibe, even when different keywords are used.
   * **Groq Llama Itinerary Construction**: Generates structured, pacing-compliant day-by-day JSON schedules.
   * **Weather-Driven Dynamic Rerouting**: Checks live OpenWeather state and reroutes to indoor attractions when heavy rain is detected.
   * **Redis Cache Layer v7**: Caches itinerary requests with collision-resistant key hashes including excluded destination names.
