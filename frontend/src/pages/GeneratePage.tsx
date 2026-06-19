@@ -1751,7 +1751,7 @@ export default function GeneratePage() {
                       })
                       .catch((err) => {
                         console.error("Failed to register on confirm sheet:", err);
-                        show(err.message || 'Failed to create account', 'error');
+                        show(err.message || 'Failed to create account', 'warn');
                       });
                   }}
                   className="w-full h-12 rounded-xl bg-brand-500 text-white font-bold text-sm press shadow-glow flex items-center justify-center gap-1"

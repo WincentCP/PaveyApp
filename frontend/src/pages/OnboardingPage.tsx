@@ -178,7 +178,7 @@ export default function OnboardingPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
       setAuthErrors({ email: msg });
-      show(msg, 'error');
+      show(msg, 'warn');
     } finally {
       setAuthLoading(false);
     }
