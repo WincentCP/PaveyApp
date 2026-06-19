@@ -16,7 +16,7 @@ import { MAX_TRIP_DAYS, exceedsMaxDuration } from '../lib/planValidation';
 import { COPY } from '../lib/copy';
 import { dayIsTight } from '../lib/density';
 import { formatCost } from '../lib/format';
-import { suggestCurrency, type Currency } from '../data/wallet';
+import { suggestCurrency, type Currency, CURRENCY_RATES_TO_IDR } from '../data/wallet';
 import { useToast } from '../components/Toast';
 import TimePicker from '../components/TimePicker';
 import { apiRegister, apiLogin } from '../lib/api';
@@ -189,14 +189,16 @@ export default function GeneratePage() {
           ? `${destinations[0].name} + ${destinations.length - 1} more`
           : 'New Trip';
       const tripDest = destinations.map((d) => d.name).join(' → ') || 'Custom Destination';
-      const tripCurrency = destinations[0]?.currency ?? 'IDR';
+      const tripCurrency = effectiveCurrency;
       const tripDays = journeyStart.days || daysParam || 1;
+      const rate = CURRENCY_RATES_TO_IDR[tripCurrency] || 1;
+      const localBudget = Math.round((budget * Math.max(1, tripDays)) / rate);
       
       const newTripId = createTrip({
         name: tripName,
         destination: tripDest,
         currency: tripCurrency,
-        budget: budget * Math.max(1, tripDays),
+        budget: localBudget,
         daysTotal: tripDays,
         daysRemaining: tripDays,
       });
@@ -230,6 +232,7 @@ export default function GeneratePage() {
     action: 'keep' | 'discard';
     dayIndex: number;
     index: number;
+    replacedWith?: Place;
   }[]>([]);
 
 
@@ -251,6 +254,34 @@ export default function GeneratePage() {
   };
 
   const discardStopFromItinerary = (place: Place) => {
+    const targetCity = destinations[0]?.name || activeTrip?.destination || '';
+    
+    const isSameCity = (placeCity: string, targetCityName: string) => {
+      const pCity = placeCity.toLowerCase();
+      const tCity = targetCityName.toLowerCase();
+      if (tCity.includes(pCity) || pCity.includes(tCity)) return true;
+      if (tCity.includes('bali') && ['ubud', 'seminyak', 'canggu', 'nusa-dua', 'nusa dua'].includes(pCity)) return true;
+      return false;
+    };
+
+    // Find alternative
+    const currentItinIds = new Set(itinerary.map((p) => p.id));
+    
+    // Step 1: same category & city, not in itinerary, highest rating
+    let alt = PLACES.filter((p) => 
+      isSameCity(p.city, targetCity) &&
+      p.category === place.category &&
+      !currentItinIds.has(p.id)
+    ).sort((a, b) => b.rating - a.rating)[0];
+
+    // Step 2: same city, any category, not in itinerary, highest rating
+    if (!alt) {
+      alt = PLACES.filter((p) => 
+        isSameCity(p.city, targetCity) &&
+        !currentItinIds.has(p.id)
+      ).sort((a, b) => b.rating - a.rating)[0];
+    }
+
     if (isMultiDay) {
       let targetDayIdx = -1;
       let targetPlaceIdx = -1;
@@ -263,35 +294,63 @@ export default function GeneratePage() {
         }
       }
       if (targetDayIdx !== -1) {
-        const newDays = perDayItineraries.map((day, d) =>
-          d === targetDayIdx ? day.filter((p) => p.id !== place.id) : day
-        );
+        const newDays = perDayItineraries.map((day, d) => {
+          if (d !== targetDayIdx) return day;
+          if (alt) {
+            return day.map((p) => p.id === place.id ? alt : p);
+          } else {
+            return day.filter((p) => p.id !== place.id);
+          }
+        });
         setPerDayItineraries(newDays);
         setItinerary(newDays.flat());
-        return { dayIndex: targetDayIdx, index: targetPlaceIdx };
+        if (alt) {
+          show(`Replaced ${place.name} with ${alt.name}`, 'success');
+        } else {
+          show('No alternatives available, stop removed', 'info');
+        }
+        return { dayIndex: targetDayIdx, index: targetPlaceIdx, replacedWith: alt };
       }
     } else {
       const targetPlaceIdx = itinerary.findIndex((p) => p.id === place.id);
-      removeStop(place.id);
-      return { dayIndex: 0, index: targetPlaceIdx };
+      if (targetPlaceIdx !== -1) {
+        if (alt) {
+          const next = itinerary.map((p) => p.id === place.id ? alt : p);
+          setItinerary(next);
+          show(`Replaced ${place.name} with ${alt.name}`, 'success');
+        } else {
+          removeStop(place.id);
+          show('No alternatives available, stop removed', 'info');
+        }
+        return { dayIndex: 0, index: targetPlaceIdx, replacedWith: alt };
+      }
     }
     return null;
   };
 
-  const restoreStopToItinerary = (place: Place, dayIndex: number, index: number) => {
+  const restoreStopToItinerary = (place: Place, dayIndex: number, index: number, replacedWith?: Place) => {
     if (isMultiDay) {
       const newDays = perDayItineraries.map((day, d) => {
         if (d !== dayIndex) return day;
         const next = day.slice();
-        next.splice(Math.min(index, next.length), 0, place);
-        return next;
+        if (replacedWith) {
+          return next.map((p) => p.id === replacedWith.id ? place : p);
+        } else {
+          next.splice(Math.min(index, next.length), 0, place);
+          return next;
+        }
       });
       setPerDayItineraries(newDays);
       setItinerary(newDays.flat());
     } else {
-      const next = itinerary.slice();
-      next.splice(Math.min(index, next.length), 0, place);
-      setItinerary(next);
+      if (replacedWith) {
+        const next = itinerary.map((p) => p.id === replacedWith.id ? place : p);
+        setItinerary(next);
+      } else {
+        const next = itinerary.slice();
+        next.splice(Math.min(index, next.length), 0, place);
+        setItinerary(next);
+      }
     }
   };
 
@@ -335,7 +394,7 @@ export default function GeneratePage() {
     setSwipeHistory((prev) => prev.slice(0, -1));
     
     if (lastAction.action === 'discard') {
-      restoreStopToItinerary(lastAction.place, lastAction.dayIndex, lastAction.index);
+      restoreStopToItinerary(lastAction.place, lastAction.dayIndex, lastAction.index, lastAction.replacedWith);
       show(`Restored ${lastAction.place.name}`, 'success');
     }
     
@@ -535,14 +594,16 @@ export default function GeneratePage() {
 
     if (isPostOnboarding && !isEditMode) {
       const tripDest = destinations.map((d) => d.name).join(' → ') || 'Custom Destination';
-      const tripCurrency = destinations[0]?.currency ?? 'IDR';
+      const tripCurrency = effectiveCurrency;
       const tripDays = journeyStart.days || daysParam || 1;
+      const rate = CURRENCY_RATES_TO_IDR[tripCurrency] || 1;
+      const localBudget = Math.round((budget * Math.max(1, tripDays)) / rate);
 
       createTrip({
         name: derivedTripName,
         destination: tripDest,
         currency: tripCurrency,
-        budget: budget * Math.max(1, tripDays),
+        budget: localBudget,
         daysTotal: tripDays,
         daysRemaining: tripDays,
         linkedToPlan: true,
@@ -707,7 +768,7 @@ export default function GeneratePage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Distance</span>
-                        <span className="font-bold text-white text-base">{totals.dist.toFixed(2)}km</span>
+                        <span className="font-bold text-white text-base">{totals.dist > 0.01 ? `${totals.dist.toFixed(2)}km` : '< 0.1km'}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Duration</span>
@@ -1383,7 +1444,7 @@ export default function GeneratePage() {
                       <span className="font-semibold text-ink-700">{place.rating}</span>
                       <span>· {formatCost(place.cost, effectiveCurrency)}</span>
                     </div>
-                    <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm.toFixed(2)}km</div>
+                    <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm > 0.01 ? `${place.distanceKm.toFixed(2)}km` : '< 0.1km'}</div>
                   </div>
                 ))}
               </div>
@@ -2054,7 +2115,11 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
       </div>
       <div className="flex items-center gap-1 bg-ink-50 px-2 py-0.5 rounded-full text-[10px] text-ink-400 font-medium">
         <Car className="w-3 h-3 text-ink-400 shrink-0" />
-        <span>{driveMin} min ({distanceKm.toFixed(2)} km)</span>
+        <span>
+          {distanceKm > 0.01
+            ? `${driveMin} min (${distanceKm.toFixed(2)} km)`
+            : `< 1 min (< 0.1 km)`}
+        </span>
       </div>
     </div>
   );
@@ -2406,7 +2471,7 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-bold text-brand-600">{formatCost(p.cost, effectiveCurrency)}</div>
-                    <div className="text-[11px] text-ink-500">{p.distanceKm.toFixed(2)} km</div>
+                    <div className="text-[11px] text-ink-500">{p.distanceKm > 0.01 ? `${p.distanceKm.toFixed(2)} km` : '< 0.1 km'}</div>
                   </div>
                   <Plus className="w-4 h-4 text-ink-400 shrink-0" />
                 </button>
@@ -2592,7 +2657,7 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
             </div>
             <div className="flex items-center gap-1">
               <Compass className="w-3.5 h-3.5 text-ink-400" />
-              <span>{place.distanceKm.toFixed(2)} km dist</span>
+              <span>{place.distanceKm > 0.01 ? `${place.distanceKm.toFixed(2)} km` : '< 0.1 km'} dist</span>
             </div>
           </div>
         </div>

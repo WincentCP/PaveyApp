@@ -27,7 +27,7 @@ function shouldShowBuddyIntro(): boolean {
 }
 
 function AppShell() {
-  const { onboardingComplete, buddyOpen, setBuddyOpen } = useApp();
+  const { onboardingComplete, buddyOpen, setBuddyOpen, itinerary, destinations, vibe, perDayItineraries } = useApp();
   const { pathname } = useLocation();
   const [buddyIntroOpen, setBuddyIntroOpen] = useState(() => shouldShowBuddyIntro());
 
@@ -41,6 +41,30 @@ function AppShell() {
   const hideBuddy = hideChrome || pathname.startsWith('/generate') || pathname.startsWith('/navigate');
   // Only show the intro bubble on the home screen.
   const showBuddyIntro = buddyIntroOpen && !hideBuddy && pathname === '/' && !buddyOpen;
+
+  const itinContext = (() => {
+    if (!itinerary || itinerary.length === 0 || !destinations || destinations.length === 0) return undefined;
+    const destName = destinations[0]?.name.split(',')[0];
+    const totalDays = destinations.reduce((sum, d) => sum + d.days, 0) || 1;
+    let contextStr = `Trip: ${destName} (${totalDays} days, ${vibe || 'balanced'} vibe). `;
+    
+    if (perDayItineraries && perDayItineraries.length > 0) {
+      perDayItineraries.forEach((dayStops, idx) => {
+        const stopNames = dayStops.map(p => p.name).join(', ');
+        if (stopNames) {
+          contextStr += `Day ${idx + 1}: ${stopNames}. `;
+        }
+      });
+    } else {
+      const stopNames = itinerary.map(p => p.name).join(', ');
+      contextStr += `Stops: ${stopNames}.`;
+    }
+    
+    if (contextStr.length > 480) {
+      contextStr = contextStr.slice(0, 480) + '...';
+    }
+    return contextStr;
+  })();
 
   return (
     <div className="flex-1 relative overflow-hidden">
@@ -107,7 +131,7 @@ function AppShell() {
         )}
       </AnimatePresence>
 
-      {!hideBuddy && <Buddy open={buddyOpen} onClose={() => setBuddyOpen(false)} />}
+      {!hideBuddy && <Buddy open={buddyOpen} onClose={() => setBuddyOpen(false)} itineraryContext={itinContext} />}
     </div>
   );
 }

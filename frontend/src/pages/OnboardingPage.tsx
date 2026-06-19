@@ -584,6 +584,15 @@ export default function OnboardingPage() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+
+                  {/* Static limited places warning */}
+                  <div className="mt-2 bg-amber-50/50 border border-amber-200/60 rounded-xl p-3 flex gap-2 items-start">
+                    <span className="text-xs mt-0.5 shrink-0">💡</span>
+                    <p className="text-xs text-amber-800 leading-normal">
+                      Some cities may have limited place data. Popular destinations like Bali, Jakarta, Tokyo will have richer results.
+                    </p>
+                  </div>
+
                   {/* UI10 — Country-level detection */}
                   {(() => {
                     const COUNTRY_CITIES: Record<string, string[]> = {

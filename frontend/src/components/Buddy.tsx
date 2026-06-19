@@ -140,7 +140,7 @@ function BuddyAvatar() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function Buddy({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function Buddy({ open, onClose, itineraryContext }: { open: boolean; onClose: () => void; itineraryContext?: string }) {
   const { activeTripId } = useApp();
   const tripId =
   activeTripId && activeTripId !== 'trip-default' && activeTripId !== 'default-trip'
@@ -156,7 +156,7 @@ export default function Buddy({ open, onClose }: { open: boolean; onClose: () =>
     triggerPlanAroundHotel,
     triggerEditPlan,
     triggerCheckWeather,
-  } = useChat(tripId);
+  } = useChat(tripId, itineraryContext);
 
   const [text, setText] = useState('');
   const [showLocPopup, setShowLocPopup] = useState(false);

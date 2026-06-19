@@ -1055,9 +1055,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const gp = allGeocoded[gIdx] ?? dayPlaces[i];
             const nextGp = (i < dayPlaces.length - 1) ? (allGeocoded[gIdx + 1] ?? null) : null;
             gIdx++;
-            const distKm = (nextGp && gp.lat && gp.lng && nextGp.lat && nextGp.lng)
+            let distKm = (nextGp && gp.lat && gp.lng && nextGp.lat && nextGp.lng)
               ? haversineKm(gp.lat, gp.lng, nextGp.lat, nextGp.lng)
               : 0;
+            // Floor at 0.1 km if sequential stops are identical or extremely close
+            if (nextGp && distKm < 0.01) {
+              distKm = 0.1;
+            }
             geocodedDay.push({ ...gp, distanceKm: distKm });
           }
           return geocodedDay;

@@ -877,6 +877,15 @@ export default function HomePage() {
               <button onClick={() => nav('/trips')} className="text-xs text-brand-600 font-semibold press">See all</button>
             </div>
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              {/* Dotted Plan Another Card at the beginning of scroll */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={openPlanChoiceSheet}
+                className="shrink-0 w-32 rounded-2xl border border-dashed border-brand-300 bg-brand-50/10 hover:bg-brand-50/20 flex flex-col items-center justify-center gap-1.5 text-brand-600 press transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-[10px] font-bold">Plan another</span>
+              </motion.button>
               {upcomingTrips.map((trip) => (
                 <motion.button
                   key={trip.id}
@@ -896,15 +905,6 @@ export default function HomePage() {
                   </div>
                 </motion.button>
               ))}
-              {/* Dotted Plan Another Card at the end of scroll */}
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={openPlanChoiceSheet}
-                className="shrink-0 w-32 rounded-2xl border border-dashed border-brand-300 bg-brand-50/10 hover:bg-brand-50/20 flex flex-col items-center justify-center gap-1.5 text-brand-600 press transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span className="text-[10px] font-bold">Plan another</span>
-              </motion.button>
             </div>
           </div>
         ) : (
@@ -1120,17 +1120,6 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* Add another destination CTA */}
-      {!hasMultiDest && onboardingComplete && (
-        <div className="px-5 mt-4">
-          <button
-            onClick={() => openAddDestSheet()}
-            className="w-full h-11 rounded-2xl border-2 border-dashed border-brand-200 text-brand-600 text-xs font-bold press flex items-center justify-center gap-2 hover:border-brand-400 transition-colors"
-          >
-            <Plus className="w-4 h-4" /> Add another destination
-          </button>
-        </div>
-      )}
 
       {/* Saved Places */}
       <AnimatePresence>
@@ -1278,6 +1267,13 @@ export default function HomePage() {
                       autoFocus
                     />
                     {intentDest && <button onClick={() => setIntentDest('')}><X className="w-3.5 h-3.5 text-ink-400" /></button>}
+                  </div>
+                  {/* Static limited places warning */}
+                  <div className="mt-2 bg-amber-50/50 border border-amber-200/60 rounded-xl p-3 flex gap-2 items-start">
+                    <span className="text-xs mt-0.5 shrink-0">💡</span>
+                    <p className="text-xs text-amber-800 leading-normal">
+                      Some cities may have limited place data. Popular destinations like Bali, Jakarta, Tokyo will have richer results.
+                    </p>
                   </div>
                   {intentErrors.dest && (
                     <div className="flex items-center gap-1.5 text-xs text-red-600 mt-1.5">
@@ -1592,7 +1588,7 @@ export default function HomePage() {
                   <div className="flex justify-between text-xs text-ink-500">
                     <span>{formatCost(50_000, activeTrip.currency)}</span>
                     <span className="text-brand-600 font-semibold">{formatCost(intentBudget ?? budget, activeTrip.currency)}</span>
-                    <span>{formatCost(1_000_000, activeTrip.currency)}+</span>
+                    <span>Custom</span>
                   </div>
                 </div>
 
@@ -1654,6 +1650,13 @@ export default function HomePage() {
                       className="flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 outline-none"
                       autoFocus
                     />
+                  </div>
+                  {/* Static limited places warning */}
+                  <div className="mt-2 bg-amber-50/50 border border-amber-200/60 rounded-xl p-3 flex gap-2 items-start">
+                    <span className="text-xs mt-0.5 shrink-0">💡</span>
+                    <p className="text-xs text-amber-800 leading-normal">
+                      Some cities may have limited place data. Popular destinations like Bali, Jakarta, Tokyo will have richer results.
+                    </p>
                   </div>
                   {newDestError && (
                     <div className="flex items-center gap-1.5 text-xs text-red-600 mt-1.5">
@@ -1885,7 +1888,7 @@ export default function HomePage() {
                   <div className="flex justify-between text-xs text-ink-500">
                     <span>{formatCost(50_000, activeTrip.currency)}</span>
                     <span className="text-brand-600 font-semibold">{formatCost(budget, activeTrip.currency)}</span>
-                    <span>{formatCost(1_000_000, activeTrip.currency)}+</span>
+                    <span>Custom</span>
                   </div>
                 </div>
                 <button

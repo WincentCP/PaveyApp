@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { sendMessage, stripDataJson, parseAIResult, type HistoryMsg } from '../ai';
+import { sendMessage as originalSendMessage, stripDataJson, parseAIResult, type HistoryMsg } from '../ai';
 import { fetchWeather, fetchWeatherByCoords } from '../services/weather';
 import { enrichPlaces } from '../services/geocoding';
 import { searchHotels } from '../services/hotels';
@@ -29,7 +29,18 @@ function sleep(ms: number) {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useChat(tripId?: string) {
+export function useChat(tripId?: string, initialContext?: string) {
+    const sendMessage = useCallback((
+        history: HistoryMsg[],
+        text: string,
+        onChunk: (c: string) => void,
+        tId?: string,
+        ctx?: string
+    ) => {
+        const combined = [initialContext, ctx].filter(Boolean).join('\n');
+        return originalSendMessage(history, text, onChunk, tId, combined || undefined);
+    }, [initialContext]);
+
     const [msgs, setMsgs] = useState<ChatMsg[]>([
         {
             id: uid(),

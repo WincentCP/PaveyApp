@@ -137,8 +137,8 @@ export default function NavigatePage() {
   }, [progress, totalTravelTimeMin, current]);
 
   const distRemain = useMemo(() => {
-    if (!current) return '0 km';
-    return `${(current.distanceKm * (1 - progress)).toFixed(2)} km`;
+    const val = current.distanceKm * (1 - progress);
+    return val > 0.01 ? `${val.toFixed(2)} km` : '< 0.1 km';
   }, [progress, current]);
 
   // UI3 — time at stop calculation
@@ -351,7 +351,7 @@ export default function NavigatePage() {
                 <img src={altPlace.image} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-ink-900 text-sm truncate">{altPlace.name}</div>
-                  <div className="text-xs text-ink-500">{altPlace.distanceKm.toFixed(2)} km away · {altPlace.durationMin}min</div>
+                  <div className="text-xs text-ink-500">{altPlace.distanceKm > 0.01 ? `${altPlace.distanceKm.toFixed(2)} km` : '< 0.1 km'} away · {altPlace.durationMin}min</div>
                 </div>
                 <div className="flex flex-col gap-1 shrink-0">
                   <button
