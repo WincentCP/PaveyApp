@@ -39,6 +39,18 @@ The recommendation and itinerary generation service running RAG pipelines.
 
 ---
 
+## ✨ Key Technical Capabilities (Slide Highlights)
+
+Berikut adalah ringkasan kapabilitas utama sistem Pavey yang menggabungkan kecerdasan buatan, data spasial, dan keandalan sistem:
+
+* **🌧️ Real-time Weather Rerouting**: Sistem secara otomatis melakukan manuver pengalihan rute secara langsung apabila mendeteksi cuaca buruk atau lokasi tujuan yang tidak layak kunjung melalui integrasi API OpenWeather dan Google Places.
+* **💬 Smart & Flexible Chatbot**: Chatbot perjalanan TinTin dirancang cerdas untuk memberikan rekomendasi itinerary yang fleksibel dengan mempertimbangkan banyak parameter penting sekaligus, termasuk cuaca lokal, rute spasial perjalanan, anggaran biaya, dan preferensi personal pengguna.
+* **🔍 Advanced Recommendation System**: Menggunakan kombinasi pencarian kecocokan vektor **Enhanced Cosine Similarity** (pada dataset lokal) yang kemudian diteruskan ke LLM (Groq Llama) untuk dirapikan menjadi struktur skema data JSON yang siap dikonsumsi oleh frontend secara aman.
+* **🦖 Limited Offline Fallback**: Menjamin kenyamanan perjalanan pengguna di area minim sinyal dengan secara otomatis mengalihkan generator itinerary ke data historis dan mock-up lokal apabila koneksi internet terputus.
+* **📊 Supporting Features (Monitoring & Logging)**: Suite pemantauan lengkap yang mengumpulkan metrik performa real-time menggunakan **Prometheus**, memvisualisasikannya ke dashboard **Grafana**, dan menangkap error runtime aplikasi menggunakan **Sentry**.
+
+---
+
 ## Table of Contents
 
 1. [Product Philosophy](#1-product-philosophy)
