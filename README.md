@@ -41,13 +41,50 @@ The recommendation and itinerary generation service running RAG pipelines.
 
 ## ✨ Key Technical Capabilities (Slide Highlights)
 
-Berikut adalah ringkasan kapabilitas utama sistem Pavey yang menggabungkan kecerdasan buatan, data spasial, dan keandalan sistem:
+* **🌧️ Real-time Weather Rerouting**: The system dynamically reroutes itineraries when rain or unfavorable weather is detected using the OpenWeather and Google Places APIs.
+* **💬 Smart & Flexible Chatbot**: The TinTin travel assistant provides flexible, context-aware itinerary recommendations by combining inputs like local weather, spatial routing, budget constraints, and user preferences.
+* **🔍 Advanced Recommendation System**: Leverages an **Enhanced Cosine Similarity** vector search on a local dataset, then formats the output into a clean JSON structure using Groq Llama LLMs for frontend rendering.
+* **🦖 Limited Offline Fallback**: Guarantees a continuous user experience in low-connectivity areas by automatically falling back to locally cached historical destination databases.
+* **📊 Supporting Features (Monitoring & Logging)**: Features a robust MLOps pipeline tracking system metrics with **Prometheus**, visualizing performance on **Grafana** dashboards, and reporting runtime errors using **Sentry**.
 
-* **🌧️ Real-time Weather Rerouting**: Sistem secara otomatis melakukan manuver pengalihan rute secara langsung apabila mendeteksi cuaca buruk atau lokasi tujuan yang tidak layak kunjung melalui integrasi API OpenWeather dan Google Places.
-* **💬 Smart & Flexible Chatbot**: Chatbot perjalanan TinTin dirancang cerdas untuk memberikan rekomendasi itinerary yang fleksibel dengan mempertimbangkan banyak parameter penting sekaligus, termasuk cuaca lokal, rute spasial perjalanan, anggaran biaya, dan preferensi personal pengguna.
-* **🔍 Advanced Recommendation System**: Menggunakan kombinasi pencarian kecocokan vektor **Enhanced Cosine Similarity** (pada dataset lokal) yang kemudian diteruskan ke LLM (Groq Llama) untuk dirapikan menjadi struktur skema data JSON yang siap dikonsumsi oleh frontend secara aman.
-* **🦖 Limited Offline Fallback**: Menjamin kenyamanan perjalanan pengguna di area minim sinyal dengan secara otomatis mengalihkan generator itinerary ke data historis dan mock-up lokal apabila koneksi internet terputus.
-* **📊 Supporting Features (Monitoring & Logging)**: Suite pemantauan lengkap yang mengumpulkan metrik performa real-time menggunakan **Prometheus**, memvisualisasikannya ke dashboard **Grafana**, dan menangkap error runtime aplikasi menggunakan **Sentry**.
+---
+
+## 🚀 Live Demo & Local Setup
+
+### 🔗 Live URL (Vercel)
+You can access the live version of Pavey deployed on Vercel at: **[https://frontend-sage-ten-29.vercel.app/](https://frontend-sage-ten-29.vercel.app/)**
+
+### 💻 Running Locally
+
+#### 1. Frontend Setup (React PWA)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+#### 2. Backend Setup (FastAPI Orchestrator)
+Make sure to configure the `.env` file inside `backend/` (refer to [backend/README.md](file:///d:/PaveyApp/backend/README.md) for required keys).
+```bash
+cd backend
+# Create and activate virtual environment
+python -m venv venv
+# On Windows:
+.\venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+#### 3. AI Core Setup (RAG Engine & Docker)
+Make sure to configure the `.env` file inside `ai-core/` (refer to [ai-core/README.md](file:///d:/PaveyApp/ai-core/README.md)).
+```bash
+cd ai-core
+docker compose up -d --build ai-core-api
+```
 
 ---
 
