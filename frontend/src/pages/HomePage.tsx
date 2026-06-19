@@ -31,7 +31,7 @@ import { allocateDays, type PlannerDestination } from '../lib/itinerary';
 import { COPY } from '../lib/copy';
 import { tripDurationDays, isPastDate } from '../lib/dateUtils';
 import TripTooLongModal from '../components/TripTooLongModal';
-import { suggestCurrency, DEFAULT_TRIP } from '../data/wallet';
+import { suggestCurrency, DEFAULT_TRIP, CURRENCY_RATES_TO_IDR, CURRENCY_SYMBOLS } from '../data/wallet';
 
 const MAX_DESTINATIONS = 6;
 
@@ -1564,12 +1564,30 @@ export default function HomePage() {
 
                 {/* Budget selection slider directly inline */}
                 <div>
-                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per day)</span></div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] font-bold tracking-widest text-ink-500">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per day)</span></div>
+                    <div className="flex items-center bg-ink-50 rounded-lg px-2 py-1 border border-ink-200 focus-within:border-brand-400 transition-colors w-32">
+                      <span className="text-xs font-semibold text-ink-500 mr-1">
+                        {CURRENCY_SYMBOLS[activeTrip.currency] ?? activeTrip.currency}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={Math.round((intentBudget ?? budget) / (CURRENCY_RATES_TO_IDR[activeTrip.currency] ?? 1))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const idrVal = val * (CURRENCY_RATES_TO_IDR[activeTrip.currency] ?? 1);
+                          setIntentBudget(idrVal);
+                        }}
+                        className="w-full bg-transparent text-xs font-bold text-ink-900 outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  </div>
                   <input
                     type="range" min={50_000} max={1_000_000} step={10_000}
-                    value={intentBudget ?? budget} onChange={(e) => setIntentBudget(Number(e.target.value))}
+                    value={Math.min(1_000_000, intentBudget ?? budget)} onChange={(e) => setIntentBudget(Number(e.target.value))}
                     className="vibe-slider mb-1"
-                    style={{ ['--val' as string]: `${Math.max(0, Math.min(100, (((intentBudget ?? budget) - 50_000) / (1_000_000 - 50_000)) * 100))}%` } as React.CSSProperties}
+                    style={{ ['--val' as string]: `${Math.max(0, Math.min(100, (((Math.min(1_000_000, intentBudget ?? budget)) - 50_000) / (1_000_000 - 50_000)) * 100))}%` } as React.CSSProperties}
                   />
                   <div className="flex justify-between text-xs text-ink-500">
                     <span>{formatCost(50_000, activeTrip.currency)}</span>
@@ -1838,12 +1856,31 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per day)</span></div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-[10px] font-bold tracking-widest text-ink-500">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per day)</span></div>
+                    <div className="flex items-center bg-ink-50 rounded-lg px-2 py-1 border border-ink-200 focus-within:border-brand-400 transition-colors w-32">
+                      <span className="text-xs font-semibold text-ink-500 mr-1">
+                        {CURRENCY_SYMBOLS[activeTrip.currency] ?? activeTrip.currency}
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={Math.round(budget / (CURRENCY_RATES_TO_IDR[activeTrip.currency] ?? 1))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const idrVal = val * (CURRENCY_RATES_TO_IDR[activeTrip.currency] ?? 1);
+                          setBudget(idrVal);
+                          if (itinerary.length > 0) setVibeChangedPrompt(true);
+                        }}
+                        className="w-full bg-transparent text-xs font-bold text-ink-900 outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </div>
+                  </div>
                   <input
                     type="range" min={50_000} max={1_000_000} step={10_000}
-                    value={budget} onChange={(e) => { setBudget(Number(e.target.value)); if (itinerary.length > 0) setVibeChangedPrompt(true); }}
+                    value={Math.min(1_000_000, budget)} onChange={(e) => { setBudget(Number(e.target.value)); if (itinerary.length > 0) setVibeChangedPrompt(true); }}
                     className="vibe-slider mb-1"
-                    style={{ ['--val' as string]: `${sliderPct}%` } as React.CSSProperties}
+                    style={{ ['--val' as string]: `${Math.max(0, Math.min(100, (((Math.min(1_000_000, budget)) - 50_000) / (1_000_000 - 50_000)) * 100))}%` } as React.CSSProperties}
                   />
                   <div className="flex justify-between text-xs text-ink-500">
                     <span>{formatCost(50_000, activeTrip.currency)}</span>

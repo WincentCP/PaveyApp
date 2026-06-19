@@ -38,6 +38,7 @@ export default function NavigatePage() {
   const [prompt, setPrompt] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showDayTransitionConfirm, setShowDayTransitionConfirm] = useState(false);
 
   // UI8 — rating overlay
   const [ratingPlace, setRatingPlace] = useState<typeof itinerary[number] | null>(null);
@@ -59,17 +60,21 @@ export default function NavigatePage() {
   const next = itinerary[navIndex + 1];
   const isLastStop = navIndex >= itinerary.length - 1;
 
-  // Find which day the current navIndex belongs to
-  const currentDayIndex = useMemo(() => {
+  const getDayIndex = (idx: number) => {
     let accumulatedStops = 0;
     for (let dayIdx = 0; dayIdx < perDayItineraries.length; dayIdx++) {
       const dayStopsCount = perDayItineraries[dayIdx].length;
-      if (navIndex >= accumulatedStops && navIndex < accumulatedStops + dayStopsCount) {
+      if (idx >= accumulatedStops && idx < accumulatedStops + dayStopsCount) {
         return dayIdx;
       }
       accumulatedStops += dayStopsCount;
     }
-    return 0; // Default to 0
+    return 0;
+  };
+
+  // Find which day the current navIndex belongs to
+  const currentDayIndex = useMemo(() => {
+    return getDayIndex(navIndex);
   }, [perDayItineraries, navIndex]);
 
   const currentDayStartIdx = useMemo(() => {
@@ -166,11 +171,21 @@ export default function NavigatePage() {
     }
   };
 
-  const onNext = () => {
+  const onNext = (bypassDayConfirm: boolean | unknown = false) => {
+    const shouldBypass = typeof bypassDayConfirm === 'boolean' ? bypassDayConfirm : false;
     if (isLastStop) {
       setShowFinishConfirm(true);
       return;
     }
+    
+    // Check if next stop transitions to a new day
+    const nextDayIdx = getDayIndex(navIndex + 1);
+    const currDayIdx = getDayIndex(navIndex);
+    if (!shouldBypass && nextDayIdx !== currDayIdx) {
+      setShowDayTransitionConfirm(true);
+      return;
+    }
+
     setNavIndex(navIndex + 1);
     setProgress(0);
     setArrived(false);
@@ -507,6 +522,38 @@ export default function NavigatePage() {
               <div className="flex gap-2">
                 <button onClick={() => setShowFinishConfirm(false)} className="flex-1 h-12 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Not yet</button>
                 <button onClick={confirmFinish} className="flex-1 h-12 rounded-xl bg-brand-500 text-white font-semibold press shadow-glow">Finish trip 🎉</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Day transition confirmation ── */}
+      <AnimatePresence>
+        {showDayTransitionConfirm && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowDayTransitionConfirm(false)} className="absolute inset-0 z-40 bg-ink-900/50" />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+              className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-5 shadow-card"
+            >
+              <div className="text-center mb-4">
+                <div className="text-4xl mb-2">🌅</div>
+                <div className="font-bold text-ink-900 font-display text-lg">Day {getDayIndex(navIndex) + 1} completed! 🎉</div>
+                <div className="text-sm text-ink-500 mt-1">Ready to start Day {getDayIndex(navIndex) + 2}?</div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowDayTransitionConfirm(false)} className="flex-1 h-12 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Not yet</button>
+                <button
+                  onClick={() => {
+                    setShowDayTransitionConfirm(false);
+                    onNext(true);
+                  }}
+                  className="flex-1 h-12 rounded-xl bg-brand-500 text-white font-semibold press shadow-glow"
+                >
+                  Start Day {getDayIndex(navIndex) + 2} 🚀
+                </button>
               </div>
             </motion.div>
           </>

@@ -724,28 +724,69 @@ export default function OnboardingPage() {
                 <>
                   <StepTitle title="What's your daily budget?" subtitle={`Per day · shown in ${budgetCurrency} (${currencySymbol})`} />
                   <div className="mt-6 space-y-3">
-                    {[
-                      { label: 'Budget', desc: `${fmtBudget(budgetMin)} – ${fmtBudget(Math.round(budgetMax * 0.3))}/day`, value: Math.round((budgetMin + budgetMax * 0.3) / 2) },
-                      { label: 'Mid-range', desc: `${fmtBudget(Math.round(budgetMax * 0.3))} – ${fmtBudget(Math.round(budgetMax * 0.6))}/day`, value: Math.round(budgetMax * 0.45) },
-                      { label: 'Comfortable', desc: `${fmtBudget(Math.round(budgetMax * 0.6))} – ${fmtBudget(budgetMax)}/day`, value: Math.round(budgetMax * 0.8) },
-                      { label: 'No limit', desc: `${fmtBudget(budgetMax)}+/day`, value: budgetMax },
-                    ].map((opt) => (
-                      <button
-                        key={opt.label}
-                        onClick={() => setBudget(opt.value)}
-                        className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 press transition-colors ${budget === opt.value ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
-                      >
-                        <div className="text-left">
-                          <div className={`font-bold text-sm ${budget === opt.value ? 'text-brand-700' : 'text-ink-900'}`}>{opt.label}</div>
-                          <div className="text-xs text-ink-500 mt-0.5">{opt.desc}</div>
-                        </div>
-                        {budget === opt.value && (
-                          <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    {(() => {
+                      const predefinedValues = [
+                        Math.round((budgetMin + budgetMax * 0.3) / 2),
+                        Math.round(budgetMax * 0.45),
+                        Math.round(budgetMax * 0.8),
+                        budgetMax
+                      ];
+                      const isCustom = !predefinedValues.includes(budget);
+
+                      return (
+                        <>
+                          {[
+                            { label: 'Budget', desc: `${fmtBudget(budgetMin)} – ${fmtBudget(Math.round(budgetMax * 0.3))}/day`, value: Math.round((budgetMin + budgetMax * 0.3) / 2) },
+                            { label: 'Mid-range', desc: `${fmtBudget(Math.round(budgetMax * 0.3))} – ${fmtBudget(Math.round(budgetMax * 0.6))}/day`, value: Math.round(budgetMax * 0.45) },
+                            { label: 'Comfortable', desc: `${fmtBudget(Math.round(budgetMax * 0.6))} – ${fmtBudget(budgetMax)}/day`, value: Math.round(budgetMax * 0.8) },
+                            { label: 'No limit', desc: `${fmtBudget(budgetMax)}+/day`, value: budgetMax },
+                          ].map((opt) => (
+                            <button
+                              key={opt.label}
+                              onClick={() => setBudget(opt.value)}
+                              className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 press transition-colors ${budget === opt.value ? 'border-brand-500 bg-brand-50' : 'border-ink-100 bg-white'}`}
+                            >
+                              <div className="text-left">
+                                <div className={`font-bold text-sm ${budget === opt.value ? 'text-brand-700' : 'text-ink-900'}`}>{opt.label}</div>
+                                <div className="text-xs text-ink-500 mt-0.5">{opt.desc}</div>
+                              </div>
+                              {budget === opt.value && (
+                                <div className="w-5 h-5 rounded-full bg-brand-500 flex items-center justify-center shrink-0">
+                                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+
+                          <div className={`w-full p-4 rounded-2xl border-2 transition-colors bg-white ${isCustom ? 'border-brand-500 bg-brand-50' : 'border-ink-100'}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="text-left flex-1 min-w-0 mr-3">
+                                <div className="font-bold text-sm text-ink-900">Custom daily budget</div>
+                                <div className="text-xs text-ink-500 mt-0.5">Enter preferred amount</div>
+                              </div>
+                              <div className="flex items-center bg-ink-50 rounded-xl px-3 py-2 border border-ink-200 focus-within:border-brand-400 transition-colors w-36 shrink-0">
+                                <span className="text-sm font-semibold text-ink-500 mr-1">{currencySymbol}</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  placeholder="0"
+                                  value={isCustom ? toLocalBudget(budget) : ''}
+                                  onChange={(e) => {
+                                    const val = Number(e.target.value);
+                                    if (val > 0) {
+                                      setBudget(fromLocalBudget(val));
+                                    } else {
+                                      setBudget(budgetMin);
+                                    }
+                                  }}
+                                  className="w-full bg-transparent text-sm font-bold text-ink-900 outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                />
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </button>
-                    ))}
+                        </>
+                      );
+                    })()}
                     {totalDays > 1 && (
                       <div className="mt-2 flex items-center gap-3 bg-brand-50 border border-brand-100 rounded-2xl p-3">
                         <Wallet className="w-5 h-5 text-brand-500 shrink-0" />
