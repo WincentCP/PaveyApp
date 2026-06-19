@@ -114,8 +114,7 @@ docker compose up -d --build ai-core-api
 22. [State Management & Persistence](#22-state-management--persistence)
 23. [Key Components Reference](#23-key-components-reference)
 24. [Key Utility Libraries Reference](#24-key-utility-libraries-reference)
-25. [Frontend-Only Scope & Known Limitations](#25-frontend-only-scope--known-limitations)
-26. [Backend Migration Path](#26-backend-migration-path)
+25. [Integrated Backend & AI Service Features](#25-integrated-backend--ai-service-features)
 
 ---
 
@@ -1042,82 +1041,7 @@ Wallet types (`Trip`, `Transaction`, `Currency`), currency utilities (`suggestCu
 
 ---
 
-## 25. Frontend-Only Scope & Known Limitations
-
-### Scope limitations
-
-- **Place catalogue is static seed data.** `PLACES` in `src/data/places.ts` is a hard-coded array. New cities require code changes. There is no API call to a places database.
-- **No real distance/routing.** `distanceKm` on each `Place` is an approximate seeded value, not computed from actual coordinates. The density check uses these values, so thresholds are calibrated to seeded distances.
-- **No real weather.** The weather card on HomePage is a UI mock (28°C, Partly Cloudy).
-- **No authentication server.** Login/signup writes to React state and localStorage only. Any credentials are accepted.
-- **No payment or booking.** Wallet tracks expenses manually; no integration with booking services.
-- **No push notifications.** All reminders and alerts are in-app only.
-- **Currency rates are approximate.** `CURRENCY_RATES_TO_IDR` uses rough static rates. There is no live exchange rate feed.
-
-### Known UX gaps (deferred)
-
-- **MapPage and per-destination date sub-sheet** still use native `<input type="date">`. Replacing them with `MiniCalendar` was deferred.
-- **Sticky review header during loading** (journey summary visible while plan generates) was not implemented.
-- **Route-level fade transition** (intent-sheet exit → GeneratePage fade-in with no flash) was not implemented.
-- **State preservation on "Edit trip"** (restoring intent-sheet values when navigating back from GeneratePage) was not implemented.
-- **Unified CTA copy** — GeneratePage still uses legacy strings (`"Start My Trip →"`, `"Confirm My Journey"`) instead of the unified `COPY.ctas.reviewStart`. These should be consolidated.
-- **Loading headline** — GeneratePage loading phase does not yet use `COPY.ctas.loadingHeadline` ("Building your plan…").
-
----
-
-## 26. Backend Migration Path
-
-The frontend planning logic was written with backend extraction in mind. The migration is a series of one-file changes, not a rewrite.
-
-### Planning engine (`itinerary.ts`)
-
-```ts
-// Current (frontend — synchronous)
-const result = generateItinerary(input);
-
-// Future (backend — async)
-const result = await api.post('/plan', input);
-```
-
-`GenerateInput` and `GenerateResult` are the exact request/response shapes for a `POST /plan` endpoint. No changes to callers in AppContext.
-
-### Validation (`planValidation.ts`)
-
-These rules should be mirrored on the backend as request validation for `POST /plan`:
-- `exceedsMaxDuration(days)` → reject with 422 if `days > 30`
-- `isOverDense(citiesCount, days)` → reject with 422 if `citiesCount > days`
-- `computeIntentBanners()` → optionally return advisory `warnings[]` in the response body
-
-### Place data
-
-`PLACES` in `src/data/places.ts` becomes a database query:
-
-```
-GET /places?city=Tokyo&vibe=cultural&budget=500000
-```
-
-`pickDayItinerary()` becomes the query + filtering logic on the backend.
-
-### Wallet
-
-The wallet's entity model maps directly to database tables:
-
-```
-GET    /trips
-POST   /trips
-GET    /trips/:id/transactions
-POST   /trips/:id/transactions
-```
-
-AppContext's wallet state becomes `useQuery` / `useMutation` calls. The proxy accessors (`tripBudget`, `totalSpent`, etc.) remain unchanged in the interface.
-
-### Auth
-
-Replace the `completeOnboarding` / `signIn` no-ops with real JWT auth. The `isAuthenticated` flag in AppContext continues to control routing — only the source of truth changes.
-
----
-
-## 27. Integrated Backend & AI Service Features
+## 25. Integrated Backend & AI Service Features
 
 Pavey has transitioned to a fully integrated backend architecture consisting of:
 - **Frontend App**: React PWA that handles user flows and respects backend-enriched data.
