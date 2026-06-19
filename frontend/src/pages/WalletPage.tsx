@@ -580,7 +580,11 @@ function EditBudgetSheet({ tripBudget, tripName, tripDaysRemaining, currency, ha
   hasTransactions: boolean;
   onSave: (budget: number, name: string, daysRem: number) => void;
 }) {
-  const [budget, setBudget] = useState(tripBudget);
+  const [budget, setBudget] = useState(() => {
+    return (currency === 'IDR' || currency === 'JPY' || currency === 'KRW')
+      ? Math.round(tripBudget)
+      : Math.round(tripBudget * 100) / 100;
+  });
   const [name, setName] = useState(tripName);
   const [daysRem, setDaysRem] = useState(tripDaysRemaining);
   const presets = currency === 'IDR'

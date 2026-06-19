@@ -1321,7 +1321,7 @@ export default function HomePage() {
                   {!intentDest && (
                     <div className="mt-2 text-[11px] text-ink-400 leading-snug">
                       Popular:{' '}
-                      {['Bali', 'Jakarta', 'Bandung', 'Medan', 'Yogyakarta', 'Tokyo', 'Seoul'].map((city, i, arr) => (
+                      {['Bali', 'Jakarta', 'Bandung', 'Medan', 'Yogyakarta', 'Singapore', 'Kuala Lumpur'].map((city, i, arr) => (
                         <span key={city}>
                           <button
                             onClick={() => { setIntentDest(city); setIntentErrors((p) => ({ ...p, dest: undefined })); }}
