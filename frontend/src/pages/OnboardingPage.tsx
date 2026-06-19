@@ -327,7 +327,7 @@ export default function OnboardingPage() {
                 className="relative z-10 px-6 pt-6 pb-10"
               >
                 <button
-                  onClick={() => { setAuthMode('signup'); go('auth_form'); }}
+                  onClick={() => { setAuthMode('signup'); go('destinations'); }}
                   className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2 mb-3"
                 >
                   <ArrowRight className="w-5 h-5" /> Create Account (Sign Up)
@@ -339,10 +339,23 @@ export default function OnboardingPage() {
                   Sign In (Login)
                 </button>
                 <button
-                  onClick={() => { setAuthMode('signup'); go('destinations'); }}
+                  onClick={() => {
+                    justCompletedRef.current = true;
+                    completeOnboarding({
+                      name: 'Guest',
+                      email: 'guest@pavey.app',
+                      vibe: 'balanced',
+                      destinations: [],
+                      totalDays: 3,
+                      budget: 500_000,
+                      startDate: 'today',
+                    });
+                    show('Logged in as Guest', 'success');
+                    nav('/', { replace: true });
+                  }}
                   className="w-full py-2 text-ink-500 hover:text-brand-500 font-bold text-xs press flex items-center justify-center gap-1.5"
                 >
-                  <User className="w-3.5 h-3.5" /> Continue as Guest (Explore First)
+                  <User className="w-3.5 h-3.5" /> Continue as Guest
                 </button>
                 <p className="text-center text-[11px] text-ink-400 mt-4 leading-relaxed">
                   By continuing you agree to our Terms &amp; Privacy Policy
