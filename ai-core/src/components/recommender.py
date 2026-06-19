@@ -114,6 +114,9 @@ class SemanticRecommender:
             norm_city = norm_city.split(",")[0].strip()
         if "yogyakarta" in norm_city or "jogja" in norm_city:
             norm_city = "jogjakarta"
+        # Map Bali sub-regions to the main "bali" city dataset
+        if norm_city in ["seminyak", "ubud", "canggu", "nusa dua", "uluwatu", "kuta", "sanur", "jimbaran"]:
+            norm_city = "bali"
 
         city_mask         = self.df["city"].str.lower().str.strip() == norm_city
         city_filtered_df  = self.df[city_mask].copy()
