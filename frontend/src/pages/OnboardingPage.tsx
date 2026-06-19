@@ -326,19 +326,23 @@ export default function OnboardingPage() {
                 transition={{ delay: 0.55, type: 'spring', stiffness: 280, damping: 30 }}
                 className="relative z-10 px-6 pt-6 pb-10"
               >
-                {/* Round 11 #1 — primary path goes straight into trip planning;
-                    auth is requested only after the user sees a generated plan. */}
                 <button
-                  onClick={() => { setAuthMode('signup'); go('destinations'); }}
+                  onClick={() => { setAuthMode('signup'); go('auth_form'); }}
                   className="w-full h-14 rounded-2xl bg-brand-500 text-white font-bold text-base press shadow-glow flex items-center justify-center gap-2 mb-3"
                 >
-                  <ArrowRight className="w-5 h-5" /> Try it first — no signup
+                  <ArrowRight className="w-5 h-5" /> Create Account (Sign Up)
                 </button>
                 <button
                   onClick={() => { setAuthMode('login'); go('auth_form'); }}
-                  className="w-full h-12 rounded-2xl bg-ink-50 text-ink-800 font-semibold text-base press flex items-center justify-center gap-2"
+                  className="w-full h-12 rounded-2xl bg-ink-50 text-ink-800 font-bold text-sm press flex items-center justify-center gap-2 mb-4"
                 >
-                  I already have an account
+                  Sign In (Login)
+                </button>
+                <button
+                  onClick={() => { setAuthMode('signup'); go('destinations'); }}
+                  className="w-full py-2 text-ink-500 hover:text-brand-500 font-bold text-xs press flex items-center justify-center gap-1.5"
+                >
+                  <User className="w-3.5 h-3.5" /> Continue as Guest (Explore First)
                 </button>
                 <p className="text-center text-[11px] text-ink-400 mt-4 leading-relaxed">
                   By continuing you agree to our Terms &amp; Privacy Policy
