@@ -47,10 +47,6 @@ function AppShell() {
       <Routes>
         <Route path="/onboarding" element={<OnboardingPage />} />
 
-        {!onboardingComplete && (
-          <Route path="*" element={<Navigate to="/onboarding" replace />} />
-        )}
-
         <Route path="/" element={<HomePage />} />
         <Route path="/generate" element={<GeneratePage />} />
         <Route path="/map" element={<MapPage />} />

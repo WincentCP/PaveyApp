@@ -21,7 +21,7 @@ const RECENT_TRIPS = [
 
 
 export default function ProfilePage() {
-  const { visited, savedPlaces, logout, transactions, authUser, trips, visitedPlaceIds } = useApp();
+  const { visited, savedPlaces, logout, transactions, authUser, trips, visitedPlaceIds, isAuthenticated } = useApp();
   const nav = useNavigate();
   const [statDetail, setStatDetail] = useState<null | string>(null);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -30,8 +30,8 @@ export default function ProfilePage() {
   const totalPlaces = Math.max(visited.size, visitedPlaceIds.size);
   const userTrips = trips.filter((t) => t.id !== 'trip-default');
   const isNewUser = visited.size === 0 && transactions.length === 0;
-  const displayName = authUser?.name?.split(' ')[0] ?? USER.firstName;
-  const displayEmail = authUser?.email ?? USER.email;
+  const displayName = isAuthenticated ? (authUser?.name?.split(' ')[0] ?? 'Traveler') : 'Guest';
+  const displayEmail = isAuthenticated ? (authUser?.email ?? 'guest@pavey.app') : 'guest@pavey.app';
 
   const handleLogout = () => {
     logout();
@@ -97,12 +97,32 @@ export default function ProfilePage() {
       {/* User card */}
       <div className="px-5">
         <div className="bg-white rounded-3xl p-4 border border-ink-100 shadow-soft flex gap-3">
-          <motion.img whileHover={{ scale: 1.04 }} src={USER.avatar} alt="me" className="w-16 h-16 rounded-2xl object-cover" />
+          {isAuthenticated ? (
+            <motion.img whileHover={{ scale: 1.04 }} src={USER.avatar} alt="me" className="w-16 h-16 rounded-2xl object-cover" />
+          ) : (
+            <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center text-brand-500 text-3xl">
+              👤
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="font-bold text-ink-900 font-display truncate">{displayName}</div>
-            <div className="text-xs text-ink-500 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" /> {USER.location}</div>
-            <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3 shrink-0" /> <span className="truncate">{displayEmail}</span></div>
-            <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3 shrink-0" /> {USER.phone}</div>
+            {isAuthenticated ? (
+              <>
+                <div className="text-xs text-ink-500 mt-1 flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0" /> {USER.location}</div>
+                <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3 shrink-0" /> <span className="truncate">{displayEmail}</span></div>
+                <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5"><Phone className="w-3 h-3 shrink-0" /> {USER.phone}</div>
+              </>
+            ) : (
+              <>
+                <div className="text-xs text-ink-500 mt-1">Guest Account</div>
+                <div
+                  onClick={() => nav('/onboarding')}
+                  className="text-xs text-brand-600 font-semibold mt-1 press flex items-center gap-1 cursor-pointer"
+                >
+                  Tap here to Sign In or Sign Up →
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -229,17 +249,29 @@ export default function ProfilePage() {
         <Row icon={<HelpCircle className="w-4 h-4" />} label="Help & Support" comingSoon />
       </div>
 
-      {/* Logout */}
+      {/* Logout / Sign In */}
       <div className="px-5 mt-4 mb-2">
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className="w-full bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-center gap-3 press"
-        >
-          <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
-            <LogOut className="w-4 h-4" />
-          </span>
-          <span className="flex-1 text-left text-sm font-semibold text-red-600">Log Out</span>
-        </button>
+        {isAuthenticated ? (
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-full bg-red-50 border border-red-100 rounded-2xl px-4 py-3 flex items-center gap-3 press"
+          >
+            <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+              <LogOut className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-left text-sm font-semibold text-red-600">Log Out</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => nav('/onboarding')}
+            className="w-full bg-brand-50 border border-brand-100 rounded-2xl px-4 py-3 flex items-center gap-3 press"
+          >
+            <span className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
+              <User className="w-4 h-4" />
+            </span>
+            <span className="flex-1 text-left text-sm font-semibold text-brand-600">Sign In or Create Account</span>
+          </button>
+        )}
       </div>
       </div>
 

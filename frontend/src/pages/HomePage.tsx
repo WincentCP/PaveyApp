@@ -5,7 +5,7 @@ import {
   ChevronRight, Plus, Navigation, RefreshCw,
   ArrowRight, Compass, Zap, AlertTriangle,
   Trees, Coffee, Landmark, Scale, ArrowLeft, Clock,
-  Settings2,
+  Settings2, User,
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiGetWeather } from '../lib/api';
@@ -100,7 +100,7 @@ export default function HomePage() {
   const {
     vibe, setVibe, budget, setBudget, itinerary, setItinerary,
     savedPlaces, savePlace, removeSavedPlace, isSaved, addStop,
-    authUser, onboardingComplete,
+    authUser, onboardingComplete, isAuthenticated,
     destinations, activeDestIdx, setActiveDestIdx, addDestination, setDestinations, removeDestination,
     isNavigating, setIsNavigating, activeTrip, totalSpent, tripBudget, tripDaysRemaining, dailyAllowance,
     currency, setCurrency, journeyStart, setJourneyStart, perDayItineraries,
@@ -243,7 +243,7 @@ export default function HomePage() {
 
   // ── Trip state logic is moved to the top of the component to avoid TDZ issues ──
 
-  const displayName = authUser?.name?.split(' ')[0] ?? USER.firstName;
+  const displayName = isAuthenticated ? (authUser?.name?.split(' ')[0] ?? 'Traveler') : 'Guest';
 
   // UI1 — Day header computation
   const dayHeaderInfo = useMemo(() => {
@@ -563,16 +563,28 @@ export default function HomePage() {
                 {displayName}
                 <motion.span animate={{ rotate: [0, 18, -8, 14, 0] }} transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 2 }}>👋</motion.span>
               </h1>
-              {activeDest ? (
-                <div className="mt-2 inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
-                  <MapPin className="w-3 h-3 text-white" />
-                  <span className="text-white text-xs font-semibold">{activeDest.name.split(',')[0]}</span>
-                </div>
-              ) : (
-                <button className="mt-2 inline-flex items-center gap-1 text-white/90 text-xs font-semibold press drop-shadow">
-                  <MapPin className="w-3 h-3" /> {USER.current}
-                </button>
-              )}
+              <div className="mt-2 flex flex-wrap gap-2 items-center">
+                {activeDest ? (
+                  <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1">
+                    <MapPin className="w-3 h-3 text-white" />
+                    <span className="text-white text-xs font-semibold">{activeDest.name.split(',')[0]}</span>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1 text-white/90 text-xs font-semibold drop-shadow">
+                    <MapPin className="w-3 h-3" /> {USER.current}
+                  </div>
+                )}
+                
+                {!isAuthenticated && (
+                  <button
+                    onClick={() => nav('/onboarding')}
+                    className="inline-flex items-center gap-1 bg-brand-500 text-white rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider press shadow-glow border border-brand-400/50"
+                  >
+                    <User className="w-3 h-3" />
+                    <span>Tap to Sign In</span>
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -581,8 +593,15 @@ export default function HomePage() {
               >
                 <Search className="w-5 h-5 text-white" />
               </button>
-              <button className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white press">
-                <img src={USER.avatar} alt="me" className="w-full h-full object-cover" />
+              <button
+                onClick={() => nav('/profile')}
+                className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white press bg-white/20 backdrop-blur-sm flex items-center justify-center"
+              >
+                {isAuthenticated ? (
+                  <img src={USER.avatar} alt="me" className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-6 h-6 text-white" />
+                )}
               </button>
             </div>
           </div>
