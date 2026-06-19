@@ -121,6 +121,17 @@ def startup_event():
     inference_pipeline.initialize_system()
     logger.info("[System Lifecycle] Inisialisasi sistem selesai. API Core siap menerima request.")
 
+@app.get("/")
+def read_root():
+    """Endpoint root untuk verifikasi status server dan memberikan informasi endpoint."""
+    return {
+        "status": "online",
+        "service": "Pavey Enterprise AI Core API",
+        "version": "2.0.0",
+        "documentation": "/docs",
+        "metrics": "/metrics"
+    }
+
 # Skema Data Validation (Pydantic)
 class TravelPlannerRequest(BaseModel):
     city: str = Field(..., example="Jakarta", description="Nama kota destinasi wisata")
