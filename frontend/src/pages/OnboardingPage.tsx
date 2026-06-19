@@ -188,17 +188,11 @@ export default function OnboardingPage() {
     go('generating');
     setGenPhase(0);
 
-    // Animate through loading steps. Round 11 #1 — once done, drop into the
-    // auth screen (signup or login) rather than completing immediately. The
-    // user has now seen the plan they're signing up to save.
+    // Animate through loading steps.
     const phaseTimer = setInterval(() => setGenPhase((p) => (p + 1) % GEN_STEPS.length), 700);
     setTimeout(() => {
       clearInterval(phaseTimer);
-      if (authMode === 'signup') {
-        finalizeOnboarding();
-      } else {
-        go('auth_form');
-      }
+      go('auth_form');
     }, 2200);
   };
 
@@ -221,6 +215,7 @@ export default function OnboardingPage() {
       totalDays,
       budget,
       startDate: startStr,
+      isGuest: !isRealUser,
     });
     setItinerary(generated);
     nav('/generate?after=onboarding', { replace: true });
@@ -483,6 +478,14 @@ export default function OnboardingPage() {
                   ? 'Already have an account? Sign in'
                   : "Don't have an account? Sign up"}
               </button>
+              {authMode === 'signup' && (
+                <button
+                  onClick={finalizeOnboarding}
+                  className="w-full text-center text-xs text-ink-400 hover:text-brand-500 font-bold press py-1.5 mt-1"
+                >
+                  Skip and Continue as Guest
+                </button>
+              )}
               {/* Issue 2: email kept notice after toggle */}
               <AnimatePresence>
                 {justToggled && email && (

@@ -220,6 +220,7 @@ interface AppState {
     totalDays: number;
     budget: number;
     startDate: string;
+    isGuest?: boolean;
   }) => void;
   logout: () => void;
 
@@ -791,9 +792,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     totalDays: number;
     budget: number;
     startDate: string;
+    isGuest?: boolean;
   }) => {
-    setAuthUser({ name: data.name, email: data.email });
-    setIsAuthenticated(true);
+    if (data.isGuest) {
+      setAuthUser(null);
+      setIsAuthenticated(false);
+    } else {
+      setAuthUser({ name: data.name, email: data.email });
+      setIsAuthenticated(true);
+    }
     setVibe(data.vibe);
     setBudget(data.budget);
 
