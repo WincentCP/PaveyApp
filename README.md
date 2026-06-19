@@ -1,6 +1,6 @@
 # Pavey — Trip Planning App
 
-**Pavey** is a mobile-first travel planning app that generates personalized day-by-day itineraries, handles multi-city trips with automatic travel days, and links trip planning to a built-in expense wallet. It is built entirely on the frontend — there is no backend API today. The planning engine is a set of pure TypeScript functions designed to be extracted to a backend service without touching any React code.
+**Pavey** is a mobile-first travel planning app that generates personalized day-by-day itineraries, handles multi-city trips with automatic travel days, and links trip planning to a built-in expense wallet. Originally built as a frontend-only prototype, it is now powered by a robust multi-service architecture featuring a React PWA frontend, a FastAPI backend orchestrator connecting to Supabase, and a Python FastAPI AI Core microservice handling cosine-similarity RAG search, weather checks, and Llama LLM generation.
 
 ---
 
