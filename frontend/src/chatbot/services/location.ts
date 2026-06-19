@@ -39,15 +39,7 @@ function tryGPS(): Promise<UserLocation | null> {
                 clearTimeout(timeout);
                 const { latitude: lat, longitude: lon } = pos.coords;
                 // Reverse geocode with Nominatim to get city name
-                let city = await reverseCityName(lat, lon);
-                
-                // Fallback: If Nominatim fails or returns 'your location', fetch city name from IP
-                if (city === 'your location') {
-                    const ipGeo = await tryIPGeo();
-                    if (ipGeo && ipGeo.city) {
-                        city = ipGeo.city;
-                    }
-                }
+                const city = await reverseCityName(lat, lon);
                 resolve({ lat, lon, city });
             },
             () => {
@@ -62,21 +54,26 @@ function tryGPS(): Promise<UserLocation | null> {
 async function reverseCityName(lat: number, lon: number): Promise<string> {
     try {
         const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
             { headers: { 'Accept-Language': 'en', 'User-Agent': 'PaveyApp/1.0' } },
         );
         const d = await res.json();
-        return (
-            d.address?.city ||
-            d.address?.town ||
-            d.address?.village ||
-            d.address?.municipality ||
-            d.address?.suburb ||
-            d.address?.city_district ||
-            d.address?.county ||
-            d.address?.state ||
-            'your location'
-        );
+        const addr = d.address ?? {};
+
+        // Priority order — most specific populated place first.
+        // Intentionally skip suburb/city_district/quarter to avoid getting
+        // administrative sub-districts (e.g. "Tangerang Selatan") instead of
+        // the actual city (e.g. "Tangerang" or "Jakarta").
+        const city =
+            addr.city ||
+            addr.town ||
+            addr.municipality ||
+            addr.county ||       // kabupaten (fallback for rural areas)
+            addr.state_district ||
+            addr.state ||
+            '';
+
+        return city || 'your location';
     } catch {
         return 'your location';
     }
