@@ -35,7 +35,7 @@ The recommendation and itinerary generation service running RAG pipelines.
   * **Groq Llama Itinerary Construction**: Generates structured, pacing-compliant day-by-day JSON schedules.
   * **Weather-Driven Dynamic Rerouting**: Checks live OpenWeather state and reroutes to indoor attractions when heavy rain is detected.
   * **Redis Cache Layer v7**: Caches itinerary requests with collision-resistant key hashes including excluded destination names.
-  * **MLOps Observability**: Advanced Evidentiary data drift monitoring (KS-Test), Prometheus metrics, and Sentry tracking.
+  * **MLOps Observability**: Advanced Evidentiary data drift monitoring (KS-Test), Prometheus metrics, Grafana dashboard, Sentry error logging and tracking.
 
 ---
 
