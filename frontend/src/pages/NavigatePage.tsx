@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, CheckCircle2, SkipForward, ListTree, X,
-  Navigation, AlertTriangle, Clock, Play, Pause,
+  Navigation, AlertTriangle, Clock, Play, Pause, Zap,
 } from 'lucide-react';
 import { PaveyLogoMark } from '../components/PaveyLogo';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -14,9 +14,9 @@ import { useToast } from '../components/Toast';
 import type { Place } from '../data/places';
 
 const PROMPTS = [
-  '🌧 Rain in 15 mins — want indoor options nearby?',
-  '💸 Next stop is above your budget — suggest alternative?',
-  '📍 You\'re close! Ready to check in?',
+  'Rain in 15 mins — want indoor options nearby?',
+  'Next stop is above your budget — suggest alternative?',
+  'You\'re close! Ready to check in?',
 ];
 
 const SKIP_REASONS = ['Closed', 'Too crowded', 'Changed mind', 'Other'];
@@ -155,7 +155,7 @@ export default function NavigatePage() {
     markVisited(current.id);
     markVisitedPermanent(current.id);
     visitedAtRef.current = Date.now();
-    show(`Marked ${current.name} as visited 🎉`, 'success');
+    show(`Marked ${current.name} as visited`, 'success');
 
     // UI8 — show rating overlay
     setRatingPlace(current);
@@ -196,7 +196,7 @@ export default function NavigatePage() {
   };
 
   const confirmFinish = () => {
-    show('Trip complete! 🎉', 'success');
+    show('Trip complete!', 'success');
     setIsNavigating(false);
     completeTrip();
     setShowFinishConfirm(false);
@@ -372,7 +372,7 @@ export default function NavigatePage() {
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               className="absolute bottom-4 inset-x-4 z-20 bg-white rounded-2xl shadow-card p-3 flex items-center gap-3"
             >
-              <div className="text-xl">⚡</div>
+              <Zap className="w-5 h-5 text-amber-500 fill-amber-500 shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-ink-900">Finished early — head to {next.name} now?</div>
               </div>
@@ -491,7 +491,7 @@ export default function NavigatePage() {
               className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-5 shadow-card"
             >
               <div className="text-center mb-4">
-                <div className="text-4xl mb-2">🛑</div>
+                <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-2" />
                 <div className="font-bold text-ink-900 font-display text-lg">Stop navigating?</div>
                 <div className="text-sm text-ink-500 mt-1">You've visited {navIndex} of {itinerary.length} stops. Progress will be saved.</div>
               </div>
@@ -515,7 +515,7 @@ export default function NavigatePage() {
               className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-5 shadow-card"
             >
               <div className="text-center mb-4">
-                <div className="text-4xl mb-2">🏁</div>
+                <CheckCircle2 className="w-10 h-10 text-brand-500 mx-auto mb-2" />
                 <div className="font-bold text-ink-900 font-display text-lg">Finish your trip?</div>
                 <div className="text-sm text-ink-500 mt-1">You've completed all {itinerary.length} stops. This will end navigation.</div>
               </div>

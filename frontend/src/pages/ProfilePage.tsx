@@ -31,7 +31,7 @@ export default function ProfilePage() {
   const userTrips = trips.filter((t) => t.id !== 'trip-default');
   const isNewUser = visited.size === 0 && transactions.length === 0;
   const displayName = isAuthenticated ? (authUser?.name?.split(' ')[0] ?? 'Traveler') : 'Guest';
-  const displayEmail = isAuthenticated ? (authUser?.email ?? 'guest@pavey.app') : 'guest@pavey.app';
+  const displayEmail = isAuthenticated ? (authUser?.email ?? '') : '';
 
   const handleLogout = () => {
     logout();
@@ -114,7 +114,7 @@ export default function ProfilePage() {
               </>
             ) : (
               <>
-                <div className="text-xs text-ink-500 mt-1">Guest Account</div>
+                <div className="text-xs text-ink-500 mt-1">Guest Mode</div>
                 <div
                   onClick={() => nav('/onboarding')}
                   className="text-xs text-brand-600 font-semibold mt-1 press flex items-center gap-1 cursor-pointer"

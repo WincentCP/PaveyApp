@@ -207,7 +207,7 @@ export default function OnboardingPage() {
     const isRealUser = !!email.trim();
     completeOnboarding({
       name: isRealUser ? (name || email.split('@')[0] || 'Traveler') : 'Guest',
-      email: isRealUser ? email : 'guest@pavey.app',
+      email: isRealUser ? email : '',
       vibe: selectedVibe,
       destinations: destList.length > 0
         ? destList.map((d) => ({ name: d.name, days: d.days }))
@@ -338,7 +338,7 @@ export default function OnboardingPage() {
                     justCompletedRef.current = true;
                     completeOnboarding({
                       name: 'Guest',
-                      email: 'guest@pavey.app',
+                      email: '',
                       vibe: 'balanced',
                       destinations: [],
                       totalDays: 3,
