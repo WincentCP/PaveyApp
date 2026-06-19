@@ -17,7 +17,8 @@ KOTA_TO_COUNTRY = {
     "Melbourne": "Australia", "Sydney": "Australia", "Canberra": "Australia",
     "San Francisco": "USA", "New York": "USA", "California": "USA", "Massachusetts": "USA",
     "Dublin": "Ireland",
-    "Amsterdam": "Netherlands", "Den Haag": "Netherlands"
+    "Amsterdam": "Netherlands", "Den Haag": "Netherlands",
+    "Tokyo": "Japan", "Seoul": "South Korea"
 }
 
 def build():
