@@ -602,7 +602,7 @@ export default function OnboardingPage() {
                   )}
                   {destList.length === 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {['Bali, Indonesia', 'Tokyo, Japan', 'Bangkok, Thailand', 'Seoul, South Korea', 'Singapore'].map((d) => (
+                      {['Bali, Indonesia', 'Tokyo, Japan', 'Kuala Lumpur, Malaysia', 'Seoul, South Korea', 'Singapore'].map((d) => (
                         <button
                           key={d}
                           onClick={() => setDestList((prev) => prev.some((x) => x.name === d) ? prev : [...prev, { name: d, days: 2 }])}
