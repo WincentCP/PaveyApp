@@ -23,8 +23,8 @@ def chat_with_llama(message: str, system_prompt: str = "", max_tokens: int = 102
     # Models list to fallback on rate limit (429)
     models = [
         os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "llama3-70b-8192",
         "llama-3.1-8b-instant",
-        "mixtral-8x7b-32768"
     ]
     last_err = None
     for model in models:
