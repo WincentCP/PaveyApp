@@ -478,6 +478,10 @@ export default function HomePage() {
     if (intentEndDate) params.set('endTime', intentEndTime);
     params.set('days', String(days));
     params.set('pace', intentPace);
+    // Pass city as URL param — source of truth that's immune to React state timing issues.
+    // buildFullItinerary reads destinations[0]?.name from context, which may still hold
+    // the previous trip's city if the setState hasn't settled before the effect runs.
+    params.set('city', intentDest);
     nav(`/generate?${params}`);
   };
 

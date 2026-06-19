@@ -235,7 +235,7 @@ interface AppState {
   setPerDayItineraries: (p: Place[][]) => void;
   perDayMeta: DayPlan[];
   setPerDayMeta: (m: DayPlan[]) => void;
-  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string, bypassCache?: boolean) => Promise<void>;
+  buildFullItinerary: (days: number, arrivalTime?: string, departureTime?: string, bypassCache?: boolean, cityOverride?: string) => Promise<void>;
   loadingPlan: boolean;
   reorderStop: (from: number, to: number) => void;
   removeStop: (id: string) => void;
@@ -917,7 +917,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     perDayMeta,
     setPerDayMeta,
     loadingPlan,
-    buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00', bypassCache = false) => {
+    buildFullItinerary: async (days: number, arrivalTime = '09:00', departureTime = '14:00', bypassCache = false, cityOverride?: string) => {
       setLoadingPlan(true);
       // Fix #6 & #7: clear previous itinerary so "plan another trip" starts fresh
       setItinerary([]);
@@ -926,7 +926,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         let res: any;
         // Use the first destination name, then activeTrip destination, then empty string.
         // Do NOT fall back to 'Bali, Indonesia' — that would generate wrong-city results.
-        const targetCity = destinations[0]?.name || activeTrip?.destination || '';
+        // cityOverride from URL param wins — it's set by HomePage before navigation,
+        // so it's always fresh even if React context state hasn't settled yet.
+        const targetCity = cityOverride || destinations[0]?.name || activeTrip?.destination || '';
 
         // Fix #3: auto-suggest currency from destination and update the active trip
         if (targetCity) {

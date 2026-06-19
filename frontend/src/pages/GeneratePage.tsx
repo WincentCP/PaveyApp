@@ -61,8 +61,12 @@ export default function GeneratePage() {
   const startTimeParam = searchParams.get('startTime'); // e.g. "09:00"
   const endTimeParam = searchParams.get('endTime'); // e.g. "14:00"
   const daysParam = Math.max(1, parseInt(searchParams.get('days') ?? '1') || 1);
+  // city from URL is the authoritative source — immune to React state timing.
+  // buildFullItinerary reads destinations[0]?.name from context but that setState
+  // may not have settled yet if user just cancelled a different city's trip.
+  const cityParam = searchParams.get('city') ?? '';
 
-  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -166,6 +170,11 @@ export default function GeneratePage() {
     setExitModalOpen(false);
     hasConfirmedTripRef.current = true;
     setHasConfirmedTrip(true);
+    // Clear stale state — if the user cancels a half-generated trip, we don't want
+    // the previous city's destinations/itinerary to bleed into the next generation.
+    setDestinations([]);
+    setItinerary([]);
+    setPerDayItineraries([]);
     nav('/', { replace: true });
   };
 
@@ -411,10 +420,10 @@ export default function GeneratePage() {
     }
     if (!isManualMode && !isEditMode) {
       // Always use AI (buildFullItinerary) regardless of trip duration.
-      // buildItinerary() only reads static local PLACES (Bali/Bangkok/etc)
-      // and would show wrong city data for user's actual destination.
+      // cityParam from URL is used as override so we don't accidentally use
+      // a stale destinations[0] from the previously generated (cancelled) trip.
       const days = Math.max(1, daysParam > 1 ? daysParam : journeyStart.days);
-      buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00')
+      buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00', false, cityParam || undefined)
         .catch(() => setGenerationError(true));
     }
   }, []); // eslint-disable-line
@@ -588,7 +597,7 @@ export default function GeneratePage() {
     // false when the phase effect fires and immediately flips back to reveal.
     setGenerationError(false);
     const days = Math.max(1, isMultiDay ? perDayItineraries.length : (daysParam > 1 ? daysParam : journeyStart.days));
-    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00', true)
+    buildFullItinerary(days, startTimeParam ?? journeyStart.time, endTimeParam ?? journeyStart.endTime ?? '14:00', true, cityParam || undefined)
       .then(() => {
         // After rebuild, reload the deck with fresh places
         setReviewQueue([]);
