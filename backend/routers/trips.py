@@ -124,6 +124,10 @@ async def enrich_itinerary_items(itinerary_list: list, city: str):
                 item["rating"] = enrichment.get("rating")
             if enrichment.get("total_reviews"):
                 item["total_reviews"] = enrichment.get("total_reviews")
+            if enrichment.get("latitude") is not None:
+                item["latitude"] = enrichment.get("latitude")
+            if enrichment.get("longitude") is not None:
+                item["longitude"] = enrichment.get("longitude")
 
 @router.post("/generate-plan")
 async def generate_guest_plan(data: GuestPlanRequest):

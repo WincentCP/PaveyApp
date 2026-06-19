@@ -115,7 +115,7 @@ export default function ItineraryTimeline({ plan }: { plan: TravelPlan }) {
                                             )}
                                             {(stop.lat != null && stop.lon != null) && (
                                                 <a
-                                                    href={`https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lon}`}
+                                                    href={stop.name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${stop.name}, ${plan.city || ''}`)}` : `https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lon}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     onClick={e => e.stopPropagation()}

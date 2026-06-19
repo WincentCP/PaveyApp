@@ -161,7 +161,7 @@ export default function PlaceList({
                             <div className="mt-1.5 pt-1.5 border-t border-ink-50 flex items-center justify-between gap-2">
                                 {(p.lat != null && p.lon != null) && (
                                     <a
-                                        href={`https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`}
+                                        href={p.name ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${p.name}, ${activeTrip?.destination || ''}`)}` : `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-1 text-brand-600 text-[10px] font-semibold hover:underline"
