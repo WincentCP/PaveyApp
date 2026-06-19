@@ -521,7 +521,7 @@ export default function NavigatePage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setShowFinishConfirm(false)} className="flex-1 h-12 rounded-xl bg-ink-50 text-ink-700 font-semibold press">Not yet</button>
-                <button onClick={confirmFinish} className="flex-1 h-12 rounded-xl bg-brand-500 text-white font-semibold press shadow-glow">Finish trip 🎉</button>
+                <button onClick={confirmFinish} className="flex-1 h-12 rounded-xl bg-brand-500 text-white font-semibold press shadow-glow">Finish trip</button>
               </div>
             </motion.div>
           </>
@@ -539,8 +539,7 @@ export default function NavigatePage() {
               className="absolute inset-x-6 top-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-5 shadow-card"
             >
               <div className="text-center mb-4">
-                <div className="text-4xl mb-2">🌅</div>
-                <div className="font-bold text-ink-900 font-display text-lg">Day {getDayIndex(navIndex) + 1} completed! 🎉</div>
+                <div className="font-bold text-ink-900 font-display text-lg">Day {getDayIndex(navIndex) + 1} completed!</div>
                 <div className="text-sm text-ink-500 mt-1">Ready to start Day {getDayIndex(navIndex) + 2}?</div>
               </div>
               <div className="flex gap-2">
@@ -552,7 +551,7 @@ export default function NavigatePage() {
                   }}
                   className="flex-1 h-12 rounded-xl bg-brand-500 text-white font-semibold press shadow-glow"
                 >
-                  Start Day {getDayIndex(navIndex) + 2} 🚀
+                  Start Day {getDayIndex(navIndex) + 2}
                 </button>
               </div>
             </motion.div>
@@ -570,7 +569,7 @@ export default function NavigatePage() {
               className="rounded-2xl bg-emerald-500 text-white p-4"
             >
               <div className="flex items-center gap-2 font-bold text-lg mb-1">
-                <CheckCircle2 className="w-5 h-5" /> You've arrived! 🎉
+                <CheckCircle2 className="w-5 h-5" /> You've arrived!
               </div>
               <div className="text-sm opacity-90 mb-1">{current.name}</div>
               {/* UI3 — Time at stop */}
@@ -592,7 +591,7 @@ export default function NavigatePage() {
                   onClick={onNext}
                   className="bg-ink-900 text-white rounded-xl py-2.5 text-sm font-semibold press flex items-center justify-center gap-1.5"
                 >
-                  {isLastStop ? 'Finish trip 🏁' : 'Next stop ›'}
+                  {isLastStop ? 'Finish trip' : 'Next stop ›'}
                 </button>
               </div>
             </motion.div>

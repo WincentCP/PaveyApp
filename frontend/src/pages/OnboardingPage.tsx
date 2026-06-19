@@ -344,8 +344,9 @@ export default function OnboardingPage() {
                       totalDays: 3,
                       budget: 500_000,
                       startDate: 'today',
+                      isGuest: true,
                     });
-                    show('Logged in as Guest', 'success');
+                    show('Continuing in Guest Mode', 'success');
                     nav('/', { replace: true });
                   }}
                   className="w-full py-2 text-ink-500 hover:text-brand-500 font-bold text-xs press flex items-center justify-center gap-1.5"
