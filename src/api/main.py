@@ -51,8 +51,8 @@ OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://router.project-osrm.org")
 # Fallback model chain: if primary hits rate limit (429), try next in list
 GROQ_MODELS_FALLBACK = [
     os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    "llama3-70b-8192",
     "llama-3.1-8b-instant",
-    "mixtral-8x7b-32768",
 ]
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
