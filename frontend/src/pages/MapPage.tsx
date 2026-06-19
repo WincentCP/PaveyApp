@@ -424,7 +424,7 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onEdit, currency, on
 
       <div className="px-5 grid grid-cols-3 text-center mb-3">
         <Block label="Est. Time" value={`${Math.floor(totals.time / 60)}h ${totals.time % 60}m`} />
-        <Block label="Distance" value={`${totals.dist.toFixed(1)} km`} />
+        <Block label="Distance" value={`${totals.dist.toFixed(2)} km`} />
         <Block label="Est. Cost" value={formatCost(totals.cost, currency)} />
       </div>
 

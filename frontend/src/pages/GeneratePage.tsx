@@ -707,7 +707,7 @@ export default function GeneratePage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Distance</span>
-                        <span className="font-bold text-white text-base">{totals.dist.toFixed(1)}km</span>
+                        <span className="font-bold text-white text-base">{totals.dist.toFixed(2)}km</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider opacity-75 font-semibold">Duration</span>
@@ -1383,7 +1383,7 @@ export default function GeneratePage() {
                       <span className="font-semibold text-ink-700">{place.rating}</span>
                       <span>· {formatCost(place.cost, effectiveCurrency)}</span>
                     </div>
-                    <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm}km</div>
+                    <div className="text-[10px] text-ink-400">{place.durationMin}min · {place.distanceKm.toFixed(2)}km</div>
                   </div>
                 ))}
               </div>
@@ -2054,7 +2054,7 @@ function StopConnector({ distanceKm }: { distanceKm: number; fromTime?: string; 
       </div>
       <div className="flex items-center gap-1 bg-ink-50 px-2 py-0.5 rounded-full text-[10px] text-ink-400 font-medium">
         <Car className="w-3 h-3 text-ink-400 shrink-0" />
-        <span>{driveMin} min ({distanceKm} km)</span>
+        <span>{driveMin} min ({distanceKm.toFixed(2)} km)</span>
       </div>
     </div>
   );
@@ -2406,7 +2406,7 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-bold text-brand-600">{formatCost(p.cost, effectiveCurrency)}</div>
-                    <div className="text-[11px] text-ink-500">{p.distanceKm} km</div>
+                    <div className="text-[11px] text-ink-500">{p.distanceKm.toFixed(2)} km</div>
                   </div>
                   <Plus className="w-4 h-4 text-ink-400 shrink-0" />
                 </button>
@@ -2592,7 +2592,7 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
             </div>
             <div className="flex items-center gap-1">
               <Compass className="w-3.5 h-3.5 text-ink-400" />
-              <span>{place.distanceKm} km dist</span>
+              <span>{place.distanceKm.toFixed(2)} km dist</span>
             </div>
           </div>
         </div>
