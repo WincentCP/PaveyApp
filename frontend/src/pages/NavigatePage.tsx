@@ -251,7 +251,7 @@ export default function NavigatePage() {
           </button>
         </div>
 
-        <div className="flex-1 bg-brand-500 text-white rounded-2xl px-4 py-2.5 shadow-glow">
+        <div className="flex-1 min-w-0 bg-brand-500 text-white rounded-2xl px-4 py-2.5 shadow-glow">
           <div className="flex items-center gap-2">
             <motion.div animate={{ rotate: [0, 15, -10, 5, 0] }} transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}>
               <Navigation className="w-4 h-4 opacity-90" />
