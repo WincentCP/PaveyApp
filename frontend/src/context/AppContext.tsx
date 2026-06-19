@@ -632,19 +632,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const dest = destinations[activeDestIdx];
     if (!dest) return;
-    if (dest.itinerary && dest.itinerary.length > 0) {
-      setItinerary(dest.itinerary);
-    } else {
-      setItinerary([]);
+    if (JSON.stringify(dest.itinerary) !== JSON.stringify(itinerary)) {
+      setItinerary(dest.itinerary || []);
     }
-  }, [activeDestIdx]); // eslint-disable-line
+  }, [activeDestIdx, destinations]); // eslint-disable-line
 
   // When global itinerary changes, save it back to the active destination.
   useEffect(() => {
     if (!destinations[activeDestIdx]) return;
-    setDestinations((prev) =>
-      prev.map((d, i) => i === activeDestIdx ? { ...d, itinerary } : d)
-    );
+    const currentDest = destinations[activeDestIdx];
+    if (JSON.stringify(currentDest.itinerary) !== JSON.stringify(itinerary)) {
+      setDestinations((prev) =>
+        prev.map((d, i) => i === activeDestIdx ? { ...d, itinerary } : d)
+      );
+    }
   }, [itinerary]); // eslint-disable-line
 
   // 1.3 — Date-aware active destination
@@ -685,7 +686,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [activeTripId, trips]);
 
+  const syncActiveTripIdRef = useRef(activeTripId);
+
   useEffect(() => {
+    if (activeTripId !== syncActiveTripIdRef.current) {
+      syncActiveTripIdRef.current = activeTripId;
+      return;
+    }
     const currentActive = trips.find((t) => t.id === activeTripId);
     if (!currentActive) return;
 
