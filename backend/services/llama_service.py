@@ -23,7 +23,7 @@ def chat_with_llama(message: str, system_prompt: str = "", max_tokens: int = 102
     # Models list to fallback on rate limit (429)
     models = [
         os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-        "llama3-70b-8192",
+        "meta-llama/llama-4-scout-17b-16e-instruct",
         "llama-3.1-8b-instant",
     ]
     last_err = None
@@ -40,7 +40,7 @@ def chat_with_llama(message: str, system_prompt: str = "", max_tokens: int = 102
             )
             return response.choices[0].message.content
         except Exception as e:
-            if "429" in str(e) or "rate_limit" in str(e).lower():
+            if "429" in str(e) or "rate_limit" in str(e).lower() or "model_decommissioned" in str(e).lower() or "decommissioned" in str(e).lower():
                 last_err = e
                 continue
             raise RuntimeError(f"LLM API error: {str(e)}")

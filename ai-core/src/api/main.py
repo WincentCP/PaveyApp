@@ -48,10 +48,10 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://router.project-osrm.org")
 
-# Fallback model chain: if primary hits rate limit (429), try next in list
+# Fallback model chain: if primary hits rate limit (429) or is decommissioned (400), try next in list
 GROQ_MODELS_FALLBACK = [
     os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-    "llama3-70b-8192",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
     "llama-3.1-8b-instant",
 ]
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -443,12 +443,13 @@ def generate_itinerary(payload: TravelPlannerRequest):
                 break
             except Exception as model_err:
                 err_str = str(model_err)
-                if "429" in err_str or "rate_limit" in err_str.lower():
-                    logger.warning(f"[Inference] Rate limit pada model '{candidate_model}', mencoba fallback berikutnya... ({err_str[:120]})")
+                # Continue to next model if this one is rate-limited (429) OR decommissioned (400)
+                if "429" in err_str or "rate_limit" in err_str.lower() or "model_decommissioned" in err_str.lower() or "decommissioned" in err_str.lower():
+                    logger.warning(f"[Inference] Model '{candidate_model}' tidak tersedia (rate limit / decommissioned), mencoba fallback berikutnya... ({err_str[:120]})")
                     last_error = model_err
                     continue
                 else:
-                    # Non-rate-limit error: re-raise immediately
+                    # Non-recoverable error: re-raise immediately
                     raise
 
         if chat_completion is None:
