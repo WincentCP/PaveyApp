@@ -1228,7 +1228,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ? {
                 ...t,
                 currency: targetCurrency,
-                budget: Math.round(t.budget * exchangeRate),
+                budget: (targetCurrency === 'IDR' || targetCurrency === 'JPY' || targetCurrency === 'KRW')
+                  ? Math.round(t.budget * exchangeRate)
+                  : Math.round((t.budget * exchangeRate) * 100) / 100,
                 transactions: convertedTxns,
               }
             : t
