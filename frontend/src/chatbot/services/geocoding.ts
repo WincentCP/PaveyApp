@@ -18,7 +18,7 @@ export async function geocodeName(
 
         // Sanity: cross-continent check
         const center = await getCityCenter(cityContext);
-        if (center && haversineKm(lat, lon, center.lat, center.lon) > 200) return null;
+        if (center && haversineKm(lat, lon, center.lat, center.lon) > 80) return null;
 
         return { lat, lon };
     } catch {

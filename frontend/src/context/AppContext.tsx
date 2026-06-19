@@ -60,8 +60,8 @@ async function geocodeItineraryPlaces(places: Place[], city: string): Promise<Pl
       if (data[0]) {
         const lat = parseFloat(data[0].lat);
         const lng = parseFloat(data[0].lon);
-        // Sanity check: must be within 200km of city center
-        if (!center || haversineKm(lat, lng, center.lat, center.lon) <= 200) {
+        // Sanity check: must be within 80km of city center
+        if (!center || haversineKm(lat, lng, center.lat, center.lon) <= 80) {
           results.push({ ...p, lat, lng });
           await sleep(350); // Nominatim rate limit: max 1 req/sec
           continue;
@@ -1038,11 +1038,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const geocodedDays: Place[][] = planDays.map((dayPlaces) => {
           const geocodedDay: Place[] = [];
           for (let i = 0; i < dayPlaces.length; i++) {
-            const gp = allGeocoded[gIdx++] ?? dayPlaces[i];
-            const next = allGeocoded[gIdx] ?? null;
-            const distKm = (next && gp.lat && gp.lng && next.lat && next.lng)
-              ? haversineKm(gp.lat, gp.lng, next.lat, next.lng)
-              : gp.distanceKm;
+            const gp = allGeocoded[gIdx] ?? dayPlaces[i];
+            const nextGp = (i < dayPlaces.length - 1) ? (allGeocoded[gIdx + 1] ?? null) : null;
+            gIdx++;
+            const distKm = (nextGp && gp.lat && gp.lng && nextGp.lat && nextGp.lng)
+              ? haversineKm(gp.lat, gp.lng, nextGp.lat, nextGp.lng)
+              : 0;
             geocodedDay.push({ ...gp, distanceKm: distKm });
           }
           return geocodedDay;

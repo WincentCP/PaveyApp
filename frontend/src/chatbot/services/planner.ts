@@ -77,7 +77,7 @@ export async function generateTravelPlan(
     const nearby = center
     ? places.filter((p) => {
         if (p.lat == null || p.lon == null) return true;
-        return haversineKm(center.lat, center.lon, p.lat, p.lon) <= 200;
+        return haversineKm(center.lat, center.lon, p.lat, p.lon) <= 80;
     })
     : places;
 

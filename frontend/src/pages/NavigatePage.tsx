@@ -27,6 +27,7 @@ export default function NavigatePage() {
   const {
     itinerary, navIndex, setNavIndex, markVisited, setIsNavigating, completeTrip,
     setBuddyOpen, ratePlace, markVisitedPermanent, removeStop, alternatives,
+    perDayItineraries,
   } = useApp();
   const { show } = useToast();
 
@@ -57,6 +58,34 @@ export default function NavigatePage() {
   const current = itinerary[navIndex];
   const next = itinerary[navIndex + 1];
   const isLastStop = navIndex >= itinerary.length - 1;
+
+  // Find which day the current navIndex belongs to
+  const currentDayIndex = useMemo(() => {
+    let accumulatedStops = 0;
+    for (let dayIdx = 0; dayIdx < perDayItineraries.length; dayIdx++) {
+      const dayStopsCount = perDayItineraries[dayIdx].length;
+      if (navIndex >= accumulatedStops && navIndex < accumulatedStops + dayStopsCount) {
+        return dayIdx;
+      }
+      accumulatedStops += dayStopsCount;
+    }
+    return 0; // Default to 0
+  }, [perDayItineraries, navIndex]);
+
+  const currentDayStartIdx = useMemo(() => {
+    let acc = 0;
+    for (let i = 0; i < currentDayIndex; i++) {
+      acc += perDayItineraries[i]?.length || 0;
+    }
+    return acc;
+  }, [perDayItineraries, currentDayIndex]);
+
+  const currentDayStops = useMemo(() => {
+    if (perDayItineraries.length > 0) {
+      return perDayItineraries[currentDayIndex] || [];
+    }
+    return itinerary;
+  }, [perDayItineraries, currentDayIndex, itinerary]);
 
   useEffect(() => {
     if (paused || arrived || !current) return;
@@ -357,21 +386,24 @@ export default function NavigatePage() {
         </AnimatePresence>
 
         <div className="absolute top-3 right-3 z-10 space-y-1">
-          {itinerary.map((p, i) => (
-            <div
-              key={p.id}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-soft bg-white/95"
-            >
-              <span
-                className={`w-3.5 h-3.5 rounded-full shrink-0 ${
-                  i < navIndex ? 'bg-emerald-500' : i === navIndex ? 'bg-brand-500' : 'border-2 border-ink-300 bg-white'
-                }`}
-              />
-              <span className={`max-w-[72px] truncate ${i === navIndex ? 'text-brand-600 font-bold' : i < navIndex ? 'text-emerald-600' : 'text-ink-500'}`}>
-                {p.name.split(' ')[0]}
-              </span>
-            </div>
-          ))}
+          {currentDayStops.map((p, idx) => {
+            const globalIdx = perDayItineraries.length > 0 ? currentDayStartIdx + idx : idx;
+            return (
+              <div
+                key={p.id}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-soft bg-white/95"
+              >
+                <span
+                  className={`w-3.5 h-3.5 rounded-full shrink-0 ${
+                    globalIdx < navIndex ? 'bg-emerald-500' : globalIdx === navIndex ? 'bg-brand-500' : 'border-2 border-ink-300 bg-white'
+                  }`}
+                />
+                <span className={`max-w-[72px] truncate ${globalIdx === navIndex ? 'text-brand-600 font-bold' : globalIdx < navIndex ? 'text-emerald-600' : 'text-ink-500'}`}>
+                  {p.name.split(' ')[0]}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
