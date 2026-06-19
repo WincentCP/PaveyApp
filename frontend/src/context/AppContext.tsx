@@ -383,7 +383,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(persisted?.isAuthenticated ?? false);
   const [authUser, setAuthUser] = useState<{ name: string; email: string } | null>(persisted?.authUser ?? null);
   const [accessToken, setAccessToken] = useState<string | null>(persisted?.accessToken ?? null);
-  const [onboardingComplete, setOnboardingComplete] = useState(persisted?.onboardingComplete ?? false);
+  const [onboardingComplete, setOnboardingComplete] = useState(!!persisted?.accessToken && (persisted?.onboardingComplete ?? false));
   const [everOnboarded, setEverOnboarded] = useState(persisted?.everOnboarded ?? false);
 
   // Vibe & itinerary
