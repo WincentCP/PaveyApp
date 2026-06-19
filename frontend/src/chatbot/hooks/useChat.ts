@@ -204,7 +204,7 @@ export function useChat(tripId?: string) {
             lastCityRef.current = loc.city;
 
             // Fetch weather
-            const weather = await fetchWeatherByCoords(loc.lat, loc.lon);
+            const weather = await fetchWeatherByCoords(loc.lat, loc.lon, loc.city);
             const weatherHint = weather.isRainy
             ? 'It is currently raining. Prioritize indoor places like museums, cafes, and malls.'
             : weather.isExtreme
