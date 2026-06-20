@@ -60,8 +60,8 @@ function AppShell() {
       contextStr += `Stops: ${stopNames}.`;
     }
     
-    if (contextStr.length > 480) {
-      contextStr = contextStr.slice(0, 480) + '...';
+    if (contextStr.length > 1500) {
+      contextStr = contextStr.slice(0, 1500) + '...';
     }
     return contextStr;
   })();

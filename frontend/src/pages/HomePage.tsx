@@ -126,13 +126,6 @@ export default function HomePage() {
   const [filterMinRating, setFilterMinRating] = useState(0);
 
   const [detailPlace, setDetailPlace] = useState<Place | null>(null);
-  const [addDestSheet, setAddDestSheet] = useState(false);
-  const [newDestName, setNewDestName] = useState('');
-  const [newDestDays, setNewDestDays] = useState(2);
-  const [newDestArriveDate, setNewDestArriveDate] = useState('');
-  const [newDestDepartDate, setNewDestDepartDate] = useState('');
-  const [newDestError, setNewDestError] = useState<string | null>(null);
-  const [newDestCalendarOpen, setNewDestCalendarOpen] = useState(false);
   // Pre-generation intent sheet
   const [intentSheet, setIntentSheet] = useState<'ai' | 'manual' | 'choice' | null>(null);
   const [intentDest, setIntentDest] = useState('');
@@ -148,6 +141,12 @@ export default function HomePage() {
   const [intentEndTimeSet, setIntentEndTimeSet] = useState(false);
   const [intentVibe, setIntentVibe] = useState<Vibe | null>(null);
   const [intentBudget, setIntentBudget] = useState<number | null>(null);
+  const plannerCurrency = useMemo(() => {
+    if (intentDest && intentDest.trim()) {
+      return suggestCurrency(intentDest);
+    }
+    return activeTrip.currency;
+  }, [intentDest, activeTrip.currency]);
   const [intentErrors, setIntentErrors] = useState<{ dest?: string; date?: string }>({});
   const [showFlightTimes, setShowFlightTimes] = useState(false);
   // (Removed in Round 11 #12 — single-day warning is now an inline hint, not a state-driven dialog.)
@@ -160,6 +159,7 @@ export default function HomePage() {
   const [tooLongOpen, setTooLongOpen] = useState(false);
   const [intentPace, setIntentPace] = useState<TripPace>('balanced');
   const endDateInputRef = useRef<HTMLInputElement>(null);
+  const intentDestRef = useRef<HTMLInputElement>(null);
 
   // Issue 27: vibe/budget change prompt
   const [vibeChangedPrompt, setVibeChangedPrompt] = useState(false);
@@ -277,16 +277,7 @@ export default function HomePage() {
     return { todaySpent, totalBudgetPerDay, daysRemaining, isOnTrack };
   }, [activeTrip, tripBudget, tripDaysRemaining]);
 
-  // Auto-calculate days from dates in add dest sheet
-  const calcedDays = useMemo(() => {
-    if (newDestArriveDate && newDestDepartDate) {
-      const a = new Date(newDestArriveDate);
-      const b = new Date(newDestDepartDate);
-      const diff = Math.max(1, Math.round((b.getTime() - a.getTime()) / 86400000));
-      return diff;
-    }
-    return null;
-  }, [newDestArriveDate, newDestDepartDate]);
+
 
   // Auto-open intent sheet when arriving with ?newPlan=1 (from Wallet) or
   // ?openIntent=1 (from "Edit trip" on GeneratePage — restores prior draft).
@@ -355,59 +346,7 @@ export default function HomePage() {
 
 
 
-  // Open add-dest sheet with smart defaults: pre-fill dates from trip-level intent if known
-  const openAddDestSheet = () => {
-    if (intentDate && intentEndDate && !newDestArriveDate && !newDestDepartDate) {
-      setNewDestArriveDate(intentDate);
-      setNewDestDepartDate(intentEndDate);
-    }
-    setNewDestCalendarOpen(false);
-    setAddDestSheet(true);
-  };
 
-  // Day-distribution timeline preview for multi-city in intent sheet
-  const previewDays = useMemo(() => {
-    if (destinations.length < 2 || !intentDate || !intentEndDate) return null;
-    const plannerDests: PlannerDestination[] = destinations.map((d) => ({
-      name: d.name,
-      days: d.days,
-      arriveDate: d.arriveDate,
-      departDate: d.departDate,
-    }));
-    const total = tripDurationDays(intentDate, intentEndDate);
-    if (total <= 0) return null;
-    return allocateDays(plannerDests, total);
-  }, [destinations, intentDate, intentEndDate]);
-
-  const handleAddDest = () => {
-    const trimmed = newDestName.trim();
-    if (!trimmed) {
-      setNewDestError('Please enter a destination name');
-      return;
-    }
-    if (isDuplicateDestination(trimmed, destinations)) {
-      setNewDestError(`${trimmed} is already in your trip`);
-      return;
-    }
-    if (destinations.length >= MAX_DESTINATIONS) {
-      setNewDestError(COPY.maxDestinations);
-      return;
-    }
-    setNewDestError(null);
-    const days = calcedDays ?? newDestDays;
-    addDestination({
-      name: trimmed,
-      days,
-      arriveDate: newDestArriveDate || undefined,
-      departDate: newDestDepartDate || undefined,
-    });
-    setNewDestName('');
-    setNewDestDays(2);
-    setNewDestArriveDate('');
-    setNewDestDepartDate('');
-    setAddDestSheet(false);
-    show(`${trimmed} added to your trip`, 'success');
-  };
 
   // Compute the day count once; the review modal & nav both need it.
   const intentDays = intentEndDate ? tripDurationDays(intentDate, intentEndDate) : 1;
@@ -823,12 +762,6 @@ export default function HomePage() {
             <span className="text-[10px] font-bold tracking-widest text-ink-500">YOUR ROUTE</span>
             <div className="flex items-center gap-3">
               <button onClick={() => setManageDestsSheet(true)} className="text-xs text-ink-500 font-semibold press">Manage</button>
-              <button
-                onClick={() => openAddDestSheet()}
-                className="flex items-center gap-1 text-xs text-brand-600 font-semibold press"
-              >
-                <Plus className="w-3 h-3" /> Add stop
-              </button>
             </div>
           </div>
 
@@ -852,18 +785,6 @@ export default function HomePage() {
                 )}
               </div>
             ))}
-            {destinations.length < MAX_DESTINATIONS ? (
-              <button
-                onClick={() => openAddDestSheet()}
-                className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-dashed border-brand-300 text-brand-500 text-xs font-semibold press"
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-            ) : (
-              <span className="shrink-0 text-[10px] text-ink-400 italic self-center px-1">
-                Six is plenty
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -1260,6 +1181,7 @@ export default function HomePage() {
                   <div className={`flex items-center gap-2 rounded-xl px-3 py-3 border-2 transition-colors ${intentErrors.dest ? 'bg-red-50 border-red-400' : 'bg-ink-50 border-transparent focus-within:border-brand-400'}`}>
                     <MapPin className={`w-4 h-4 shrink-0 ${intentErrors.dest ? 'text-red-400' : 'text-ink-400'}`} />
                     <input
+                      ref={intentDestRef}
                       value={intentDest}
                       onChange={(e) => { setIntentDest(e.target.value); if (e.target.value.trim()) setIntentErrors((p) => ({ ...p, dest: undefined })); }}
                       placeholder={destPlaceholder}
@@ -1270,9 +1192,9 @@ export default function HomePage() {
                   </div>
                   {/* Static limited places warning */}
                   <div className="mt-2 bg-amber-50/50 border border-amber-200/60 rounded-xl p-3 flex gap-2 items-start">
-                    <span className="text-xs mt-0.5 shrink-0">💡</span>
-                    <p className="text-xs text-amber-800 leading-normal">
-                      Some cities may have limited place data. Popular destinations like Bali, Jakarta, Tokyo will have richer results.
+                    <span className="text-xs mt-0.5 shrink-0">⚠️</span>
+                    <p className="text-xs text-amber-800 leading-normal font-medium">
+                      Note: Beberapa destinasi masih memiliki data yang terbatas (limited). Masukkan kota populer seperti Bali, Jakarta, Tokyo, dll. untuk hasil terbaik.
                     </p>
                   </div>
                   {intentErrors.dest && (
@@ -1354,52 +1276,7 @@ export default function HomePage() {
                   )}
                 </div>
 
-                {/* Day-distribution timeline preview — shows exactly how days are split before generation */}
-                {previewDays && (
-                  <div className="bg-ink-50 rounded-2xl px-3 py-2.5 space-y-1">
-                    <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-2">YOUR ROUTE PREVIEW</div>
-                    {(() => {
-                      let currentDayNum = 1;
-                      const rows: { label: string; city: string; isTravel: boolean; count: number }[] = [];
-                      let i = 0;
-                      while (i < previewDays.length) {
-                        const day = previewDays[i];
-                        if (day.kind === 'travel') {
-                          const fromCity = destinations[previewDays[i - 1]?.destIdx ?? day.destIdx]?.name.split(',')[0] ?? '';
-                          const toCity = destinations[previewDays[i + 1]?.destIdx ?? day.destIdx]?.name.split(',')[0] ?? '';
-                          rows.push({ label: `Day ${currentDayNum}`, city: toCity ? `${fromCity} → ${toCity}` : fromCity, isTravel: true, count: 1 });
-                          currentDayNum++;
-                          i++;
-                        } else {
-                          const destIdx = day.destIdx;
-                          let run = 0;
-                          while (i + run < previewDays.length && previewDays[i + run].destIdx === destIdx && previewDays[i + run].kind !== 'travel') run++;
-                          const cityName = destinations[destIdx]?.name.split(',')[0] ?? '';
-                          const label = run === 1 ? `Day ${currentDayNum}` : `Day ${currentDayNum}–${currentDayNum + run - 1}`;
-                          rows.push({ label, city: cityName, isTravel: false, count: run });
-                          currentDayNum += run;
-                          i += run;
-                        }
-                      }
-                      return rows.map((r, idx) => (
-                        <div key={idx} className="flex items-center gap-2 py-0.5">
-                          <span className="text-[10px] text-ink-400 w-16 shrink-0 font-mono">{r.label}</span>
-                          {r.isTravel
-                            ? <span className="text-[11px] text-ink-400">✈ {r.city}</span>
-                            : (
-                              <>
-                                <span className="text-[11px] font-semibold text-ink-800">{r.city}</span>
-                                <span className="ml-auto flex gap-0.5">{Array.from({ length: Math.min(r.count, 6) }).map((_, di) => <span key={di} className="w-1.5 h-1.5 rounded-full bg-brand-300 inline-block" />)}</span>
-                              </>
-                            )}
-                        </div>
-                      ));
-                    })()}
-                    <div className="mt-1 text-[10px] text-ink-400">
-                      Includes {destinations.length - 1} travel day{destinations.length - 1 !== 1 ? 's' : ''} — added automatically.
-                    </div>
-                  </div>
-                )}
+
 
                 {/* WHEN — one canonical calendar, collapsed by default */}
                 <div>
@@ -1564,15 +1441,15 @@ export default function HomePage() {
                     <div className="text-[10px] font-bold tracking-widest text-ink-500">BUDGET <span className="font-normal normal-case tracking-normal text-ink-400">(per day)</span></div>
                     <div className="flex items-center bg-ink-50 rounded-lg px-2 py-1 border border-ink-200 focus-within:border-brand-400 transition-colors w-32">
                       <span className="text-xs font-semibold text-ink-500 mr-1">
-                        {CURRENCY_SYMBOLS[activeTrip.currency] ?? activeTrip.currency}
+                        {CURRENCY_SYMBOLS[plannerCurrency] ?? plannerCurrency}
                       </span>
                       <input
                         type="number"
                         min="0"
-                        value={Math.round((intentBudget ?? budget) / (CURRENCY_RATES_TO_IDR[activeTrip.currency] ?? 1))}
+                        value={Math.round((intentBudget ?? budget) / (CURRENCY_RATES_TO_IDR[plannerCurrency] ?? 1))}
                         onChange={(e) => {
                           const val = Number(e.target.value);
-                          const idrVal = val * (CURRENCY_RATES_TO_IDR[activeTrip.currency] ?? 1);
+                          const idrVal = val * (CURRENCY_RATES_TO_IDR[plannerCurrency] ?? 1);
                           setIntentBudget(idrVal);
                         }}
                         className="w-full bg-transparent text-xs font-bold text-ink-900 outline-none text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -1586,8 +1463,10 @@ export default function HomePage() {
                     style={{ ['--val' as string]: `${Math.max(0, Math.min(100, (((Math.min(1_000_000, intentBudget ?? budget)) - 50_000) / (1_000_000 - 50_000)) * 100))}%` } as React.CSSProperties}
                   />
                   <div className="flex justify-between text-xs text-ink-500">
-                    <span>{formatCost(50_000, activeTrip.currency)}</span>
-                    <span className="text-brand-600 font-semibold">{formatCost(intentBudget ?? budget, activeTrip.currency)}</span>
+                    <span>{formatCost(50_000, plannerCurrency)}</span>
+                    <span className="text-brand-600 font-semibold">
+                      {(intentBudget ?? budget) >= 1_000_000 ? 'Custom' : formatCost(intentBudget ?? budget, plannerCurrency)}
+                    </span>
                     <span>Custom</span>
                   </div>
                 </div>
@@ -1618,125 +1497,10 @@ export default function HomePage() {
         regionsCount={countDistinctRegions(destinations.map((d) => d.name))}
         onClose={() => setTooLongOpen(false)}
         onFocusDates={() => endDateInputRef.current?.focus()}
-        onFocusDestinations={() => openAddDestSheet()}
+        onFocusDestinations={() => intentDestRef.current?.focus()}
       />
 
-      {/* ── Add Destination Sheet ── */}
-      <AnimatePresence>
-        {addDestSheet && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAddDestSheet(false)} className="absolute inset-0 z-40 bg-ink-900/40" />
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-card pb-8 flex flex-col max-h-[90%] overflow-hidden"
-            >
-              <div className="w-12 h-1.5 bg-ink-100 rounded-full mx-auto mt-3 shrink-0" />
-              <div className="px-5 pt-3 pb-4 flex items-center justify-between shrink-0">
-                <div className="font-bold text-ink-900 font-display">Add Destination</div>
-                <button onClick={() => setAddDestSheet(false)} className="w-8 h-8 rounded-full bg-ink-50 flex items-center justify-center press"><X className="w-4 h-4" /></button>
-              </div>
-              <div className="px-5 space-y-4 flex-1 overflow-y-auto no-scrollbar pb-4">
-                {/* City name */}
-                <div>
-                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">DESTINATION</div>
-                  <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border-2 transition-colors ${newDestError ? 'bg-red-50 border-red-400' : 'bg-ink-50 border-transparent focus-within:border-brand-400'}`}>
-                    <MapPin className={`w-4 h-4 shrink-0 ${newDestError ? 'text-red-400' : 'text-ink-400'}`} />
-                    <input
-                      value={newDestName}
-                      onChange={(e) => { setNewDestName(e.target.value); if (newDestError) setNewDestError(null); }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddDest()}
-                      placeholder="City or country (e.g. Rome, Italy)"
-                      className="flex-1 bg-transparent text-sm text-ink-900 placeholder:text-ink-400 outline-none"
-                      autoFocus
-                    />
-                  </div>
-                  {/* Static limited places warning */}
-                  <div className="mt-2 bg-amber-50/50 border border-amber-200/60 rounded-xl p-3 flex gap-2 items-start">
-                    <span className="text-xs mt-0.5 shrink-0">💡</span>
-                    <p className="text-xs text-amber-800 leading-normal">
-                      Some cities may have limited place data. Popular destinations like Bali, Jakarta, Tokyo will have richer results.
-                    </p>
-                  </div>
-                  {newDestError && (
-                    <div className="flex items-center gap-1.5 text-xs text-red-600 mt-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {newDestError}
-                    </div>
-                  )}
-                </div>
 
-                {/* Date range */}
-                {/* Dates — MiniCalendar, collapsible */}
-                <div>
-                  <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">DATES</div>
-                  <button
-                    onClick={() => setNewDestCalendarOpen((v) => !v)}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm border border-ink-200 bg-ink-50 flex items-center justify-between press"
-                  >
-                    <span className="font-semibold text-ink-700">
-                      {newDestArriveDate && newDestDepartDate ? (() => {
-                        const a = new Date(newDestArriveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                        const b = new Date(newDestDepartDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-                        return `${a} → ${b}`;
-                      })() : newDestArriveDate ? new Date(newDestArriveDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' →' : 'Set dates (optional)'}
-                    </span>
-                    <span className="text-[11px] text-ink-400">{newDestCalendarOpen ? 'Done' : 'Edit'}</span>
-                  </button>
-                  {newDestCalendarOpen && (
-                    <div className="mt-2">
-                      <MiniCalendar
-                        startDate={newDestArriveDate ? new Date(newDestArriveDate) : null}
-                        endDate={newDestDepartDate ? new Date(newDestDepartDate) : null}
-                        onSelect={(d) => {
-                          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                          if (!newDestArriveDate || (newDestArriveDate && newDestDepartDate)) {
-                            setNewDestArriveDate(iso);
-                            setNewDestDepartDate('');
-                          } else {
-                            if (d >= new Date(newDestArriveDate)) {
-                              setNewDestDepartDate(iso);
-                              setNewDestCalendarOpen(false);
-                            } else {
-                              setNewDestArriveDate(iso);
-                              setNewDestDepartDate('');
-                            }
-                          }
-                        }}
-                      />
-                      <div className="mt-1 text-[10px] text-ink-400 text-center">
-                        {!newDestArriveDate ? 'Tap arrive date.' : !newDestDepartDate ? 'Tap depart date (same = 1 day).' : 'Tap to restart.'}
-                      </div>
-                    </div>
-                  )}
-                  {calcedDays !== null ? (
-                    <div className="mt-2 text-xs text-brand-600 font-semibold">{calcedDays} day{calcedDays !== 1 ? 's' : ''} calculated from dates</div>
-                  ) : (
-                    <div className="mt-2">
-                      <div className="text-[10px] font-bold tracking-widest text-ink-500 mb-1.5">DAYS PLANNED</div>
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => setNewDestDays((d) => Math.max(1, d - 1))} className="w-10 h-10 rounded-full bg-ink-50 border border-ink-200 flex items-center justify-center press font-bold text-ink-700 text-lg">−</button>
-                        <div className="flex-1 text-center text-2xl font-extrabold text-ink-900 font-display">{newDestDays}</div>
-                        <button onClick={() => setNewDestDays((d) => d + 1)} className="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center press font-bold text-white text-lg">+</button>
-                      </div>
-                      <div className="text-center text-xs text-ink-500 mt-1">day{newDestDays !== 1 ? 's' : ''}</div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-[11px] text-ink-400 leading-snug text-center">{COPY.hints.travelDays}</div>
-
-                <button
-                  onClick={handleAddDest}
-                  disabled={!newDestName.trim()}
-                  className="w-full h-12 rounded-2xl bg-brand-500 disabled:bg-ink-200 text-white font-bold press shadow-glow flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Add to Trip
-                </button>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* ── Quick Plan Sheet ── */}
       <AnimatePresence>

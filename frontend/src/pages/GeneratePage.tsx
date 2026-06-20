@@ -8,7 +8,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import StatusBar from '../components/StatusBar';
-import { useApp, PACE_STOPS } from '../context/AppContext';
+import { useApp, PACE_STOPS, getPlaceImage } from '../context/AppContext';
 import type { Place } from '../data/places';
 import { PLACES } from '../data/places';
 import { getRegion, countDistinctRegions } from '../data/regions';
@@ -280,6 +280,61 @@ export default function GeneratePage() {
         isSameCity(p.city, targetCity) &&
         !currentItinIds.has(p.id)
       ).sort((a, b) => b.rating - a.rating)[0];
+    }
+
+    if (!alt) {
+      // Generate fallback alternative stop
+      const cityClean = targetCity.split(',')[0].trim();
+      const cat = place.category || 'Scenic';
+      
+      let mockName = `Local Discovery in ${cityClean}`;
+      let mockDesc = `A wonderful spot to explore in ${cityClean}, offering authentic local charm and highly recommended by fellow travelers.`;
+      let typeKey = 'attraction';
+
+      if (cat === 'Cafe' || cat === 'Cozy' || cat === 'Foodie') {
+        const cafeNames = ['Secret Garden Cafe', 'Boutique Coffee House', 'Corner Roastery', 'Local Flavors Bistro', 'The Cozy Nook'];
+        const index = Math.abs(place.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % cafeNames.length;
+        mockName = `${cafeNames[index]} ${cityClean}`;
+        mockDesc = `A delightful culinary experience in the heart of ${cityClean}. Known for its great atmosphere and delicious menu.`;
+        typeKey = 'restaurant';
+      } else if (cat === 'Nature' || cat === 'Scenic') {
+        const natureNames = ['Greenery Ridge', 'Scenic Lookout Point', 'Botanical Haven', 'Peaceful Valley Walk', 'Panoramic Vista Spot'];
+        const index = Math.abs(place.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % natureNames.length;
+        mockName = `${cityClean} ${natureNames[index]}`;
+        mockDesc = `A beautiful natural landmark in ${cityClean}. Perfect for scenic photography, fresh air, and relaxing views.`;
+      } else {
+        const culturalNames = ['Heritage Museum House', 'Historic Landmark Temple', 'Artisanal Village Craft Market', 'Old Town Memorial Square', 'Cultural Discovery Pavilion'];
+        const index = Math.abs(place.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % culturalNames.length;
+        mockName = `${cityClean} ${culturalNames[index]}`;
+        mockDesc = `Rich historical and cultural site in ${cityClean}. Explore the unique heritage, local architecture, and storied past of the area.`;
+      }
+
+      const offsetLat = (Math.sin(place.id.charCodeAt(0)) * 0.015);
+      const offsetLng = (Math.cos(place.id.charCodeAt(place.id.length - 1 || 0)) * 0.015);
+
+      const mockImage = getPlaceImage(cityClean, typeKey, mockName);
+
+      alt = {
+        id: `mock-alt-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        city: cityClean,
+        name: mockName,
+        category: cat,
+        tags: [...(place.tags || []), 'Alternative'],
+        vibes: place.vibes || ['balanced'],
+        image: mockImage,
+        cost: place.cost || 0,
+        priceRange: place.priceRange || { min: 0, max: 0 },
+        durationMin: place.durationMin || 90,
+        distanceKm: Math.max(0.5, parseFloat((Math.random() * 2 + 0.5).toFixed(2))),
+        lat: place.lat ? place.lat + offsetLat : -8.5069 + offsetLat,
+        lng: place.lng ? place.lng + offsetLng : 115.2625 + offsetLng,
+        rating: parseFloat((4.0 + Math.random() * 0.9).toFixed(1)),
+        description: mockDesc,
+        openingHours: place.openingHours || '09:00 - 18:00',
+        indoor: place.indoor ?? false,
+        openHour: place.openHour ?? 9,
+        closeHour: place.closeHour ?? 18,
+      };
     }
 
     if (isMultiDay) {

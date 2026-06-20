@@ -177,17 +177,17 @@ export default function WalletPage() {
 
           {/* Budget numbers */}
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div>
-              <div className="text-xs text-white/70">Total Budget</div>
-              <div className="text-base font-extrabold font-display">{fmt(tripBudget)}</div>
+            <div className="min-w-0">
+              <div className="text-xs text-white/70 truncate">Total Budget</div>
+              <div className="text-[13px] xs:text-sm font-black tracking-tight truncate shrink-0 font-display">{fmt(tripBudget)}</div>
             </div>
-            <div>
-              <div className="text-xs text-white/70">Spent</div>
-              <div className="text-base font-extrabold font-display text-red-300">{fmt(totalSpent)}</div>
+            <div className="min-w-0">
+              <div className="text-xs text-white/70 truncate">Spent</div>
+              <div className="text-[13px] xs:text-sm font-black tracking-tight truncate shrink-0 font-display text-red-300">{fmt(totalSpent)}</div>
             </div>
-            <div>
-              <div className="text-xs text-white/70">Remaining</div>
-              <div className={`text-base font-extrabold font-display ${isOverBudget ? 'text-red-300' : 'text-emerald-300'}`}>
+            <div className="min-w-0">
+              <div className="text-xs text-white/70 truncate">Remaining</div>
+              <div className={`text-[13px] xs:text-sm font-black tracking-tight truncate shrink-0 font-display ${isOverBudget ? 'text-red-300' : 'text-emerald-300'}`}>
                 {isOverBudget ? '-' : ''}{fmt(Math.abs(remaining))}
               </div>
             </div>

@@ -195,7 +195,7 @@ const FALLBACK_EATERIES = [
   'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
 ];
 
-function getPlaceImage(city: string, type: string, placeName?: string): string {
+export function getPlaceImage(city: string, type: string, placeName?: string): string {
   const cityKey = city.toLowerCase().split(',')[0].trim();
   const typeKey = TYPE_FALLBACKS[type?.toLowerCase()] ?? type?.toLowerCase() ?? 'attraction';
 

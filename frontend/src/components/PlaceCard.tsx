@@ -77,7 +77,7 @@ export default function PlaceCard({ place, index, prevPlace, onClose, onNavigate
             <InfoBlock
               icon={<MapPin className="w-3.5 h-3.5 text-orange-500" />}
               label={prevPlace ? 'From prev' : 'Distance'}
-              value={place.distanceKm > 0.01 ? `${place.distanceKm.toFixed(2)} km` : '< 0.1 km'}
+              value={prevPlace ? (prevPlace.distanceKm > 0.01 ? `${prevPlace.distanceKm.toFixed(2)} km` : '< 0.1 km') : (place.distanceKm > 0.01 ? `${place.distanceKm.toFixed(2)} km` : '< 0.1 km')}
               sub={prevPlace ? `from ${prevPlace.name.split(' ')[0]}` : undefined}
             />
           </div>

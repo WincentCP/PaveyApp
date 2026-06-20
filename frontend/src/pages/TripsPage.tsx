@@ -427,18 +427,24 @@ export default function TripsPage() {
 
       {/* Place detail card overlay */}
       <AnimatePresence>
-        {selectedPlace && (
-          <PlaceCard
-            place={selectedPlace}
-            index={(dayCount > 1 ? stopsForDay : itinerary).findIndex((p) => p.id === selectedPlace.id)}
-            onClose={() => setSelectedPlace(null)}
-            onNavigate={() => { setSelectedPlace(null); nav('/map'); }}
-            isSaved={isSaved(selectedPlace.id)}
-            onSave={() => isSaved(selectedPlace.id) ? removeSavedPlace(selectedPlace.id) : savePlace(selectedPlace)}
-            currency={activeTrip.currency}
-            onBuddy={() => { setSelectedPlace(null); setBuddyOpen(true); }}
-          />
-        )}
+        {selectedPlace && (() => {
+          const list = dayCount > 1 ? stopsForDay : itinerary;
+          const idx = list.findIndex((p) => p.id === selectedPlace.id);
+          const prevPlace = idx > 0 ? list[idx - 1] : undefined;
+          return (
+            <PlaceCard
+              place={selectedPlace}
+              index={idx}
+              prevPlace={prevPlace}
+              onClose={() => setSelectedPlace(null)}
+              onNavigate={() => { setSelectedPlace(null); nav('/map'); }}
+              isSaved={isSaved(selectedPlace.id)}
+              onSave={() => isSaved(selectedPlace.id) ? removeSavedPlace(selectedPlace.id) : savePlace(selectedPlace)}
+              currency={activeTrip.currency}
+              onBuddy={() => { setSelectedPlace(null); setBuddyOpen(true); }}
+            />
+          );
+        })()}
       </AnimatePresence>
     </div>
   );
