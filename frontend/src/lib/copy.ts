@@ -50,8 +50,8 @@ export const COPY = {
   destInput: {
     cityHint: (city: string) => `That's a country — we'll start with ${city}. Tap to use it.`,
     placeholders: [
-      'Try a city — Tokyo, Paris, Bali',
-      'Or a country — Japan, France',
+      'Try a city — Bali, Jakarta, Bandung, Jogjakarta, Lombok, Singapore',
+      'Or a country — Indonesia, Singapore',
       "We'll suggest a starting city for countries",
     ],
   },

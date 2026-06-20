@@ -1194,7 +1194,7 @@ export default function HomePage() {
                   <div className="mt-2 bg-amber-50/50 border border-amber-200/60 rounded-xl p-3 flex gap-2 items-start">
                     <span className="text-xs mt-0.5 shrink-0">⚠️</span>
                     <p className="text-xs text-amber-800 leading-normal font-medium">
-                      Note: Beberapa destinasi masih memiliki data yang terbatas (limited). Masukkan kota populer seperti Bali, Jakarta, Tokyo, dll. untuk hasil terbaik.
+                      Note: Pavey saat ini lebih fokus pada kota-kota di Indonesia. Masukkan kota seperti Bali, Jakarta, Bandung, Jogjakarta, Lombok, dll. untuk mendapatkan rekomendasi tempat dan foto terbaik.
                     </p>
                   </div>
                   {intentErrors.dest && (
