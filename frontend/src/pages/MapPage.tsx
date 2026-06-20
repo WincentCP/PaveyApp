@@ -446,7 +446,7 @@ function ItineraryBottomSheet({ itinerary, totals, onStart, onEdit, currency, on
                   className="flex items-center gap-3 bg-white rounded-2xl p-2.5 border border-ink-100 cursor-pointer press hover:border-brand-300 transition-colors"
                 >
                   <div className="w-6 h-6 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</div>
-                  <img src={p.image} alt={p.name} className="w-11 h-11 rounded-xl object-cover shrink-0" />
+                  <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-11 h-11 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-ink-900 truncate text-sm">{p.name}</div>
                     <div className="flex items-center gap-1.5 text-[10px] text-ink-500 mt-0.5">

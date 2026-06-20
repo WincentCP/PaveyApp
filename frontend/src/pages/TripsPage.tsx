@@ -273,7 +273,7 @@ export default function TripsPage() {
                         onClick={() => setSelectedPlace(p)}
                         className="w-full flex items-center gap-3 bg-white border border-ink-100 rounded-2xl p-3 press hover:border-brand-200 transition-colors text-left"
                       >
-                        <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                        <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl object-cover shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-ink-900 text-sm truncate">{p.name}</div>
                           <div className="flex items-center gap-1.5 text-[10px] text-ink-500 mt-0.5">

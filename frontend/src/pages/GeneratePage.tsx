@@ -1199,7 +1199,7 @@ export default function GeneratePage() {
                     onClick={() => { setManualStops((prev) => [...prev, p]); show(`${p.name} added`, 'success'); }}
                     className="w-full flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-2.5 text-left press hover:border-brand-200 transition-colors"
                   >
-                    <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-12 h-12 rounded-xl object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-ink-900 truncate text-sm">{p.name}</div>
                       <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
@@ -1492,7 +1492,7 @@ export default function GeneratePage() {
                 ].map(({ label, place, isPrimary }) => (
                   <div key={place.id} className={`p-3 ${isPrimary ? 'bg-brand-50/30' : ''}`}>
                     <div className={`text-[9px] font-bold tracking-widest mb-2 ${isPrimary ? 'text-brand-600' : 'text-ink-400'}`}>{label}</div>
-                    <img src={place.image} alt={place.name} className="w-full h-20 object-cover rounded-xl mb-2" />
+                    <img src={place.image} alt={place.name} referrerPolicy="no-referrer" className="w-full h-20 object-cover rounded-xl mb-2" />
                     <div className="font-semibold text-ink-900 text-xs leading-snug mb-1">{place.name}</div>
                     <div className="flex items-center gap-1 text-[10px] text-ink-500 mb-0.5">
                       <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
@@ -2236,7 +2236,7 @@ function StopCard({
 
             {/* Image with overlaid index badge */}
             <div className="relative shrink-0">
-              <img src={place.image} alt={place.name} className="w-11 h-11 rounded-xl object-cover border border-ink-100" />
+              <img src={place.image} alt={place.name} referrerPolicy="no-referrer" className="w-11 h-11 rounded-xl object-cover border border-ink-100" />
               <div className="absolute -top-1.5 -left-1.5 bg-brand-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-extrabold border border-white shrink-0">
                 {index + 1}
               </div>
@@ -2513,7 +2513,7 @@ function AlternativesSheet({ open, onClose, excludeIds, onPick, title, alternati
               {list.length === 0 && <div className="text-sm text-ink-500 py-10 text-center">No places found.</div>}
               {list.map((p) => (
                 <button key={p.id} onClick={() => onPick(p)} className="w-full bg-white border border-ink-100 hover:border-brand-300 rounded-2xl p-3 flex items-center gap-3 text-left press">
-                  <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                  <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-ink-900 truncate">{p.name}</div>
                     <div className="flex items-center gap-1.5 text-xs text-ink-500 mt-0.5">
@@ -2570,7 +2570,7 @@ function AlternativeCard({ altP, onAdd }: { altP: Place; onAdd: () => void }) {
         style={{ x: dragX }}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <img src={altP.image} alt={altP.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          <img src={altP.image} alt={altP.name} referrerPolicy="no-referrer" className="w-10 h-10 rounded-xl object-cover shrink-0" />
           <div className="min-w-0">
             <div className="font-semibold text-ink-900 text-xs truncate">{altP.name}</div>
             <div className="text-[10px] text-ink-500 mt-0.5">
@@ -2653,6 +2653,7 @@ function SwipeCard({ place, isTop, depth, dayIndex, onSwipeLeft, onSwipeRight, d
         <img
           src={place.image}
           alt={place.name}
+          referrerPolicy="no-referrer"
           className="w-full h-full object-cover"
           draggable={false}
         />

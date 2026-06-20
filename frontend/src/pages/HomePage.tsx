@@ -973,7 +973,7 @@ export default function HomePage() {
                             onClick={() => { setSearch(null as unknown as string); setDetailPlace(p); }}
                             className="w-full flex items-center gap-3.5 p-3 rounded-2xl bg-white border border-ink-100 hover:border-brand-200 press text-left transition-all"
                           >
-                            <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover shrink-0 border border-ink-50 shadow-sm" />
+                            <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-14 h-14 rounded-xl object-cover shrink-0 border border-ink-50 shadow-sm" />
                             <div className="flex-1 min-w-0">
                               <div className="font-bold text-ink-900 text-sm truncate">{p.name}</div>
                               <div className="flex items-center gap-2 mt-1">
@@ -1067,7 +1067,7 @@ export default function HomePage() {
                   className="shrink-0 w-36 rounded-2xl border border-ink-100 overflow-hidden press hover:border-brand-200 transition-colors text-left"
                 >
                   <div className="relative h-20">
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                    <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                     <button
                       onClick={(e) => { e.stopPropagation(); removeSavedPlace(p.id); show('Removed from saved', 'info'); }}
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center press"
@@ -1724,7 +1724,7 @@ export default function HomePage() {
               <div className="overflow-y-auto no-scrollbar px-5 pb-4 space-y-2 flex-1">
                 {PLACES.slice(0, 10).map((p) => (
                   <div key={p.id} className="flex items-center gap-3 bg-white border border-ink-100 rounded-2xl p-2.5">
-                    <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                    <img src={p.image} alt={p.name} referrerPolicy="no-referrer" className="w-12 h-12 rounded-xl object-cover shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-ink-900 truncate text-sm">{p.name}</div>
                       <div className="text-xs text-ink-500 flex items-center gap-1 mt-0.5">

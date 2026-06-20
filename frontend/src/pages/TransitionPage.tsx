@@ -108,6 +108,7 @@ export default function TransitionPage() {
             <div key={p.id} className="relative">
               <img
                 src={p.image} alt={p.name}
+                referrerPolicy="no-referrer"
                 className="w-10 h-10 rounded-xl object-cover ring-2 ring-white"
               />
               <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-brand-500 text-white text-[9px] font-bold flex items-center justify-center">

@@ -41,7 +41,7 @@ export default function PlaceCard({ place, index, prevPlace, onClose, onNavigate
         <div className="w-12 h-1.5 bg-ink-200 rounded-full mx-auto mt-3" />
 
         <div className="relative h-40 mt-2">
-          <img src={place.image} alt={place.name} className="w-full h-full object-cover" />
+          <img src={place.image} alt={place.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center press">
             <X className="w-4 h-4 text-white" />
