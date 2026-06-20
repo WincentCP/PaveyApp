@@ -169,17 +169,57 @@ const TYPE_IMAGES: Record<string, string> = {
   museum:     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
 };
 
-function getPlaceImage(city: string, type: string): string {
+const FALLBACK_ATTRACTIONS = [
+  'https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1502602915892-af96e8d9f73e?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1486873249359-2731bd6dafc7?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80',
+];
+
+const FALLBACK_EATERIES = [
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
+];
+
+function getPlaceImage(city: string, type: string, placeName?: string): string {
   const cityKey = city.toLowerCase().split(',')[0].trim();
   const typeKey = TYPE_FALLBACKS[type?.toLowerCase()] ?? type?.toLowerCase() ?? 'attraction';
 
-  // Try city-specific + type
+  // Try city-specific + type first
   for (const [key, map] of Object.entries(CITY_IMAGES)) {
     if (cityKey.includes(key) || key.includes(cityKey)) {
       if (map[typeKey]) return map[typeKey];
       if (map.default) return map.default;
     }
   }
+
+  // Dynamic hash fallback to avoid "itu-itu aja"
+  if (placeName) {
+    let hash = 0;
+    for (let i = 0; i < placeName.length; i++) {
+      hash = placeName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    hash = Math.abs(hash);
+    if (typeKey === 'restaurant') {
+      return FALLBACK_EATERIES[hash % FALLBACK_EATERIES.length];
+    }
+    return FALLBACK_ATTRACTIONS[hash % FALLBACK_ATTRACTIONS.length];
+  }
+
   // Fall back to type-only
   return TYPE_IMAGES[typeKey] ?? TYPE_IMAGES.attraction;
 }
@@ -987,6 +1027,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const d = item.day_number || 1;
           if (!daysMap[d]) daysMap[d] = [];
           
+          // Local matching to PLACES database
+          const nameLower = (item.name || '').toLowerCase().trim();
+          const localMatch = PLACES.find(p => p.name.toLowerCase().trim() === nameLower)
+            || PLACES.find(p => nameLower.includes(p.name.toLowerCase()) || p.name.toLowerCase().includes(nameLower));
+
           const p: Place = {
             id: `ai-${item.step || Math.random().toString(36).slice(2, 6)}-${d}-${Date.now()}`,
             city: targetCity,
@@ -994,19 +1039,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
             category: item.type === 'restaurant' ? 'Foodie' : 'Cultural',
             tags: [item.type || 'destination'],
             vibes: [vibe],
-            image: item.image || getPlaceImage(targetCity, item.type || 'attraction'),
-            cost: item.cost ?? item.price ?? 0,
-            priceRange: { min: item.cost ?? item.price ?? 0, max: item.cost ?? item.price ?? 0 },
-            durationMin: item.duration_spent_minutes || 60,
-            distanceKm: item.travel_time_to_next_minutes ? (item.travel_time_to_next_minutes * 0.4) : 0.5,
-            lat: typeof item.latitude === 'number' && item.latitude !== 0 ? item.latitude : (item.latitude ? parseFloat(item.latitude) : 0),
-            lng: typeof item.longitude === 'number' && item.longitude !== 0 ? item.longitude : (item.longitude ? parseFloat(item.longitude) : 0),
-            rating: item.rating !== undefined && item.rating !== null ? item.rating : 4.5,
-            description: item.activity_todo || 'Explore the location',
-            openingHours: '09:00 – 21:00',
-            indoor: false,
-            openHour: 9,
-            closeHour: 21,
+            image: item.image || localMatch?.image || getPlaceImage(targetCity, item.type || 'attraction', item.name),
+            cost: item.cost ?? item.price ?? localMatch?.cost ?? 0,
+            priceRange: { 
+              min: item.cost ?? item.price ?? localMatch?.priceRange.min ?? 0, 
+              max: item.cost ?? item.price ?? localMatch?.priceRange.max ?? 0 
+            },
+            durationMin: item.duration_spent_minutes || localMatch?.durationMin || 60,
+            distanceKm: item.travel_time_to_next_minutes ? (item.travel_time_to_next_minutes * 0.4) : (localMatch?.distanceKm || 0.5),
+            lat: typeof item.latitude === 'number' && item.latitude !== 0 ? item.latitude : (item.latitude ? parseFloat(item.latitude) : (localMatch?.lat ?? 0)),
+            lng: typeof item.longitude === 'number' && item.longitude !== 0 ? item.longitude : (item.longitude ? parseFloat(item.longitude) : (localMatch?.lng ?? 0)),
+            rating: item.rating !== undefined && item.rating !== null ? item.rating : (localMatch?.rating ?? 4.5),
+            description: item.activity_todo || localMatch?.description || 'Explore the location',
+            openingHours: localMatch?.openingHours || '09:00 – 21:00',
+            indoor: localMatch?.indoor || false,
+            openHour: localMatch?.openHour || 9,
+            closeHour: localMatch?.closeHour || 21,
           };
           daysMap[d].push(p);
         });

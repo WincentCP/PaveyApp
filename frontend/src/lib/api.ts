@@ -1,4 +1,6 @@
-const BASE_URL = 'https://siilvered-pavey-backend.hf.space';
+const BASE_URL = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:8000'
+  : 'https://siilvered-pavey-backend.hf.space';
 
 let apiToken: string | null = null;
 

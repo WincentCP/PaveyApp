@@ -945,7 +945,7 @@ export default function GeneratePage() {
                                   setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
                                 }}
                                 showConnector={i < displayItinerary.length - 1}
-                                nextDistanceKm={displayItinerary[i + 1]?.distanceKm}
+                                nextDistanceKm={p.distanceKm}
                                 connectorFromTime={getTime(p.id, i)}
                                 connectorDurationMin={p.durationMin} 
                                 effectiveCurrency={effectiveCurrency}
@@ -1096,7 +1096,7 @@ export default function GeneratePage() {
                               setStopTimes((prev) => ({ ...prev, [p.id]: newTime }));
                             }}
                             showConnector={i < manualStops.length - 1}
-                            nextDistanceKm={manualStops[i + 1]?.distanceKm}
+                            nextDistanceKm={p.distanceKm}
                             connectorFromTime={getTime(p.id, i)}
                             connectorDurationMin={p.durationMin}
                             effectiveCurrency={effectiveCurrency}
