@@ -1,6 +1,6 @@
 # Pavey — Trip Planning App
 
-**Pavey** is a mobile-first travel planning app that generates personalized day-by-day itineraries, handles multi-city trips with automatic travel days, and links trip planning to a built-in expense wallet. Originally built as a frontend-only prototype, it is now powered by a robust multi-service architecture featuring a React PWA frontend, a FastAPI backend orchestrator connecting to Supabase, and a Python FastAPI AI Core microservice handling cosine-similarity RAG search, weather checks, and Llama LLM generation.
+**Pavey** is a mobile-first travel planning app that generates personalized day-by-day itineraries for popular destinations and links trip planning to a built-in expense wallet. Originally built as a frontend-only prototype, it is now powered by a robust multi-service architecture featuring a React PWA frontend, a FastAPI backend orchestrator connecting to Supabase, and a Python FastAPI AI Core microservice handling cosine-similarity RAG search, weather checks, and Llama LLM generation.
 
 ---
 
@@ -24,7 +24,6 @@ The FastAPI backend that integrates databases, handles external APIs, and manage
   * **Google Places Enrichment**: Concurrently fetches real coordinates (latitude/longitude), reviews, ratings, and maps pricing level to IDR.
   * **Duplicate-Free Generation Routing**: Tracks itinerary state and injects `exclude_names` lists to prevent duplicates.
   * **Receipt OCR Parsing**: Uses PaddleOCR to extract receipt data and automatically parse them into wallet expenses.
-  * **Social Media Parser**: Leverages Gemini to parse itinerary links and travel promo texts directly into structured day plans.
   * **TinTin AI Secure Router**: Protects internal credentials and API architecture context with strict system prompt limits.
 
 ### 3. 🧠 AI Core Engine ([ai-core/](file:///d:/PaveyApp/ai-core))
@@ -98,17 +97,17 @@ docker compose up -d --build ai-core-api
 6. [Home Flow & Intent Sheet](#6-home-flow--intent-sheet)
 7. [Destination Input](#7-destination-input)
 8. [Date Selection](#8-date-selection)
-9. [Multi-City Flow](#9-multi-city-flow)
+9. [Single-City Flow](#9-single-city-flow)
 10. [Validation Flow](#10-validation-flow)
 11. [Itinerary Generation](#11-itinerary-generation)
-12. [Travel-Day Logic](#12-travel-day-logic)
+12. [Travel-Day Logic (Deprecated)](#12-travel-day-logic-deprecated)
 13. [GeneratePage — Review & Edit](#13-generatepage--review--edit)
 14. [Recommendation Adding Flow](#14-recommendation-adding-flow)
 15. [Trip Confirmation & Wallet Linkage](#15-trip-confirmation--wallet-linkage)
 16. [Editing an Existing Trip](#16-editing-an-existing-trip)
 17. [Density / Tight-Day Detection](#17-density--tight-day-detection)
 18. [Warnings & Friction States](#18-warnings--friction-states)
-19. [Regional Clustering Logic](#19-regional-clustering-logic)
+19. [Regional Clustering Logic (Deprecated)](#19-regional-clustering-logic-deprecated)
 20. [Itinerary Constraints & Pacing Rules](#20-itinerary-constraints--pacing-rules)
 21. [Wallet Module](#21-wallet-module)
 22. [State Management & Persistence](#22-state-management--persistence)
@@ -324,13 +323,9 @@ PACE (relaxed / balanced / fast)
 
 While the destination input is focused and empty, the placeholder cycles every 2.5 seconds through three copy variants from `COPY.destInput.placeholders`. This teaches new users that both city names and country names are valid input without a tooltip or help text.
 
-### Multi-city hint
+### City Hint
 
-When `destinations.length > 1`, a muted line appears below the destination row:
-
-> "We'll add travel days automatically between cities."
-
-This sets expectations before generation so travel days are not a surprise.
+The intent sheet allows inputting one city at a time. If the user types a country, an inline hint guides them to a starting city (e.g., typing "Japan" will suggest starting with "Tokyo").
 
 ---
 
@@ -410,49 +405,14 @@ The calendar is wrapped in a collapsible disclosure in the intent sheet so the s
 
 ---
 
-## 9. Multi-City Flow
+## 9. Single-City Flow
 
-Multi-city is enabled any time `destinations.length > 1` in AppContext.
+To ensure high-quality local recommendations, accurate weather rerouting, and consistent distance calculations, the application focus has been locked to a single-city trip planning flow.
 
-### How multi-city affects the intent sheet
-
-When the user has multiple destinations set, `handleIntentConfirm` collects destination names from the `destinations` array rather than the single `intentDest` text field:
-
-```ts
-const journeyCitiesNow = destinations.length > 0
-  ? destinations.map((d) => d.name)
-  : [intentDest].filter(Boolean);
-```
-
-### How multi-city affects generation
-
-`buildFullItinerary` passes all destinations to `generateItinerary()` in `src/lib/itinerary.ts`. The engine calls `allocateDays()` which inserts exactly **one travel day between each adjacent destination pair**. This is automatic and invisible to the user until they see the generated plan.
-
-### Day allocation across cities
-
-`allocateDays()` distributes the total trip days proportionally across destinations:
-
-1. Calculates a weight for each destination: `departDate - arriveDate` span if both are set; otherwise `dest.days` (default 1).
-2. Subtracts `destinations.length - 1` days for travel days to get `planDays`.
-3. Distributes `planDays` proportionally using the weights, with a floor of 1 per destination.
-4. Reconciles the sum to exactly `planDays` using a round-robin correction loop.
-5. Inserts travel days between each adjacent pair in the final `DayPlan[]` array.
-
-### Destination switching on the dashboard
-
-When `activeDestIdx` changes (user taps a destination tab), AppContext:
-1. Loads the stored `itinerary` for that destination into the global `itinerary` slice.
-2. When `itinerary` changes, saves it back to the active destination's stored itinerary.
-
-AppContext also auto-advances `activeDestIdx` based on today's date — if today falls within a destination's `arriveDate`/`departDate` window, that destination becomes active automatically.
-
-### Currency switching
-
-When the active destination changes and its currency differs from the active wallet trip's currency, a non-blocking amber banner appears:
-
-> "You're now in Bangkok · Switch wallet to THB?"
-
-The user can accept or dismiss. This is purely informational — the wallet currency is independent of the plan.
+### Onboarding & Creation Flow
+- The user selects or types a single destination city (e.g. Bali, Jakarta, Tokyo).
+- A single itinerary is generated for the duration of the trip within that city context.
+- This prevents travel-fatigue schedules and ensures data database matches remain highly relevant.
 
 ---
 
@@ -602,32 +562,9 @@ Results are shuffled using `dayIndex` as a seed offset to produce different sugg
 
 ---
 
-## 12. Travel-Day Logic
+## 12. Travel-Day Logic (Deprecated)
 
-Travel days are a first-class day type in the engine. They exist as entries in `DayPlan[]` with `kind: 'travel'`.
-
-### Insertion rule
-
-`allocateDays()` inserts exactly **one travel day between each adjacent destination pair**:
-
-```
-Tokyo (3 days)  →  [travel day]  →  Kyoto (2 days)  →  [travel day]  →  Osaka (2 days)
-```
-
-For a 7-day trip across Tokyo → Kyoto → Osaka: 7 total − 2 travel = 5 plan days, distributed proportionally.
-
-### Travel day content
-
-Travel days are intentionally left empty (`days.push([])`). GeneratePage renders these as an `EmptyDayCard` with:
-
-- A label like "Travel day — Tokyo to Kyoto"
-- A soft copy line: "A relaxed day to move between cities. Explore the train station or rest up."
-
-**Why empty?** Scheduling stops on a travel day creates unrealistic plans — the user is on a train or at an airport. An empty card with a label is more honest than filling it with nearby airport cafes.
-
-### Recovery day
-
-The day immediately after a travel day gets one fewer scheduled stop (`prevWasTravel && max > 1 → max -= 1`). Arriving in a new city typically means settling in, not running a full itinerary from 9 AM.
+With the single-city destination flow lock, travel-day logic has been deprecated. Itineraries generated focus fully on active days within the selected destination.
 
 ---
 
@@ -803,19 +740,15 @@ Returns at most one major and one secondary banner. Priority ladder (highest fir
 
 | Key | Condition | Copy |
 |---|---|---|
-| `chaos-regions` | ≥3 distinct regions AND days ≤ regions × 4 | "N regions in N days can feel scattered…" |
-| `chaos-cities` | ≥2 regions AND ≥4 cities AND ratio < 2 days/city | "Lots of cities across regions…" |
 | `duration-over-20` | 21–30 days | "That's a longer trip — near our 30-day limit…" |
-| `ratio-under-1` | cities > 1 AND days < cities | "Each city needs at least a day…" |
 
 **Secondary banners (independent of major):**
 
 | Key | Condition | Copy |
 |---|---|---|
 | `duration-14-20` | 14–20 days | "Longer trips work best grouped by region…" |
-| `ratio-1-to-2` | cities > 1 AND 1 ≤ days/city < 2 | "Less than 2 days per city — it'll feel a bit fast." |
 
-These banners render as amber/yellow strips in the intent sheet with action chips ("Keep only Southeast Asia", "Remove a city"). The user can dismiss or act. They do not prevent plan generation.
+These banners render as amber/yellow strips in the intent sheet. The user can dismiss or act. They do not prevent plan generation. Legacy multi-city warnings (`chaos-regions`, `chaos-cities`, `ratio-under-1`, `ratio-1-to-2`) are deprecated with the single-city flow.
 
 ### GeneratePage density banner
 
@@ -833,32 +766,9 @@ When a new plan's dates overlap with the current active trip, a soft confirmatio
 
 ---
 
-## 19. Regional Clustering Logic
+## 19. Regional Clustering Logic (Deprecated)
 
-**File:** `src/data/regions.ts`
-
-The region system supports the chaos-detection banners and loading screen messages.
-
-### Region lookup
-
-`getRegion(cityName)` does a fuzzy substring match on the lowercased input against a known keyword table. For example, `"Bangkok, Thailand"` matches the key `"bangkok"` → `'Southeast Asia'`.
-
-9 regions are supported: Southeast Asia, East Asia, South Asia, Europe, North America, Oceania, Middle East, Latin America, Africa.
-
-Cities not in the table return `null`. Unknown cities are silently skipped in chaos detection (they do not count as a distinct region — this is conservative and avoids false positives for unsupported cities).
-
-### Region functions
-
-```ts
-getRegion(cityName): Region | null
-countDistinctRegions(destNames: string[]): number
-suggestPrimaryRegion(destNames: string[]): Region | null  // modal region, ties by first-seen order
-filterDestinationsByRegion(destinations, region): Destination[]
-```
-
-`suggestPrimaryRegion` picks the most-represented region in the destination list. Used by chaos banners to offer a "Keep only [Southeast Asia]" action chip.
-
-`filterDestinationsByRegion` returns the subset of destinations in that region. Called when the user taps the "Keep only" chip in an intent banner.
+With the lock to single-city trip generation, multi-city regional clustering and region fuzzy lookups have been deprecated.
 
 ---
 
@@ -869,19 +779,12 @@ filterDestinationsByRegion(destinations, region): Destination[]
 | Constraint | Value | Enforced by |
 |---|---|---|
 | Maximum trip duration | 30 days | `TripTooLongModal`, URL safety net in GeneratePage |
-| Maximum destinations | 6 | `MAX_DESTINATIONS` constant in HomePage |
-| Minimum 1 day per destination | 1 | `allocateDays` floor |
-| Cities > days | blocked | `isOverDense()` field error |
 
 ### Soft constraints (advisory only)
 
 | Scenario | Suggestion |
 |---|---|
-| ≥ 3 regions in a short window | Focus on one area |
-| ≥ 4 cities across regions, < 2 days each | Narrow to one region |
 | 21–30 day trip | Consider splitting into smaller plans |
-| < 2 days per city (multi-city) | Add more days |
-| 14–20 day trip | Group by region |
 | Day > 5 stops / > 30 km / > 10 h | Density warning, offer pace switch |
 
 ### Place deduplication
