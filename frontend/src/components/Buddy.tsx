@@ -75,7 +75,7 @@ function RichBlock({ msg }: { msg: ChatMsg }) {
       <>
       {/* Map on TOP of the list */}
       <MapView places={r.places} className="mb-2" />
-      <PlaceList places={r.places} showIndex={r.type === 'places'} />
+      <PlaceList places={r.places} showIndex={r.type === 'places'} city={r.city} />
       </>
     )}
 

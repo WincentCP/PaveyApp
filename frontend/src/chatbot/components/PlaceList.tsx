@@ -1,6 +1,6 @@
 import { MapPin, Star, Clock, ExternalLink, Plus, X } from 'lucide-react';
 import type { ChatPlace } from '../types';
-import { useApp } from '../../context/AppContext';
+import { useApp, getPlaceImage } from '../../context/AppContext';
 import { useToast } from '../../components/Toast';
 import { useState } from 'react';
 
@@ -28,9 +28,11 @@ const TYPE_BG: Record<string, string> = {
 export default function PlaceList({
     places,
     showIndex = false,
+    city,
 }: {
     places: ChatPlace[];
     showIndex?: boolean;
+    city?: string;
 }) {
     const { addStop, perDayItineraries, activeTrip, vibe } = useApp();
     const { show } = useToast();
@@ -39,15 +41,16 @@ export default function PlaceList({
     if (!places.length) return null;
 
     const convertChatPlaceToPlace = (cp: ChatPlace): any => {
-        const defaultImage = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80';
+        const currentCity = city || activeTrip?.destination?.split(' → ')[0] || '';
+        const placeImg = getPlaceImage(currentCity, cp.type, cp.name);
         return {
             id: `ai-chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            city: activeTrip?.destination?.split(' → ')[0] || '',
+            city: currentCity,
             name: cp.name,
             category: cp.type === 'restaurant' ? 'Foodie' : cp.type === 'hotel' ? 'Cozy' : 'Cultural',
             tags: [cp.type],
             vibes: [vibe || 'balanced'],
-            image: defaultImage,
+            image: placeImg,
             cost: 0,
             priceRange: { min: 0, max: 0 },
             durationMin: cp.type === 'restaurant' ? 90 : cp.type === 'hotel' ? 120 : 60,
@@ -120,27 +123,37 @@ export default function PlaceList({
                             </div>
                         )}
 
-                        {/* Coloured header strip */}
-                        <div className={`bg-gradient-to-br ${grad} px-3 pt-3 pb-4 relative`}>
-                            <div className="flex items-center justify-between">
-                                <span className="text-2xl">{TYPE_EMOJI[p.type] ?? '📍'}</span>
-                                {showIndex && (
-                                    <span className="w-6 h-6 rounded-full bg-white/20 backdrop-blur text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-white/30">
-                                        {i + 1}
-                                    </span>
+                        {/* Card image header */}
+                        <div className="h-28 relative overflow-hidden flex flex-col justify-end p-3 animate-in fade-in duration-300">
+                            <img 
+                                src={getPlaceImage(city || activeTrip?.destination?.split(' → ')[0] || '', p.type, p.name)} 
+                                alt={p.name} 
+                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                            />
+                            {/* Dark gradient overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-ink-950/80 via-ink-950/40 to-transparent" />
+                            
+                            <div className="relative z-10 flex flex-col gap-1 w-full">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm bg-white/90 backdrop-blur rounded px-1.5 py-0.5 leading-none shadow-sm">{TYPE_EMOJI[p.type] ?? '📍'}</span>
+                                    {showIndex && (
+                                        <span className="w-5 h-5 rounded-full bg-brand-500 text-white text-[10px] font-bold flex items-center justify-center ring-1 ring-white/50 shadow-sm">
+                                            {i + 1}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-white font-bold text-xs leading-tight line-clamp-2 mt-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                    {p.name}
+                                </p>
+                                {p.rating != null && (
+                                    <div className="flex items-center gap-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                                        {[1,2,3,4,5].map(s => (
+                                            <span key={s} className={`text-[8px] ${s <= Math.round(p.rating!) ? 'text-amber-400 font-bold' : 'text-white/40'}`}>★</span>
+                                        ))}
+                                        <span className="text-white text-[9px] font-bold">{p.rating.toFixed(1)}</span>
+                                    </div>
                                 )}
                             </div>
-                            <p className="text-white font-bold text-sm leading-tight mt-2 line-clamp-2">
-                                {p.name}
-                            </p>
-                            {p.rating != null && (
-                                <div className="flex items-center gap-1 mt-1">
-                                    {[1,2,3,4,5].map(s => (
-                                        <span key={s} className={`text-[8px] ${s <= Math.round(p.rating!) ? 'text-amber-300' : 'text-white/30'}`}>★</span>
-                                    ))}
-                                    <span className="text-white/90 text-[10px] font-semibold">{p.rating.toFixed(1)}</span>
-                                </div>
-                            )}
                         </div>
 
                         {/* Body */}

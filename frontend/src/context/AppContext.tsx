@@ -95,17 +95,32 @@ const CITY_IMAGES: Record<string, Record<string, string>> = {
     restaurant:  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
     market:      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',
     cafe:        'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    hotel:       'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80',
     default:     'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
   },
   jakarta: {
     restaurant:  'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
     mall:        'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+    hotel:       'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
     default:     'https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=800&q=80',
   },
   yogyakarta: {
     temple:      'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
-    restaurant:  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+    restaurant:  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    hotel:       'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80',
     default:     'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+  },
+  jogjakarta: {
+    temple:      'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+    restaurant:  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    hotel:       'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+  },
+  bandung: {
+    nature:      'https://images.unsplash.com/photo-1597047084897-51e81819a499?auto=format&fit=crop&w=800&q=80',
+    restaurant:  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+    hotel:       'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+    default:     'https://images.unsplash.com/photo-1626125345510-4603468eedfb?auto=format&fit=crop&w=800&q=80',
   },
   lombok: {
     beach:       'https://images.unsplash.com/photo-1562837832-7b4960bc6d10?auto=format&fit=crop&w=800&q=80',
@@ -154,6 +169,7 @@ const TYPE_FALLBACKS: Record<string, string> = {
   beach: 'beach', park: 'park', garden: 'park', nature: 'beach',
   market: 'market', mall: 'mall', shopping: 'mall',
   attraction: 'attraction', museum: 'attraction', gallery: 'attraction',
+  hotel: 'hotel', resort: 'hotel', lodging: 'hotel',
 };
 
 // Generic type fallback images (city-agnostic)
@@ -167,6 +183,7 @@ const TYPE_IMAGES: Record<string, string> = {
   mall:       'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
   attraction: 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
   museum:     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+  hotel:      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
 };
 
 const FALLBACK_ATTRACTIONS = [

@@ -85,6 +85,7 @@ export type MsgRole = 'user' | 'assistant';
 
 export interface RichContent {
     type: 'weather' | 'places' | 'travel_plan' | 'hotels';
+    city?: string;
     weather?: WeatherData;
     places?: ChatPlace[];
     plan?: TravelPlan;

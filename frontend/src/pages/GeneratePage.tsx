@@ -1231,7 +1231,7 @@ export default function GeneratePage() {
               <AnimatePresence>
                 {showCustomForm && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-4 overflow-hidden">
-                    <CustomPlaceForm onAdd={(p) => { setManualStops((prev) => [...prev, p]); setShowCustomForm(false); show(`${p.name} added`, 'success'); }} />
+                    <CustomPlaceForm city={destinations[0]?.name || activeTrip?.destination || ''} onAdd={(p) => { setManualStops((prev) => [...prev, p]); setShowCustomForm(false); show(`${p.name} added`, 'success'); }} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -2424,7 +2424,7 @@ function ItineraryItem({
 /* ── Custom Place Form ── */
 const CUSTOM_CATEGORIES = ['Restaurant', 'Café', 'Temple', 'Market', 'Beach', 'Museum', 'Park', 'Shop', 'Hotel', 'Hidden Gem', 'Other'];
 
-function CustomPlaceForm({ onAdd }: { onAdd: (p: Place) => void }) {
+function CustomPlaceForm({ onAdd, city }: { onAdd: (p: Place) => void; city: string }) {
   const [name, setName] = useState('');
   const [cost, setCost] = useState('50000');
   const [dur, setDur] = useState('60');
@@ -2452,7 +2452,27 @@ function CustomPlaceForm({ onAdd }: { onAdd: (p: Place) => void }) {
         </div>
       </div>
       <button disabled={!name.trim()} onClick={() => {
-        onAdd({ id: `custom-${Date.now()}`, city: '', name: name.trim(), category: category as import('../data/places').Category, tags: ['Custom'], vibes: ['balanced'], image: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=80', cost: Number(cost) || 0, priceRange: { min: Number(cost) || 0, max: Number(cost) || 0 }, durationMin: Number(dur) || 60, distanceKm: 1.0, lat: -8.5055, lng: 115.2620, rating: 0, description: 'Custom stop.', openingHours: 'All day', indoor: true, openHour: 0, closeHour: 24 });
+        onAdd({
+          id: `custom-${Date.now()}`,
+          city,
+          name: name.trim(),
+          category: category as import('../data/places').Category,
+          tags: ['Custom'],
+          vibes: ['balanced'],
+          image: getPlaceImage(city, category, name.trim()),
+          cost: Number(cost) || 0,
+          priceRange: { min: Number(cost) || 0, max: Number(cost) || 0 },
+          durationMin: Number(dur) || 60,
+          distanceKm: 1.0,
+          lat: -8.5055,
+          lng: 115.2620,
+          rating: 0,
+          description: 'Custom stop.',
+          openingHours: 'All day',
+          indoor: true,
+          openHour: 0,
+          closeHour: 24
+        });
       }} className="w-full h-10 rounded-xl bg-brand-500 disabled:bg-ink-300 text-white font-semibold press flex items-center justify-center gap-2">
         <Plus className="w-4 h-4" /> Add Custom Stop
       </button>

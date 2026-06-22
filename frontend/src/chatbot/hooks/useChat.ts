@@ -156,7 +156,7 @@ export function useChat(tripId?: string, initialContext?: string) {
                         type: (p.type as ChatPlace['type']) || 'destination',
                     }));
                     const enriched = city ? await enrichPlaces(raw2, city) : raw2;
-                    richContent = { type: 'places', places: enriched };
+                    richContent = { type: 'places', city, places: enriched };
                     break;
                 }
 
@@ -177,7 +177,7 @@ export function useChat(tripId?: string, initialContext?: string) {
                     const city = result.city ?? '';
                     const hotels = await searchHotels(city);
                     const enriched = city ? await enrichPlaces(hotels, city) : hotels;
-                    richContent = { type: 'hotels', places: enriched };
+                    richContent = { type: 'hotels', city, places: enriched };
                     break;
                 }
 
@@ -262,7 +262,7 @@ export function useChat(tripId?: string, initialContext?: string) {
                     type: (p.type as ChatPlace['type']) || 'destination',
                 }));
                 const enriched = await enrichPlaces(raw2, loc.city);
-                richContent = { type: 'places', places: enriched };
+                richContent = { type: 'places', city: loc.city, places: enriched };
             }
 
             updateMsg(assistantId, {
@@ -384,7 +384,7 @@ export function useChat(tripId?: string, initialContext?: string) {
                         type: (p.type as ChatPlace['type']) || 'destination',
                     }));
                     const enriched = await enrichPlaces(raw2, city);
-                    richContent = { type: 'places', places: enriched };
+                    richContent = { type: 'places', city, places: enriched };
                 }
 
                 // Also show weather card
