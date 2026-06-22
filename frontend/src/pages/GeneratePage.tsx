@@ -66,7 +66,7 @@ export default function GeneratePage() {
   // may not have settled yet if user just cancelled a different city's trip.
   const cityParam = searchParams.get('city') ?? '';
 
-  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, isAuthenticated, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, isAuthenticated, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken, deleteTrip, activeTripId } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -170,11 +170,16 @@ export default function GeneratePage() {
     setExitModalOpen(false);
     hasConfirmedTripRef.current = true;
     setHasConfirmedTrip(true);
+    const tripToDelete = activeTripId;
     // Clear stale state — if the user cancels a half-generated trip, we don't want
     // the previous city's destinations/itinerary to bleed into the next generation.
     setDestinations([]);
     setItinerary([]);
     setPerDayItineraries([]);
+    setJourneyStart({ date: 'today', time: '09:00', days: 1 });
+    if (tripToDelete !== 'default-trip' && tripToDelete !== 'trip-default') {
+      deleteTrip(tripToDelete);
+    }
     nav('/', { replace: true });
   };
 

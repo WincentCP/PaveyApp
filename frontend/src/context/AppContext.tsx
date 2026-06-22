@@ -729,17 +729,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const prevActiveTripIdRef = useRef(activeTripId);
 
   useEffect(() => {
-    if (activeTripId !== prevActiveTripIdRef.current) {
+    const targetTrip = trips.find((t) => t.id === activeTripId);
+    if (targetTrip && activeTripId !== prevActiveTripIdRef.current) {
       prevActiveTripIdRef.current = activeTripId;
-      const targetTrip = trips.find((t) => t.id === activeTripId);
-      if (targetTrip) {
-        if (targetTrip.itinerary) setItinerary(targetTrip.itinerary);
-        if (targetTrip.destinations) setDestinations(targetTrip.destinations);
-        if (targetTrip.journeyStart) setJourneyStart(targetTrip.journeyStart);
-        if (targetTrip.vibe) setVibe(targetTrip.vibe as Vibe);
-        if (targetTrip.pace) setPace(targetTrip.pace as TripPace);
-        if (targetTrip.perDayItineraries) setPerDayItineraries(targetTrip.perDayItineraries);
-      }
+      setItinerary(targetTrip.itinerary || []);
+      setDestinations(targetTrip.destinations || []);
+      setJourneyStart(targetTrip.journeyStart || { date: 'today', time: '09:00', days: 1 });
+      setVibe((targetTrip.vibe as Vibe) || 'balanced');
+      setPace((targetTrip.pace as TripPace) || 'balanced');
+      setPerDayItineraries(targetTrip.perDayItineraries || []);
     }
   }, [activeTripId, trips]);
 
@@ -1243,10 +1241,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     activeTrip,
     createTrip: createTripFn,
     deleteTrip: (id) => {
-      if (trips.length <= 1) return;
-      setTrips((prev) => prev.filter((t) => t.id !== id));
-      if (activeTripId === id) {
-        setActiveTripId(trips.find((t) => t.id !== id)?.id ?? trips[0].id);
+      const remaining = trips.filter((t) => t.id !== id);
+      if (remaining.length === 0) {
+        setTrips([DEFAULT_TRIP]);
+        setActiveTripId(DEFAULT_TRIP.id);
+      } else {
+        setTrips(remaining);
+        if (activeTripId === id) {
+          setActiveTripId(remaining[0].id);
+        }
       }
     },
     unlinkWalletFromPlan: (id) =>

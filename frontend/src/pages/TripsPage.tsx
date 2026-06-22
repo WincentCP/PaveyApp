@@ -41,7 +41,7 @@ export default function TripsPage() {
     journeyStart, setJourneyStart, perDayItineraries, setPerDayItineraries,
     pace, setPace,
     savePlace, removeSavedPlace, isSaved, setBuddyOpen,
-    trips, setActiveTripId, activeTripId, setTripName,
+    trips, setActiveTripId, activeTripId, setTripName, deleteTrip, setDestinations,
   } = useApp();
   const { show } = useToast();
 
@@ -410,7 +410,19 @@ export default function TripsPage() {
                         Cancel
                       </button>
                       <button
-                        onClick={() => { setItinerary([]); setPerDayItineraries([]); setConfirmDelete(false); setSettingsOpen(false); show('Plan deleted', 'info'); }}
+                        onClick={() => {
+                          const tripToDelete = activeTripId;
+                          setItinerary([]);
+                          setPerDayItineraries([]);
+                          setDestinations([]);
+                          setJourneyStart({ date: 'today', time: '09:00', days: 1 });
+                          if (tripToDelete !== 'default-trip' && tripToDelete !== 'trip-default') {
+                            deleteTrip(tripToDelete);
+                          }
+                          setConfirmDelete(false);
+                          setSettingsOpen(false);
+                          show('Plan deleted', 'info');
+                        }}
                         className="flex-1 h-8 rounded-lg bg-red-500 text-white text-xs font-bold press"
                       >
                         Delete plan
