@@ -233,3 +233,11 @@ export async function apiGenerateTripItinerary(tripId: string) {
   });
 }
 
+export async function apiEnrichPlaces(places: string[], city: string) {
+  return apiFetchSafe('/trips/enrich-places', {
+    method: 'POST',
+    body: JSON.stringify({ places, city }),
+  });
+}
+
+

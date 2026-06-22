@@ -42,7 +42,7 @@ export default function PlaceList({
 
     const convertChatPlaceToPlace = (cp: ChatPlace): any => {
         const currentCity = city || activeTrip?.destination?.split(' → ')[0] || '';
-        const placeImg = getPlaceImage(currentCity, cp.type, cp.name);
+        const placeImg = cp.image || getPlaceImage(currentCity, cp.type, cp.name);
         return {
             id: `ai-chat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
             city: currentCity,
@@ -51,8 +51,8 @@ export default function PlaceList({
             tags: [cp.type],
             vibes: [vibe || 'balanced'],
             image: placeImg,
-            cost: 0,
-            priceRange: { min: 0, max: 0 },
+            cost: cp.cost ?? 0,
+            priceRange: { min: cp.cost ?? 0, max: cp.cost ?? 0 },
             durationMin: cp.type === 'restaurant' ? 90 : cp.type === 'hotel' ? 120 : 60,
             distanceKm: 1.0,
             lat: cp.lat ?? 0,
@@ -126,7 +126,7 @@ export default function PlaceList({
                         {/* Card image header */}
                         <div className="h-28 relative overflow-hidden flex flex-col justify-end p-3 animate-in fade-in duration-300">
                             <img 
-                                src={getPlaceImage(city || activeTrip?.destination?.split(' → ')[0] || '', p.type, p.name)} 
+                                src={p.image || getPlaceImage(city || activeTrip?.destination?.split(' → ')[0] || '', p.type, p.name)} 
                                 alt={p.name} 
                                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                             />

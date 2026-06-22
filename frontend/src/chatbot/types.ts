@@ -27,6 +27,8 @@ export interface ChatPlace {
     priceRange?: string;
     website?: string;
     phone?: string;
+    image?: string;
+    cost?: number;
 }
 
 // ─── Itinerary ────────────────────────────────────────────────────────────────

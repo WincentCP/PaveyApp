@@ -1,4 +1,5 @@
 import type { ChatPlace } from '../types';
+import { apiEnrichPlaces } from '../../lib/api';
 
 export async function geocodeName(
     name: string,
@@ -46,25 +47,67 @@ export async function enrichPlaces(
     places: ChatPlace[],
     cityContext: string,
 ): Promise<ChatPlace[]> {
+    let enrichedMap: Record<string, { image?: string; rating?: number; cost?: number; latitude?: number; longitude?: number }> = {};
+    try {
+        const data = await apiEnrichPlaces(places.map(p => p.name), cityContext);
+        if (data && Array.isArray(data.results)) {
+            for (const item of data.results) {
+                if (item && item.name) {
+                    enrichedMap[item.name.toLowerCase().trim()] = {
+                        image: item.image || undefined,
+                        rating: item.rating || undefined,
+                        cost: item.cost || undefined,
+                        latitude: item.latitude || undefined,
+                        longitude: item.longitude || undefined,
+                    };
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[enrichPlaces] Backend enrichment failed:', err);
+    }
+
     const results: ChatPlace[] = [];
     const center = await getCityCenter(cityContext);
 
     for (let i = 0; i < places.length; i++) {
         const p = places[i];
-        let coords = await geocodeName(p.name, cityContext);
+        const key = p.name.toLowerCase().trim();
+        const enrichment = enrichedMap[key];
 
-        if (!coords && center) {
-            // Fallback: distribute places in a circle around the city center if geocoding fails.
-            const angle = (i * 2 * Math.PI) / Math.max(1, places.length);
-            const r = 0.006 + (i * 0.0015); // distribute radially
-            coords = {
-                lat: center.lat + r * Math.sin(angle),
-                lon: center.lon + r * Math.cos(angle),
-            };
+        let lat = enrichment?.latitude;
+        let lon = enrichment?.longitude;
+
+        if (lat === undefined || lon === undefined) {
+            const coords = await geocodeName(p.name, cityContext);
+            if (coords) {
+                lat = coords.lat;
+                lon = coords.lon;
+            } else if (center) {
+                const angle = (i * 2 * Math.PI) / Math.max(1, places.length);
+                const r = 0.006 + (i * 0.0015);
+                lat = center.lat + r * Math.sin(angle);
+                lon = center.lon + r * Math.cos(angle);
+            }
+            await sleep(350);
         }
 
-        results.push(coords ? { ...p, ...coords } : p);
-        await sleep(350); // stay under 1 req/sec
+        const image = enrichment?.image;
+        const rating = enrichment?.rating ?? p.rating;
+        const priceRange = enrichment?.cost !== undefined && enrichment.cost > 0 
+            ? `Rp ${enrichment.cost.toLocaleString('id-ID')}` 
+            : p.priceRange;
+        const cost = enrichment?.cost;
+
+        results.push({
+            ...p,
+            lat,
+            lon,
+            image,
+            rating,
+            priceRange,
+            cost,
+        });
     }
     return results;
 }
