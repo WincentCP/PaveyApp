@@ -18,6 +18,15 @@ import { Bot, User } from 'lucide-react'
 //     .replace(/\n/g, '<br/>')
 // }
 
+function escapeHtml(unsafe: string): string {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function renderMarkdownAndCleanJSON(text: string): string {
     let cleaned = text
         .replace(/```json[\s\S]*?```/gi, '')
@@ -31,7 +40,9 @@ function renderMarkdownAndCleanJSON(text: string): string {
         cleaned = ''
     }
 
-    return cleaned
+    const escaped = escapeHtml(cleaned)
+
+    return escaped
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/_(.*?)_/g, '<em>$1</em>')
