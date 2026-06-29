@@ -30,7 +30,7 @@ import {
   PACE_STOPS, allocateDays, generateItinerary,
   type TripPace, type DayKind, type DayPlan,
 } from '../lib/itinerary';
-import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken, apiSaveOnboarding, apiSavePlace, apiDeleteSavedPlace, apiGetSavedPlaces, apiGetUserPreferences, apiGeneratePlan, apiGenerateTripItinerary } from '../lib/api';
+import { apiGetMe, apiGetTrips, apiCreateTrip, apiAddExpense, apiGetExpenses, setApiToken, apiSaveOnboarding, apiSavePlace, apiDeleteSavedPlace, apiGetSavedPlaces, apiGetUserPreferences, apiGeneratePlan, apiGenerateTripItinerary, apiGetItinerary, apiSaveItinerary } from '../lib/api';
 import { getCityCenter, haversineKm } from '../chatbot/services/geocoding';
 
 
@@ -388,6 +388,7 @@ interface AppState {
   // doesn't fire on browsing.
   destAutoAdvanced: boolean;
   clearDestAutoAdvanced: () => void;
+  saveItineraryToBackend: (tripId: string, currentItinerary: Place[], currentPerDay: Place[][]) => Promise<void>;
 }
 
 export interface IntentDraft {
@@ -668,6 +669,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.warn("Failed to fetch expenses for active trip:", err);
       });
   }, [activeTripId, accessToken]);
+ 
+  // Load itinerary from backend for the active trip if it is a UUID
+  useEffect(() => {
+    if (!accessToken || !activeTripId) return;
+    const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
+    if (!isBackendTrip) return;
+ 
+    apiGetItinerary(activeTripId)
+      .then((res: any) => {
+        if (!res || !res.itinerary) return;
+        const daysKeys = Object.keys(res.itinerary).sort((a, b) => Number(a) - Number(b));
+        const flatItinerary: Place[] = [];
+        const perDay: Place[][] = [];
+ 
+        const targetTrip = trips.find((t) => t.id === activeTripId);
+        const targetCity = targetTrip?.destination?.split(' → ')?.[0] || '';
+ 
+        daysKeys.forEach((dayKey) => {
+          const dayItems = res.itinerary[dayKey] || [];
+          const dayPlaces: Place[] = dayItems.map((item: any) => {
+            let notes: any = {};
+            try {
+              notes = typeof item.notes === 'string' ? JSON.parse(item.notes) : (item.notes || {});
+            } catch (e) {
+              console.warn("Failed to parse notes JSON:", e);
+            }
+ 
+            return {
+              id: item.id || `db-${item.order_index}-${dayKey}-${Date.now()}`,
+              city: targetCity,
+              name: item.place_name,
+              category: item.place_type === 'restaurant' ? 'Foodie' : 'Cultural',
+              tags: [item.place_type],
+              vibes: [],
+              image: notes.image || '',
+              cost: notes.cost || 0,
+              priceRange: { min: notes.cost || 0, max: notes.cost || 0 },
+              durationMin: notes.duration_minutes || 60,
+              distanceKm: item.travel_time_to_next ? (item.travel_time_to_next * 0.4) : 0.5,
+              lat: notes.latitude || 0,
+              lng: notes.longitude || 0,
+              rating: notes.rating || 4.5,
+              description: notes.activity || 'Explore the location',
+              openingHours: '09:00 – 21:00',
+              indoor: false,
+              openHour: 9,
+              closeHour: 21,
+            };
+          });
+          perDay.push(dayPlaces);
+          flatItinerary.push(...dayPlaces);
+        });
+ 
+        // Update the trips list
+        setTrips((prev) =>
+          prev.map((t) =>
+            t.id === activeTripId
+              ? { ...t, itinerary: flatItinerary, perDayItineraries: perDay }
+              : t
+          )
+        );
+ 
+        // Also update local active state
+        setItinerary(flatItinerary);
+        setPerDayItineraries(perDay);
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch itinerary for active trip:", err);
+      });
+  }, [activeTripId, accessToken]);
+
 
   // Issue 35: persist key state to localStorage
   useEffect(() => {
@@ -792,6 +864,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return activeTrip.daysRemaining > 0 ? Math.max(0, remaining / activeTrip.daysRemaining) : 0;
   }, [activeTrip.budget, totalSpent, activeTrip.daysRemaining]);
 
+  const saveItineraryToBackend = async (tripId: string, currentItinerary: Place[], currentPerDay: Place[][]) => {
+    if (!accessToken || !tripId) return;
+    try {
+      const dbItems = currentItinerary.map((item, idx) => {
+        const notesData = JSON.stringify({
+          activity: item.description || '',
+          latitude: item.lat || 0,
+          longitude: item.lng || 0,
+          rating: item.rating || 4.5,
+          duration_minutes: item.durationMin || 60,
+          image: item.image || '',
+          cost: item.cost || 0,
+        });
+
+        let dayNumber = 1;
+        let orderIndex = idx;
+        if (currentPerDay && currentPerDay.length > 0) {
+          for (let d = 0; d < currentPerDay.length; d++) {
+            const pIdx = currentPerDay[d].findIndex((p) => p.id === item.id);
+            if (pIdx !== -1) {
+              dayNumber = d + 1;
+              orderIndex = pIdx;
+              break;
+            }
+          }
+        }
+
+        let baseMin = 9 * 60;
+        const start = baseMin + orderIndex * 90;
+        const sh = Math.floor(start / 60) % 24;
+        const sm = start % 60;
+        const startTimeStr = `${String(sh).padStart(2, '0')}:${String(sm).padStart(2, '0')}`;
+
+        const end = start + (item.durationMin || 60);
+        const eh = Math.floor(end / 60) % 24;
+        const em = end % 60;
+        const endTimeStr = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+
+        return {
+          day_number: dayNumber,
+          order_index: orderIndex,
+          place_name: item.name,
+          place_type: item.tags?.[0] || 'destination',
+          start_time: startTimeStr,
+          end_time: endTimeStr,
+          travel_time_to_next: item.distanceKm ? Math.max(1, Math.round(item.distanceKm * 3)) : 15,
+          notes: notesData,
+        };
+      });
+
+      await apiSaveItinerary(tripId, dbItems);
+      console.log("[AppContext] Successfully saved itinerary to database for trip:", tripId);
+    } catch (err) {
+      console.error("[AppContext] Failed to save itinerary to backend:", err);
+    }
+  };
+
   const createTripFn = (data: Omit<Trip, 'id' | 'transactions' | 'createdAt'>): string => {
     const id = `trip-${Math.random().toString(36).slice(2, 9)}`;
     const newTrip: Trip = {
@@ -837,6 +966,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           )
         );
         setActiveTripId((prevActive) => prevActive === id ? backendUuid : prevActive);
+        
+        // Save the itinerary to the backend!
+        saveItineraryToBackend(backendUuid, itinerary, perDayItineraries);
       })
       .catch((err) => {
         console.error("Failed to sync new trip to backend:", err);
@@ -1379,6 +1511,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIntentDraft,
     destAutoAdvanced,
     clearDestAutoAdvanced: () => setDestAutoAdvanced(false),
+    saveItineraryToBackend,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

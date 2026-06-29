@@ -240,4 +240,16 @@ export async function apiEnrichPlaces(places: string[], city: string) {
   });
 }
 
+export async function apiGetItinerary(tripId: string) {
+  return apiFetch(`/trips/${tripId}/itinerary`);
+}
+
+export async function apiSaveItinerary(tripId: string, itineraryItems: any[]) {
+  return apiFetch(`/trips/${tripId}/itinerary`, {
+    method: 'POST',
+    body: JSON.stringify(itineraryItems),
+  });
+}
+
+
 

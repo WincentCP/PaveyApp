@@ -66,7 +66,7 @@ export default function GeneratePage() {
   // may not have settled yet if user just cancelled a different city's trip.
   const cityParam = searchParams.get('city') ?? '';
 
-  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, isAuthenticated, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken, deleteTrip, activeTripId } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, isAuthenticated, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken, deleteTrip, activeTripId, saveItineraryToBackend } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
@@ -668,9 +668,19 @@ export default function GeneratePage() {
         daysRemaining: tripDays,
         linkedToPlan: true,
       });
-    } else if (!isEditMode) {
-      // Fix #5: update the active trip name to match the planned destination
-      setTripName(derivedTripName);
+    } else {
+      if (!isEditMode) {
+        // Fix #5: update the active trip name to match the planned destination
+        setTripName(derivedTripName);
+      }
+      
+      // Save/sync itinerary edits to backend for existing UUID trips
+      if (isAuthenticated && accessToken && activeTripId && activeTripId !== 'trip-default') {
+        const isBackendTrip = /^[0-9a-f-]{36}$/.test(activeTripId);
+        if (isBackendTrip) {
+          saveItineraryToBackend(activeTripId, isManualMode ? manualStops : itinerary, perDayItineraries);
+        }
+      }
     }
 
     if (isPostOnboarding) {
