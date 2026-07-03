@@ -28,8 +28,17 @@ export default function NavigatePage() {
     itinerary, navIndex, setNavIndex, markVisited, setIsNavigating, completeTrip,
     setBuddyOpen, ratePlace, markVisitedPermanent, removeStop, alternatives,
     perDayItineraries,
+    activeDay, setActiveDay,
   } = useApp();
   const { show } = useToast();
+
+  // Synchronize global activeDay with current day index in navigation
+  useEffect(() => {
+    const navDay = getDayIndex(navIndex);
+    if (navDay !== activeDay) {
+      setActiveDay(navDay);
+    }
+  }, [navIndex, activeDay]);
 
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);

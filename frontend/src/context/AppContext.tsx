@@ -389,6 +389,8 @@ interface AppState {
   destAutoAdvanced: boolean;
   clearDestAutoAdvanced: () => void;
   saveItineraryToBackend: (tripId: string, currentItinerary: Place[], currentPerDay: Place[][]) => Promise<void>;
+  activeDay: number;
+  setActiveDay: (d: number) => void;
 }
 
 export interface IntentDraft {
@@ -428,6 +430,7 @@ function loadPersistedState() {
       visitedPlaceIds?: string[];
       perDayItineraries?: Place[][];
       pace?: TripPace;
+      activeDay?: number;
     };
   } catch {
     return null;
@@ -457,11 +460,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [journeyStart, setJourneyStart] = useState(persisted?.journeyStart ?? { date: 'today', time: '09:00', days: 1 });
   const [perDayItineraries, setPerDayItineraries] = useState<Place[][]>(persisted?.perDayItineraries ?? []);
   const [perDayMeta, setPerDayMeta] = useState<DayPlan[]>([]);
+  const [activeDay, setActiveDay] = useState(persisted?.activeDay ?? 0);
 
   // Multi-destination
   const [destinations, setDestinations] = useState<Destination[]>(persisted?.destinations ?? []);
   const [activeDestIdx, setActiveDestIdx] = useState(0);
   const [destAutoAdvanced, setDestAutoAdvanced] = useState(false);
+
+  // Reset activeDay when active destination changes
+  useEffect(() => {
+    setActiveDay(0);
+  }, [activeDestIdx]);
 
   // Intent-sheet draft for state restoration on Edit-trip navigation.
   // Session-only — not persisted to localStorage.
@@ -752,9 +761,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         visitedPlaceIds: Array.from(visitedPlaceIds),
         perDayItineraries,
         pace,
+        activeDay,
       }));
     } catch { /* storage full — ignore */ }
-  }, [isAuthenticated, authUser, onboardingComplete, everOnboarded, accessToken, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds, perDayItineraries, pace]);
+  }, [isAuthenticated, authUser, onboardingComplete, everOnboarded, accessToken, vibe, budget, itinerary, savedPlaces, destinations, trips, activeTripId, journeyStart, placeRatings, visitedPlaceIds, perDayItineraries, pace, activeDay]);
 
   // Per-destination itinerary sync:
   // When activeDestIdx changes, load that destination's itinerary into global state.
@@ -1512,6 +1522,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     destAutoAdvanced,
     clearDestAutoAdvanced: () => setDestAutoAdvanced(false),
     saveItineraryToBackend,
+    activeDay,
+    setActiveDay,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

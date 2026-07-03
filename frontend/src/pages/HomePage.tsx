@@ -108,10 +108,11 @@ export default function HomePage() {
     trips, createTrip, setActiveTripId, setTripName,
     intentDraft, setIntentDraft, destAutoAdvanced, clearDestAutoAdvanced,
     setNavIndex, setBuddyOpen,
+    activeDay, setActiveDay,
   } = useApp();
 
   // ── Trip state logic ──────────────────────────────────────────
-  const todayStops = perDayItineraries.length > 0 ? (perDayItineraries[0] ?? []) : itinerary;
+  const todayStops = perDayItineraries.length > 0 ? (perDayItineraries[activeDay] ?? []) : itinerary;
   const hasTodayPlan = todayStops.length > 0;
   const activeDest = destinations[activeDestIdx];
   const nextDest = destinations[activeDestIdx + 1];
@@ -247,21 +248,14 @@ export default function HomePage() {
 
   // UI1 — Day header computation
   const dayHeaderInfo = useMemo(() => {
-    let dayNum = 1;
+    const dayNum = activeDay + 1;
     let dateStr = '';
-    if (journeyStart.date === 'today') {
-      const today = new Date();
-      dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    } else {
-      const start = new Date(journeyStart.date);
-      const today = new Date();
-      const diff = Math.floor((today.getTime() - start.getTime()) / 86400000);
-      dayNum = Math.max(1, diff + 1);
-      dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    }
+    const start = journeyStart.date === 'today' ? new Date() : new Date(journeyStart.date);
+    const currentDayDate = new Date(start.getTime() + activeDay * 86400000);
+    dateStr = currentDayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
     const cityName = activeDest?.name?.split(',')[0] ?? 'Your Trip';
     return { dayNum, dateStr, cityName };
-  }, [journeyStart, activeDest]);
+  }, [journeyStart, activeDest, activeDay]);
 
   // UI4 — Budget Pulse
   const budgetPulseInfo = useMemo(() => {
@@ -570,7 +564,21 @@ export default function HomePage() {
                     <span className="truncate">{activeTrip.name || `${dayHeaderInfo.cityName} Trip`}</span>
                   </h2>
                   <p className="text-xs text-ink-500 mt-1 flex items-center gap-1.5 font-medium">
-                    <span>Day {dayHeaderInfo.dayNum} of {activeTrip.daysTotal || destinations.length}</span>
+                    <span className="flex items-center gap-1">
+                      <span>Day</span>
+                      <select
+                        value={activeDay}
+                        onChange={(e) => setActiveDay(Number(e.target.value))}
+                        className="bg-brand-50 text-brand-700 font-bold px-1.5 py-0.5 rounded-lg border border-brand-100 outline-none text-xs cursor-pointer press"
+                      >
+                        {Array.from({ length: activeTrip.daysTotal || destinations.length || 1 }).map((_, i) => (
+                          <option key={i} value={i}>
+                            {i + 1}
+                          </option>
+                        ))}
+                      </select>
+                      <span>of {activeTrip.daysTotal || destinations.length}</span>
+                    </span>
                     <span className="text-ink-300">•</span>
                     <span className="truncate">{dayHeaderInfo.cityName}</span>
                   </p>

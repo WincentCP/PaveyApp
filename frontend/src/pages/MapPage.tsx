@@ -52,10 +52,10 @@ export default function MapPage() {
     destinations, activeDestIdx, setActiveDestIdx, activeTrip,
     vibe, setVibe, budget, setBudget, setBuddyOpen,
     perDayItineraries, journeyStart,
+    activeDay, setActiveDay,
   } = useApp();
   const { show } = useToast();
 
-  const [activeMapDay, setActiveMapDay] = useState(0);
   const [selected, setSelected] = useState<Place | null>(null);
   const [walletPromptVisible, setWalletPromptVisible] = useState(false);
 
@@ -81,10 +81,8 @@ export default function MapPage() {
     ? perDayItineraries.length
     : (journeyStart.days > 1 ? journeyStart.days : 0);
   const activeItinerary = perDayItineraries.length > 0
-    ? (perDayItineraries[activeMapDay] ?? [])
+    ? (perDayItineraries[activeDay] ?? [])
     : itinerary;
-
-  useEffect(() => { setActiveMapDay(0); }, [activeDestIdx]);
 
   const totals = useMemo(() => {
     const cost = activeItinerary.reduce((s, p) => s + p.cost, 0);
@@ -116,7 +114,7 @@ export default function MapPage() {
         icon={Map}
         title="Map"
         sub={dayCount > 1
-          ? `${destinations[activeDestIdx]?.name.split(',')[0] ?? 'My Trip'} · Day ${activeMapDay + 1} · ${activeItinerary.length} stops`
+          ? `${destinations[activeDestIdx]?.name.split(',')[0] ?? 'My Trip'} · Day ${activeDay + 1} · ${activeItinerary.length} stops`
           : destinations.length > 0
             ? `${destinations[activeDestIdx]?.name.split(',')[0] ?? 'My Trip'} · ${activeItinerary.length} stops`
             : `${activeItinerary.length} stop${activeItinerary.length !== 1 ? 's' : ''}`}
@@ -161,9 +159,9 @@ export default function MapPage() {
               return (
                 <button
                   key={i}
-                  onClick={() => setActiveMapDay(i)}
+                  onClick={() => setActiveDay(i)}
                   className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold press whitespace-nowrap transition-colors ${
-                    activeMapDay === i ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
+                    activeDay === i ? 'bg-brand-500 text-white' : 'bg-ink-50 text-ink-700 border border-ink-100'
                   }`}
                 >
                   {`Day ${i + 1}${dateStr}`}

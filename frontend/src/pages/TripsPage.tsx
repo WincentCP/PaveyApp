@@ -42,10 +42,9 @@ export default function TripsPage() {
     pace, setPace,
     savePlace, removeSavedPlace, isSaved, setBuddyOpen,
     trips, setActiveTripId, activeTripId, setTripName, deleteTrip, setDestinations,
+    activeDay, setActiveDay,
   } = useApp();
   const { show } = useToast();
-
-  const [activeDay, setActiveDay] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
@@ -230,17 +229,22 @@ export default function TripsPage() {
                   ? ` · ${dayTabDate(journeyStart.date, i)}`
                   : '';
                 const label = `Day ${i + 1}${dateStr}`;
+                const isCompleted = i < activeDay;
                 return (
                   <button
                     key={i}
                     onClick={() => setActiveDay(i)}
-                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors ${
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold press transition-colors flex items-center gap-1.5 ${
                       activeDay === i
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-ink-50 text-ink-700 border border-ink-100'
+                        ? 'bg-brand-500 text-white shadow-glow'
+                        : isCompleted
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                          : 'bg-ink-50 text-ink-700 border border-ink-100'
                     }`}
                   >
-                    {label}
+                    {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                    <span>{label}</span>
+                    {isCompleted && <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/80">(Done)</span>}
                   </button>
                 );
               })}

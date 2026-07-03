@@ -66,7 +66,7 @@ export default function GeneratePage() {
   // may not have settled yet if user just cancelled a different city's trip.
   const cityParam = searchParams.get('city') ?? '';
 
-  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, isAuthenticated, signIn, createTrip, setActiveTripId, setTripName, trips, budget, setAccessToken, deleteTrip, activeTripId, saveItineraryToBackend } = useApp();
+  const { vibe, buildItinerary, buildFullItinerary, loadingPlan, setItinerary, itinerary, perDayItineraries, setPerDayItineraries, perDayMeta, removeStop, replaceStop, addStop, reorderStop, alternatives, activeTrip, journeyStart, setJourneyStart, pace, setPace, destinations, setDestinations, authUser, isAuthenticated, signIn, createTrip, setActiveTripId, setTripName, trips, budget, accessToken, setAccessToken, deleteTrip, activeTripId, saveItineraryToBackend } = useApp();
   const paceParam = searchParams.get('pace');
   const { show } = useToast();
 
