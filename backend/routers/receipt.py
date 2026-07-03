@@ -102,17 +102,40 @@ _DATE_PAT     = re.compile(
 )
 _TOTAL_KEYS   = {
     "subtotal"       : r"sub\s*total|sub-total|subtotal",
-    "tax"            : r"tax|vat|ppn|pajak",
+    "tax"            : r"tax|vat|ppn|pajak|pb1",
     "service_charge" : r"service\s*charge|service|servis",
     "discount"       : r"disc|diskon|discount|promo",
     "grand_total"    : r"grand\s*total|total\s*bayar|total\s*bill|amount\s*due|total",
 }
 _SKIP_LINES   = re.compile(
-    r"receipt|struk|invoice|faktur|kasir|cashier|thank|terima\s*kasih"
-    r"|wifi|password|phone|telp|address|alamat|website|www\.|http"
-    r"|no\.\s*meja|table\s*no|order\s*#|order\s*id",
+    r"receipt|struk|invoice|faktur|kasir|cashier|thank|terima\s*kasih|thank\s*you|selamat\s*jalan|please\s*come|kunjungan"
+    r"|wifi|password|phone|telp|address|alamat|website|www\.|http|email|fax|rt/rw|kelurahan|kecamatan"
+    r"|no\.\s*meja|table\s*no|order\s*#|order\s*id|pax|pelayan|waiter|waitress"
+    r"|sub\s*total|subtotal|tax|vat|ppn|pajak|service\s*charge|service|servis|charge|disc|diskon|discount|promo|grand\s*total|total|amount\s*due|pb1"
+    r"|tunai|cash|kembali|change|kembalian|bayar|payment|debit|credit|card|kartu|visa|mastercard|jcb|amex|bca|mandiri|bni|bri|cimb|gopay|ovo|dana|linkaja|shopeepay|qris"
+    r"|edc|settlement|approval|auth\s*code|trace|batch|mid|tid|merchant\s*id|terminal\s*id"
+    r"|npwp|tax\s*id|customer\s*copy|merchant\s*copy|duplicate|salinan"
+    r"|pembulatan|rounding|tendered"
+    r"|jl\.|jalan|no\.\s*\d+|no\s*\d+",
     re.IGNORECASE
 )
+_ADDRESS_PAT = re.compile(r"\b(jl|jalan|no\b\.?\s*\d+)\b", re.IGNORECASE)
+
+
+def clean_json_string(s: str) -> str:
+    s = s.strip()
+    if s.startswith("```"):
+        first_newline = s.find("\n")
+        if first_newline != -1:
+            s = s[first_newline:].strip()
+        if s.endswith("```"):
+            s = s[:-3].strip()
+    
+    start_idx = s.find("{")
+    end_idx = s.rfind("}")
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        s = s[start_idx:end_idx + 1]
+    return s
 
 
 def _detect_currency(lines: List[str]) -> str:
@@ -205,6 +228,14 @@ def parse_receipt_from_ocr(raw_text: str) -> dict:
                 if nums:
                     totals[key] = parse_price(nums[-1])
                     total_line_indices.add(i)
+                else:
+                    # Cek baris berikutnya jika ada angka harga saja
+                    if i + 1 < len(lines):
+                        next_line = lines[i + 1]
+                        if _PRICE_ONLY.match(next_line):
+                            totals[key] = parse_price(next_line)
+                            total_line_indices.add(i)
+                            total_line_indices.add(i + 1)
                 break
 
     # ── Parse item ────────────────────────────────────────────────────────
@@ -218,9 +249,13 @@ def parse_receipt_from_ocr(raw_text: str) -> dict:
             continue
         if _SKIP_LINES.search(line):
             continue
-        if _DATE_PAT.match(line):
+        if _ADDRESS_PAT.search(line):
+            continue
+        if _DATE_PAT.search(line):
             continue
         if line == merchant:
+            continue
+        if "selamat" in line.lower() or "datang" in line.lower():
             continue
 
         # Pattern: "Nama Item    15000"
@@ -238,8 +273,11 @@ def parse_receipt_from_ocr(raw_text: str) -> dict:
                 pending_qty  = qty
                 continue
 
-            # Filter nama yang terlalu pendek atau hanya angka
-            if len(name) < 2 or re.match(r"^\d+$", name):
+            # Filter nama yang terlalu pendek, hanya angka, atau mengandung skip/address patterns
+            if len(name) < 2 or re.match(r"^\d+$", name) or _SKIP_LINES.search(name) or _ADDRESS_PAT.search(name):
+                continue
+
+            if currency == "IDR" and price < 100:
                 continue
 
             total_price = price * qty
@@ -259,6 +297,10 @@ def parse_receipt_from_ocr(raw_text: str) -> dict:
         if m_price_only and pending_name:
             price = parse_price(m_price_only.group(1))
             if price > 0:
+                if currency == "IDR" and price < 100:
+                    pending_name = None
+                    pending_qty = 1
+                    continue
                 items.append({
                     "item_id": item_id,
                     "item_name": pending_name,
@@ -277,6 +319,10 @@ def parse_receipt_from_ocr(raw_text: str) -> dict:
             qty   = int(m_qty.group(1))
             price = parse_price(m_qty.group(2))
             if price > 0 and pending_name:
+                if currency == "IDR" and price < 100:
+                    pending_name = None
+                    pending_qty = 1
+                    continue
                 items.append({
                     "item_id": item_id,
                     "item_name": pending_name,
@@ -291,8 +337,9 @@ def parse_receipt_from_ocr(raw_text: str) -> dict:
 
         # Baris nama saja (tidak ada harga) → simpan sebagai pending
         if not _PRICE_ONLY.match(line) and len(line) > 2 and not re.match(r"^\d+$", line):
-            pending_name = line
-            pending_qty  = 1
+            if not _SKIP_LINES.search(line) and not _ADDRESS_PAT.search(line):
+                pending_name = line
+                pending_qty  = 1
 
     # ── Hitung / validasi totals ──────────────────────────────────────────
     computed_subtotal = sum(it["total_item_price"] for it in items)
@@ -409,18 +456,29 @@ def parse_receipt_with_llm(raw_text: str) -> dict:
             "3. Do not include 'Subtotal', 'Tax', 'Service charge', 'PB1', or 'Total' as items in the items list. Put them in the totals object instead.\n"
             "4. For quantities, try to extract them if visible (e.g. '6 Yellow' means quantity 6, item_name 'Yellow', price_per_item is total_item_price / quantity).\n"
             "5. Convert prices to clean integers (no dots, commas, or currency symbols). If the currency is IDR, ensure the price reflects the full amount (e.g. 153,600 -> 153600).\n"
-            "6. Make sure the sum of items total_item_price does not double count totals."
+            "6. Make sure the sum of items total_item_price does not double count totals.\n"
+            "7. Filter out all greetings, marketing/welcome messages (like 'Selamat Datang', 'Thank You', 'Welcome to', 'Silakan datang kembali'), payment details (like 'Cash', 'Change', 'Tunai', 'Kembali', 'Kembalian', 'Debit', 'Credit', 'Card number', 'EDC info'), and restaurant metadata (like phone number, address, website) from the items list."
         )
         
         result_str = chat_with_llama(raw_text, system_prompt)
-        result = json.loads(result_str)
+        cleaned_str = clean_json_string(result_str)
+        result = json.loads(cleaned_str)
         
-        if "merchant_name" not in result:
+        if "merchant_name" not in result or result["merchant_name"] is None:
             result["merchant_name"] = "Unknown"
         if "items" not in result:
             result["items"] = []
-        if "totals" not in result:
-            result["totals"] = {"subtotal": 0, "tax": 0, "service_charge": 0, "discount": 0, "grand_total": 0}
+        
+        # Sanitize totals fields to ensure all keys are safe integers and not None
+        totals = result.get("totals", {})
+        if not isinstance(totals, dict):
+            totals = {}
+        for k in ["subtotal", "tax", "service_charge", "discount", "grand_total"]:
+            if k not in totals or totals[k] is None:
+                totals[k] = 0
+            else:
+                totals[k] = safe_int(totals[k])
+        result["totals"] = totals
             
         return result
     except Exception as e:
