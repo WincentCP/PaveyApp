@@ -204,9 +204,29 @@ async def get_wikidata_image(query: str) -> Optional[str]:
         print(f"[WikidataImage] Error fetching image for {query}: {e}")
     return None
 
+async def get_openverse_image(query: str) -> Optional[str]:
+    """
+    Search Openverse for free, high-resolution CC-licensed photos of places, hotels, and attractions.
+    100% free, keyless, reliable fallback.
+    """
+    url = "https://api.openverse.org/v1/images/"
+    params = {"q": query, "page_size": 1}
+    headers = {"User-Agent": "PaveyApp/1.0 (https://pavey.app; contact@pavey.app)"}
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=5.0) as client:
+            res = await client.get(url, params=params)
+            if res.status_code == 200:
+                results = res.json().get("results", [])
+                if results and results[0].get("url"):
+                    return results[0].get("url")
+    except Exception as e:
+        print(f"[OpenverseImage] Error searching image for {query}: {e}")
+    return None
+
 async def enrich_place_details(place_name: str, city: str) -> Dict[str, Any]:
     """
     Search place on Google Places API to fetch real photo URL, rating, and price level.
+    If Google Places API is restricted or not configured, falls back to Openverse, Wikidata, and Wikipedia.
     """
     photo_url = None
     rating = None
@@ -260,35 +280,44 @@ async def enrich_place_details(place_name: str, city: str) -> Dict[str, Any]:
                         latitude = location.get("latitude")
                         longitude = location.get("longitude")
                 else:
-                    print(f"[GooglePlaces] API returned status {res.status_code}: {res.text}")
+                    print(f"[GooglePlaces] API returned status {res.status_code}: {res.text[:200]}")
         except Exception as e:
             print(f"[GooglePlaces] Error fetching place details for {query}: {e}")
 
-    # Fallback to Wikidata and Wikipedia if Google Places photo is not available (key not configured, quota exhausted, or no photo found)
+    # Fallback to Openverse, Wikidata, and Wikipedia if Google Places photo is not available (key not configured, quota exhausted, or no photo found)
     if not photo_url:
-        print(f"[GooglePlaces] Photo not found or Google API failed/quota-exhausted for {place_name}. Trying free-tier Wikidata/Wikipedia fallback...")
+        # 1. Try Openverse with place name + city context
+        openverse_img = await get_openverse_image(f"{place_name} {city}")
+        if openverse_img:
+            photo_url = openverse_img
+            print(f"[GooglePlaces] Free-tier Openverse photo found for {place_name}: {openverse_img}")
         
-        # 1. Try Wikidata with place name
-        wiki_img = await get_wikidata_image(place_name)
-        if not wiki_img:
-            # 2. Try Wikidata with place name + city context
-            wiki_img = await get_wikidata_image(f"{place_name} {city}")
-        
-        if not wiki_img:
-            # 3. Try Wikipedia with place name
-            wiki_img = await get_wikipedia_image(place_name)
-        
-        if not wiki_img:
-            # 4. Try Wikipedia with place name + city context
-            wiki_img = await get_wikipedia_image(f"{place_name} {city}")
+        # 2. Try Wikidata with place name
+        if not photo_url:
+            wiki_img = await get_wikidata_image(place_name)
+            if not wiki_img:
+                # 3. Try Wikidata with place name + city context
+                wiki_img = await get_wikidata_image(f"{place_name} {city}")
             
-        # 5. Try City fallback if no specific place image was found
-        if not wiki_img and city:
-            wiki_img = await get_cached_city_image(city)
+            if not wiki_img:
+                # 4. Try Wikipedia with place name
+                wiki_img = await get_wikipedia_image(place_name)
             
-        if wiki_img:
-            photo_url = wiki_img
-            print(f"[GooglePlaces] Free-tier photo found for {place_name}: {wiki_img}")
+            if not wiki_img:
+                # 5. Try Wikipedia with place name + city context
+                wiki_img = await get_wikipedia_image(f"{place_name} {city}")
+                
+            if not wiki_img:
+                # 6. Try Openverse with place name alone
+                wiki_img = await get_openverse_image(place_name)
+
+            # 7. Try City fallback if no specific place image was found
+            if not wiki_img and city:
+                wiki_img = await get_cached_city_image(city)
+                
+            if wiki_img:
+                photo_url = wiki_img
+                print(f"[GooglePlaces] Free-tier photo found for {place_name}: {wiki_img}")
 
     return {
         "image": photo_url,
@@ -298,4 +327,3 @@ async def enrich_place_details(place_name: str, city: str) -> Dict[str, Any]:
         "latitude": latitude,
         "longitude": longitude
     }
-
