@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from services.supabase_client import supabase
 from services.llama_service import chat_with_llama
 from typing import Optional, List
+from datetime import datetime
 import traceback
 import re
 
@@ -119,7 +120,7 @@ def save_chat_history(user_id: str, trip_id: str, messages: list):
         supabase.table("user_preferences").upsert({
             "user_id": user_id,
             "vibe_history": vibe_history,
-            "updated_at": "now()"
+            "updated_at": datetime.utcnow().isoformat()
         }, on_conflict="user_id").execute()
     except Exception as e:
         print(f"[Chatbot] Failed to save history: {e}")

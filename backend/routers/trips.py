@@ -262,12 +262,12 @@ async def generate_guest_plan(data: GuestPlanRequest):
                     
                     all_itinerary_list.extend(day_itin)
                     current_date += timedelta(days=1)
-            
-            # Enrich details from Google Places
-            await enrich_itinerary_items(all_itinerary_list, data.city)
         except Exception as api_err:
             print(f"[Trips API] AI Core connection failed or returned error: {api_err}. Running LLM fallback...")
             all_itinerary_list = generate_fallback_itinerary(data.city, data.vibe, data.days, data.arrival_time)
+
+        # Enrich details from Google Places / Wikidata / Wikipedia
+        await enrich_itinerary_items(all_itinerary_list, data.city)
 
         return {
             "status": "success",
@@ -339,12 +339,12 @@ async def generate_itinerary(
                     if day_data.get("weather_mode"):
                         weather_modes.append(day_data["weather_mode"])
                     current_date += timedelta(days=1)
-            
-            # Enrich details from Google Places
-            await enrich_itinerary_items(all_itinerary_list, t["destination"])
         except Exception as api_err:
             print(f"[Trips API] AI Core connection failed or returned error: {api_err}. Running LLM fallback...")
             all_itinerary_list = generate_fallback_itinerary(t["destination"], t["vibe"], num_days, "09:00")
+
+        # Enrich details from Google Places / Wikidata / Wikipedia
+        await enrich_itinerary_items(all_itinerary_list, t["destination"])
 
         supabase.table("itinerary_items")\
             .delete()\
@@ -355,7 +355,12 @@ async def generate_itinerary(
         for item in all_itinerary_list:
             # Calculate end_time from start_time + duration
             start_time_str = item.get("arrival_time", "09:00")
-            duration_min = item.get("duration_spent_minutes", 60)
+            raw_dur = item.get("duration_spent_minutes")
+            try:
+                duration_min = int(raw_dur) if raw_dur is not None else 60
+            except (ValueError, TypeError):
+                duration_min = 60
+
             try:
                 from datetime import datetime, timedelta
                 st = datetime.strptime(start_time_str, "%H:%M")
@@ -471,7 +476,7 @@ async def complete_trip(
             "budget_max": int(t["budget_max"]) if isinstance(t["budget_max"], (int, float, str)) and str(t["budget_max"]).isdigit() else 0,
             "destination_type": t.get("destination_type", "mixed"),
             "visited_places": visited_places,
-            "updated_at": "now()"
+            "updated_at": datetime.utcnow().isoformat()
         }
 
         # Gunakan upsert dengan on_conflict="user_id" untuk menyederhanakan insert/update

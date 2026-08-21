@@ -20,7 +20,7 @@ import {
 } from '../data/wallet';
 import { relativeDay } from '../lib/format';
 import { useToast } from '../components/Toast';
-import { apiGetExpenses, apiAddExpense } from '../lib/api';
+import { apiGetExpenses, apiAddExpense, apiScanReceipt } from '../lib/api';
 
 
 function mapCategory(cat: string): TxnCategory {
@@ -692,8 +692,6 @@ function ScanSheet({ currency, onResult, onAddAllItems }: { currency: Currency; 
       formData.append('file', file);
       formData.append('function', 'extract');
 
-      // Import dinamis agar tidak blocking
-      const { apiScanReceipt } = await import('../lib/api');
       const res = await apiScanReceipt(formData);
 
       if (res.error) {
@@ -1033,7 +1031,6 @@ function SplitBillSheet({ open, currency, onClose, onConfirm }: {
       formData.append('function', 'split_bill');
       formData.append('people_names', JSON.stringify(participants.map(p => p.name)));
 
-      const { apiScanReceipt } = await import('../lib/api');
       const res = await apiScanReceipt(formData);
 
       if (res.error) {

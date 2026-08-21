@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from services.supabase_client import supabase
 from middleware.auth_middleware import get_current_user
 from typing import List
+from datetime import datetime
 
 router = APIRouter()
 
@@ -155,7 +156,7 @@ async def save_onboarding(
             "budget_min": int(data.budget),
             "budget_max": int(data.budget),
             "destination_type": "mixed",
-            "updated_at": "now()"
+            "updated_at": datetime.utcnow().isoformat()
         }, on_conflict="user_id").execute()
 
         return {"message": "Onboarding berhasil disimpan ke database"}

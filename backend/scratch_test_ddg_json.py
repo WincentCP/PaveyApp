@@ -11,7 +11,7 @@ async def fetch_ddg_image(query: str):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
     }
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=False) as client:
             res = await client.get(token_url, params=params, headers=headers, timeout=5.0)
             if res.status_code == 200:
                 html = res.text
