@@ -57,13 +57,10 @@ async function reverseCityName(lat: number, lon: number): Promise<string> {
             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`,
             { headers: { 'Accept-Language': 'en', 'User-Agent': 'PaveyApp/1.0' } },
         );
+        if (!res.ok) return '';
         const d = await res.json();
         const addr = d.address ?? {};
 
-        // Priority order — most specific populated place first.
-        // Intentionally skip suburb/city_district/quarter to avoid getting
-        // administrative sub-districts (e.g. "Tangerang Selatan") instead of
-        // the actual city (e.g. "Tangerang" or "Jakarta").
         const city =
             addr.city ||
             addr.town ||
@@ -73,28 +70,34 @@ async function reverseCityName(lat: number, lon: number): Promise<string> {
             addr.state ||
             '';
 
-        return city || 'your location';
+        return city.trim();
     } catch {
-        return 'your location';
+        return '';
     }
 }
 
 async function tryIPGeo(): Promise<UserLocation | null> {
+    // 1. Try ipwho.is (Free, HTTPS, CORS, fast, reliable)
     try {
-        // ip-api.com works over HTTP too
-        const res = await fetch('http://ip-api.com/json/?fields=status,city,lat,lon');
-        const d = await res.json();
-        if (d.status !== 'success') return null;
-        return { lat: d.lat, lon: d.lon, city: d.city, fromIP: true };
-    } catch {
-        // Try alternate: ipapi.co (HTTPS)
-        try {
-            const res = await fetch('https://ipapi.co/json/');
+        const res = await fetch('https://ipwho.is/');
+        if (res.ok) {
             const d = await res.json();
-            if (d.city && d.latitude) {
+            if (d.success && d.city && d.latitude && d.longitude) {
                 return { lat: d.latitude, lon: d.longitude, city: d.city, fromIP: true };
             }
-        } catch { /* ignore */ }
-        return null;
-    }
+        }
+    } catch { /* try next */ }
+
+    // 2. Try ipapi.co (HTTPS fallback)
+    try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (res.ok) {
+            const d = await res.json();
+            if (d.city && d.latitude && d.longitude) {
+                return { lat: d.latitude, lon: d.longitude, city: d.city, fromIP: true };
+            }
+        }
+    } catch { /* ignore */ }
+
+    return null;
 }

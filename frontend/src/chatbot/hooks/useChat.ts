@@ -202,9 +202,10 @@ export function useChat(tripId?: string, initialContext?: string) {
         try {
             const loc = await detectUserLocation();
 
-            if (!loc) {
+            if (!loc || !loc.city || loc.city.toLowerCase() === 'your location') {
                 updateMsg(detectingId, {
                     text: "I couldn't detect your location 📍 Which city are you currently in?",
+                    isStreaming: false,
                 });
                 pendingFlowRef.current = { type: 'awaiting_city_for_places' };
                 setLoading(false);
@@ -269,7 +270,6 @@ export function useChat(tripId?: string, initialContext?: string) {
                 text: result?.intro || display,
                 isStreaming: false,
                 richContent,
-                // Attach weather as a secondary widget via extra field
             });
 
             // Also show weather card separately
@@ -287,7 +287,11 @@ export function useChat(tripId?: string, initialContext?: string) {
                 return next;
             });
         } catch (err) {
-            addAssistant("Sorry, something went wrong while detecting your location. Please tell me your city!");
+            updateMsg(detectingId, {
+                text: "I couldn't detect your location 📍 Which city are you currently in?",
+                isStreaming: false,
+            });
+            pendingFlowRef.current = { type: 'awaiting_city_for_places' };
         } finally {
             setLoading(false);
         }
