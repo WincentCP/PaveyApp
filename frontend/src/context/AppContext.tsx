@@ -162,83 +162,109 @@ const CITY_IMAGES: Record<string, Record<string, string>> = {
   },
 };
 
-// Type keyword normalizer — maps AI-returned types to image key
-const TYPE_FALLBACKS: Record<string, string> = {
-  restaurant: 'restaurant', cafe: 'restaurant', food: 'restaurant',
-  temple: 'temple', shrine: 'shrine', mosque: 'temple', church: 'temple',
-  beach: 'beach', park: 'park', garden: 'park', nature: 'beach',
-  market: 'market', mall: 'mall', shopping: 'mall',
-  attraction: 'attraction', museum: 'attraction', gallery: 'attraction',
-  hotel: 'hotel', resort: 'hotel', lodging: 'hotel',
+// Comprehensive topic-based high-resolution fallback photos for any city
+const CATEGORY_DYNAMIC_IMAGES: Record<string, string[]> = {
+  restaurant: [
+    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
+  ],
+  cafe: [
+    'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
+  ],
+  hotel: [
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=800&q=80',
+  ],
+  beach: [
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1562837832-7b4960bc6d10?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=800&q=80',
+  ],
+  temple: [
+    'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=800&q=80',
+  ],
+  nature: [
+    'https://images.unsplash.com/photo-1597047084897-51e81819a499?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+  ],
+  mall: [
+    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1569596082827-c9c9b72df8a4?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
+  ],
+  museum: [
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=800&q=80',
+  ],
+  attraction: [
+    'https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80',
+    'https://images.unsplash.com/photo-1486873249359-2731bd6dafc7?auto=format&fit=crop&w=800&q=80',
+  ],
 };
-
-// Generic type fallback images (city-agnostic)
-const TYPE_IMAGES: Record<string, string> = {
-  restaurant: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
-  cafe:       'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
-  temple:     'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
-  beach:      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
-  park:       'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=800&q=80',
-  market:     'https://images.unsplash.com/photo-1569596082827-c9c9b72df8a4?auto=format&fit=crop&w=800&q=80',
-  mall:       'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
-  attraction: 'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
-  museum:     'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
-  hotel:      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-};
-
-const FALLBACK_ATTRACTIONS = [
-  'https://images.unsplash.com/photo-1508964942454-1a56651d54ac?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1528181304800-259b08848526?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1502602915892-af96e8d9f73e?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1518002171953-a080ee817e1f?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1486873249359-2731bd6dafc7?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=800&q=80',
-];
-
-const FALLBACK_EATERIES = [
-  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1549294413-26f195200c16?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
-  'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=800&q=80',
-];
 
 export function getPlaceImage(city: string, type: string, placeName?: string): string {
-  const cityKey = city.toLowerCase().split(',')[0].trim();
-  const typeKey = TYPE_FALLBACKS[type?.toLowerCase()] ?? type?.toLowerCase() ?? 'attraction';
+  const cityKey = city?.toLowerCase().split(',')[0].trim() || '';
+  const nameLower = placeName?.toLowerCase().trim() || '';
 
-  // Try city-specific + type first
+  // 1. Check if placeName has specific keyword indicators
+  let categoryKey = 'attraction';
+  if (/hotel|resort|villa|inn|lodging|hostel|stay/i.test(nameLower) || /hotel/i.test(type)) {
+    categoryKey = 'hotel';
+  } else if (/cafe|kopi|coffee|roastery|bakery/i.test(nameLower) || /cafe/i.test(type)) {
+    categoryKey = 'cafe';
+  } else if (/restaurant|resto|warung|sate|bakso|nasi|dapur|kuliner|food|dining/i.test(nameLower) || /restaurant|food/i.test(type)) {
+    categoryKey = 'restaurant';
+  } else if (/pantai|beach|island|gili|cove/i.test(nameLower) || /beach/i.test(type)) {
+    categoryKey = 'beach';
+  } else if (/candi|temple|pura|mosque|masjid|church|gereja|shrine/i.test(nameLower) || /temple|shrine/i.test(type)) {
+    categoryKey = 'temple';
+  } else if (/taman|park|curug|waterfall|gunung|mountain|hutan|forest|bukit|ridge/i.test(nameLower) || /nature|park/i.test(type)) {
+    categoryKey = 'nature';
+  } else if (/mall|plaza|square|market|pasar/i.test(nameLower) || /mall|market|shopping/i.test(type)) {
+    categoryKey = 'mall';
+  } else if (/museum|gallery|istana|palace|benteng|fort|monumen|monas/i.test(nameLower) || /museum/i.test(type)) {
+    categoryKey = 'museum';
+  }
+
+  // 2. Try city-specific match first
   for (const [key, map] of Object.entries(CITY_IMAGES)) {
-    if (cityKey.includes(key) || key.includes(cityKey)) {
-      if (map[typeKey]) return map[typeKey];
+    if (cityKey && (cityKey.includes(key) || key.includes(cityKey))) {
+      if (map[categoryKey]) return map[categoryKey];
+      if (map[type]) return map[type];
       if (map.default) return map.default;
     }
   }
 
-  // Dynamic hash fallback to avoid "itu-itu aja"
+  // 3. Dynamic hash pick from the relevant category pool
+  const pool = CATEGORY_DYNAMIC_IMAGES[categoryKey] || CATEGORY_DYNAMIC_IMAGES.attraction;
   if (placeName) {
     let hash = 0;
     for (let i = 0; i < placeName.length; i++) {
       hash = placeName.charCodeAt(i) + ((hash << 5) - hash);
     }
-    hash = Math.abs(hash);
-    if (typeKey === 'restaurant') {
-      return FALLBACK_EATERIES[hash % FALLBACK_EATERIES.length];
-    }
-    return FALLBACK_ATTRACTIONS[hash % FALLBACK_ATTRACTIONS.length];
+    return pool[Math.abs(hash) % pool.length];
   }
 
-  // Fall back to type-only
-  return TYPE_IMAGES[typeKey] ?? TYPE_IMAGES.attraction;
+  return pool[0];
 }
 
 
