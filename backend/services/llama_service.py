@@ -20,10 +20,12 @@ def chat_with_llama(message: str, system_prompt: str = "", max_tokens: int = 102
     if len(message) > _MAX_INPUT_CHARS:
         message = message[:_MAX_INPUT_CHARS]
 
-    # Models list to fallback on rate limit (429) or other errors
+    # Models list to fallback on rate limit (429), not found (404), or decommissioned
     models = [
-        os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-        "llama-3.1-8b-instant",
+        os.getenv("GROQ_MODEL", "groq/compound-mini"),
+        "qwen/qwen3.6-27b",
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b",
     ]
     last_err = None
     for model in models:
@@ -42,6 +44,14 @@ def chat_with_llama(message: str, system_prompt: str = "", max_tokens: int = 102
             last_err = e
             continue
 
-    raise RuntimeError(f"All Groq models failed: {str(last_err)}")
+    # Fallback to OpenRouter if all Groq models fail
+    try:
+        from services.gemini_service import generate_text
+        return generate_text(prompt=message, system_prompt=system_prompt)
+    except Exception as or_err:
+        pass
+
+    raise RuntimeError(f"All LLM models failed. Groq: {str(last_err)}")
+
 
 

@@ -48,11 +48,12 @@ OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://router.project-osrm.org")
 
-# Fallback model chain: if primary hits rate limit (429) or is decommissioned (400), try next in list
+# Fallback model chain: active Groq models
 GROQ_MODELS_FALLBACK = [
-    os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-    "meta-llama/llama-4-scout-17b-16e-instruct",
-    "llama-3.1-8b-instant",
+    os.getenv("GROQ_MODEL", "groq/compound-mini"),
+    "qwen/qwen3.6-27b",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
 ]
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 SENTRY_DSN = os.getenv("SENTRY_DSN")
@@ -454,17 +455,12 @@ def generate_itinerary(payload: TravelPlannerRequest):
                 break
             except Exception as model_err:
                 err_str = str(model_err)
-                # Continue to next model if this one is rate-limited (429) OR decommissioned (400)
-                if "429" in err_str or "rate_limit" in err_str.lower() or "model_decommissioned" in err_str.lower() or "decommissioned" in err_str.lower():
-                    logger.warning(f"[Inference] Model '{candidate_model}' tidak tersedia (rate limit / decommissioned), mencoba fallback berikutnya... ({err_str[:120]})")
-                    last_error = model_err
-                    continue
-                else:
-                    # Non-recoverable error: re-raise immediately
-                    raise
+                logger.warning(f"[Inference] Model '{candidate_model}' gagal ({err_str[:120]}), mencoba model berikutnya...")
+                last_error = model_err
+                continue
 
         if chat_completion is None:
-            raise last_error or RuntimeError("Semua model Groq mencapai rate limit. Coba lagi nanti.")
+            raise last_error or RuntimeError("Semua model inferensi gagal. Coba lagi nanti.")
 
         response_payload_text = chat_completion.choices[0].message.content
 
